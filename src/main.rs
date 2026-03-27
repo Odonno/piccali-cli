@@ -1,5 +1,12 @@
+use std::path::PathBuf;
+use std::process;
 use clap::{Parser, ValueEnum};
 use globset::Glob;
+use walkdir::WalkDir;
+
+mod formatter;
+mod models;
+mod parser;
 
 /// Output format for generated documentation.
 #[derive(Debug, Clone, ValueEnum)]
@@ -16,7 +23,6 @@ enum Formatter {
 #[command(name = "piccali-cli", version, about)]
 struct Cli {
     /// Glob pattern for input feature files.
-    /// The pattern is validated at parse time.
     #[arg(short, long, default_value = "**/*.feature")]
     input: Glob,
 
@@ -25,8 +31,12 @@ struct Cli {
     formatter: Formatter,
 
     /// Path to the output file/folder.
-    #[arg(short, long)]
-    output: String,
+    #[arg(short, long, conflicts_with = "dry_run")]
+    output: Option<String>,
+
+    /// Print formatted output to stdout instead of writing to a file.
+    #[arg(long, conflicts_with = "output")]
+    dry_run: bool,
 
     /// Title of the generated document.
     #[arg(short, long)]
@@ -44,17 +54,90 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
-    println!("Input:            {}", cli.input.glob());
-    println!("Formatter:        {:?}", cli.formatter);
-    println!("Output:           {}", cli.output);
+    // Require either --output or --dry-run
+    if cli.output.is_none() && !cli.dry_run {
+        eprintln!("Error: either --output or --dry-run must be specified.");
+        process::exit(1);
+    }
 
-    if let Some(ref title) = cli.title {
-        println!("Title:            {title}");
+    // Discover feature files matching the glob pattern
+    let feature_files = discover_files(&cli.input);
+    if feature_files.is_empty() {
+        eprintln!(
+            "No feature files found matching pattern: {}",
+            cli.input.glob()
+        );
+        process::exit(1);
     }
-    if let Some(ref tag_prefix) = cli.tag_prefix {
-        println!("Tag prefix:       {tag_prefix}");
+
+    // Parse all feature files
+    let mut features = Vec::new();
+    for path in &feature_files {
+        match parser::parse_feature_file(path) {
+            Ok(feature) => features.push(feature),
+            Err(error) => {
+                eprintln!("{error}");
+                process::exit(1);
+            }
+        }
     }
-    if let Some(ref tag_url_template) = cli.tag_url_template {
-        println!("Tag URL template: {tag_url_template}");
+
+    let document = models::Document { features };
+
+    // Format the document
+    let output = match cli.formatter {
+        Formatter::Json => match formatter::format_json(&document) {
+            Ok(json) => json,
+            Err(error) => {
+                eprintln!("{error}");
+                process::exit(1);
+            }
+        },
+        Formatter::Html | Formatter::Markdown => {
+            eprintln!(
+                "Error: {:?} formatter is not yet implemented.",
+                cli.formatter
+            );
+            process::exit(1);
+        }
+    };
+
+    // Output the result
+    if cli.dry_run {
+        println!("{output}");
+    } else if let Some(ref output_path) = cli.output {
+        if let Err(error) = std::fs::write(output_path, &output) {
+            eprintln!("Failed to write output to {output_path}: {error}");
+            process::exit(1);
+        }
+        eprintln!("Written to {output_path}");
     }
+}
+
+/// Walk the current directory and return all file paths matching the glob pattern.
+fn discover_files(glob: &Glob) -> Vec<PathBuf> {
+    let matcher = glob.compile_matcher();
+    let mut files = Vec::new();
+
+    let walker = WalkDir::new(".").into_iter().filter_entry(|entry| {
+        // Skip common directories that should never contain feature files
+        let name = entry.file_name().to_string_lossy();
+        !matches!(name.as_ref(), "target" | "node_modules" | ".git")
+    });
+
+    for entry in walker.filter_map(Result::ok) {
+        if entry.file_type().is_file() {
+            let path = entry.into_path();
+            // Strip the leading "./" or ".\" to get a clean relative path
+            let relative = path.strip_prefix(".").unwrap_or(&path);
+            // Normalize path separators to forward slashes for consistent glob matching
+            let normalized = relative.to_string_lossy().replace('\\', "/");
+            if matcher.is_match(&normalized) {
+                files.push(path);
+            }
+        }
+    }
+
+    files.sort();
+    files
 }
