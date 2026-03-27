@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,7 +30,7 @@ import type { Feature, FolderNode, Rule, Step, Tag } from "@/lib/types";
 function resolveFeature(
   folders: FolderNode[],
   folderPath: number[],
-  featureIndex: number
+  featureIndex: number,
 ): Feature | undefined {
   let current = folders;
   for (const idx of folderPath) {
@@ -97,7 +97,10 @@ function StepTable({ step }: { step: Step }) {
           {rows.map((row, ri) => (
             <TableRow key={ri}>
               {row.map((cell, ci) => (
-                <TableCell key={ci} className="py-1.5 px-3 font-mono text-[11px]">
+                <TableCell
+                  key={ci}
+                  className="py-1.5 px-3 font-mono text-[11px]"
+                >
                   {cell}
                 </TableCell>
               ))}
@@ -214,7 +217,8 @@ function FeatureContent({
                   </span>
                   {ruleScenarioCount > 0 && (
                     <Badge variant="secondary" className="text-xs shrink-0">
-                      {ruleScenarioCount} scenario{ruleScenarioCount !== 1 ? "s" : ""}
+                      {ruleScenarioCount} scenario
+                      {ruleScenarioCount !== 1 ? "s" : ""}
                     </Badge>
                   )}
                 </button>
@@ -289,7 +293,8 @@ function FeatureContent({
                       {scenario.examples?.map((ex, ei) => (
                         <div key={ei} className="flex flex-col gap-1">
                           <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                            {ex.keyword}{ex.name ? `: ${ex.name}` : ""}
+                            {ex.keyword}
+                            {ex.name ? `: ${ex.name}` : ""}
                           </span>
                           {(ex.tags ?? []).length > 0 && (
                             <div className="flex flex-wrap gap-1">
@@ -303,7 +308,10 @@ function FeatureContent({
                               <TableHeader>
                                 <TableRow>
                                   {ex.table.header.map((col, ci) => (
-                                    <TableHead key={ci} className="h-7 px-3 font-mono text-[11px]">
+                                    <TableHead
+                                      key={ci}
+                                      className="h-7 px-3 font-mono text-[11px]"
+                                    >
                                       {col}
                                     </TableHead>
                                   ))}
@@ -313,7 +321,10 @@ function FeatureContent({
                                 {ex.table.rows.map((row, ri) => (
                                   <TableRow key={ri}>
                                     {row.map((cell, ci) => (
-                                      <TableCell key={ci} className="py-1.5 px-3 font-mono text-[11px]">
+                                      <TableCell
+                                        key={ci}
+                                        className="py-1.5 px-3 font-mono text-[11px]"
+                                      >
                                         {cell}
                                       </TableCell>
                                     ))}
@@ -358,6 +369,12 @@ export const App = () => {
   const { data, metadata, isLoading } = useDataContext();
   const [selected, setSelected] = useState<SelectedFeature | null>(null);
 
+  useEffect(() => {
+    if (metadata?.title) {
+      document.title = metadata.title;
+    }
+  }, [metadata]);
+
   if (isLoading) {
     return <LoadingState />;
   }
@@ -372,7 +389,7 @@ export const App = () => {
     selectedFeature = resolveFeature(
       folders,
       selected.path.folderPath,
-      selected.path.featureIndex
+      selected.path.featureIndex,
     );
     if (selected.type === "rule" && selectedFeature) {
       selectedRule = selectedFeature.rules?.[selected.ruleIndex];
