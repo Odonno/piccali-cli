@@ -11,12 +11,39 @@ import { useDataContext } from "@/hooks/useDataContext";
 import {
   FileText,
   BookOpen,
-  Tag,
+  Tag as TagIcon,
   Layers,
   ListChecks,
   AlertCircle,
 } from "lucide-react";
-import type { Feature, Rule } from "@/lib/types";
+import type { Feature, Rule, Tag } from "@/lib/types";
+
+/** Renders a single tag as a Badge, optionally wrapped in an <a> link. */
+function TagBadge({ tag, small = false }: { tag: Tag; small?: boolean }) {
+  const badge = (
+    <Badge
+      variant="secondary"
+      className={
+        small
+          ? "text-[10px] gap-0.5 font-mono h-4 px-1"
+          : "gap-1 text-xs font-mono"
+      }
+    >
+      <TagIcon className={small ? "size-2.5" : "size-3"} />
+      {tag.name}
+    </Badge>
+  );
+
+  if (tag.url) {
+    return (
+      <a href={tag.url} target="_blank" rel="noopener noreferrer">
+        {badge}
+      </a>
+    );
+  }
+
+  return badge;
+}
 
 // Placeholder content for the selected feature/rule
 function FeatureContent({
@@ -56,14 +83,7 @@ function FeatureContent({
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-1">
             {tags.map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="gap-1 text-xs font-mono"
-              >
-                <Tag className="size-3" />
-                {tag}
-              </Badge>
+              <TagBadge key={tag.name} tag={tag} />
             ))}
           </div>
         )}
@@ -127,14 +147,7 @@ function FeatureContent({
                 {(scenario.tags ?? []).length > 0 && (
                   <div className="flex flex-wrap gap-1 ml-auto">
                     {scenario.tags?.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="text-[10px] gap-0.5 font-mono h-4 px-1"
-                      >
-                        <Tag className="size-2.5" />
-                        {tag}
-                      </Badge>
+                      <TagBadge key={tag.name} tag={tag} small />
                     ))}
                   </div>
                 )}

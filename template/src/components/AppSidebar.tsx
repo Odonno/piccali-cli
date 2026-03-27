@@ -5,7 +5,7 @@ import {
   Layers,
   BookOpen,
   ListChecks,
-  Tag,
+  Tag as TagIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -153,15 +153,29 @@ export const AppSidebar = ({
                           <p className="font-medium">{featureLabel(feature)}</p>
                           {feature.tags && feature.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {feature.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground"
-                                >
-                                  <Tag className="size-2.5" />
-                                  {tag}
-                                </span>
-                              ))}
+                              {feature.tags.map((tag) => {
+                                const content = (
+                                  <span
+                                    key={tag.name}
+                                    className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground"
+                                  >
+                                    <TagIcon className="size-2.5" />
+                                    {tag.name}
+                                  </span>
+                                );
+                                return tag.url ? (
+                                  <a
+                                    key={tag.name}
+                                    href={tag.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    {content}
+                                  </a>
+                                ) : (
+                                  content
+                                );
+                              })}
                             </div>
                           )}
                         </TooltipContent>

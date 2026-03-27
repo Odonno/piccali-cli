@@ -1,5 +1,13 @@
 use serde::Serialize;
 
+/// A tag with an optional URL link.
+#[derive(Debug, Serialize, Clone)]
+pub struct Tag {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
 /// Top-level document containing all parsed features.
 #[derive(Debug, Serialize)]
 pub struct Document {
@@ -14,7 +22,7 @@ pub struct Feature {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
+    pub tags: Vec<Tag>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub background: Option<Background>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -31,7 +39,7 @@ pub struct Rule {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
+    pub tags: Vec<Tag>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub background: Option<Background>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -53,7 +61,7 @@ pub struct Scenario {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
+    pub tags: Vec<Tag>,
     pub steps: Vec<Step>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub examples: Vec<Examples>,
@@ -66,7 +74,7 @@ pub struct Examples {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
+    pub tags: Vec<Tag>,
     pub table: Table,
 }
 

@@ -1,13 +1,21 @@
-use std::path::{Path, PathBuf};
 use chrono::Utc;
 use gherkin::GherkinEnv;
 use globset::Glob;
 use serde::Serialize;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 // ---------------------------------------------------------------------------
 // Models (mirrors src/models.rs)
 // ---------------------------------------------------------------------------
+
+#[derive(Debug, Serialize)]
+struct Tag {
+    name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    url: Option<String>,
+}
 
 #[derive(Debug, Serialize)]
 struct Document {
@@ -21,7 +29,7 @@ struct Feature {
     #[serde(skip_serializing_if = "Option::is_none")]
     description: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    tags: Vec<String>,
+    tags: Vec<Tag>,
     #[serde(skip_serializing_if = "Option::is_none")]
     background: Option<Background>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -37,7 +45,7 @@ struct Rule {
     #[serde(skip_serializing_if = "Option::is_none")]
     description: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    tags: Vec<String>,
+    tags: Vec<Tag>,
     #[serde(skip_serializing_if = "Option::is_none")]
     background: Option<Background>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -57,7 +65,7 @@ struct Scenario {
     #[serde(skip_serializing_if = "Option::is_none")]
     description: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    tags: Vec<String>,
+    tags: Vec<Tag>,
     steps: Vec<Step>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     examples: Vec<Examples>,
@@ -69,7 +77,7 @@ struct Examples {
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    tags: Vec<String>,
+    tags: Vec<Tag>,
     table: Table,
 }
 
@@ -100,25 +108,48 @@ struct Table {
 }
 
 // ---------------------------------------------------------------------------
+// Tag resolution (mirrors src/parser.rs)
+// ---------------------------------------------------------------------------
+
+fn resolve_tag(raw: &str, tag_links: &HashMap<&str, &str>) -> Tag {
+    let url = tag_links.iter().find_map(|(prefix, template)| {
+        raw.strip_prefix(prefix)
+            .map(|id| template.replace("{id}", id))
+    });
+    Tag {
+        name: raw.to_owned(),
+        url,
+    }
+}
+
+fn resolve_tags(raw: &[String], tag_links: &HashMap<&str, &str>) -> Vec<Tag> {
+    raw.iter().map(|t| resolve_tag(t, tag_links)).collect()
+}
+
+// ---------------------------------------------------------------------------
 // Parser (mirrors src/parser.rs)
 // ---------------------------------------------------------------------------
 
-fn parse_feature_file(path: &Path) -> Result<Feature, String> {
+fn parse_feature_file(path: &Path, tag_links: &HashMap<&str, &str>) -> Result<Feature, String> {
     let env = GherkinEnv::default();
     let parsed = gherkin::Feature::parse_path(path, env)
         .map_err(|e| format!("Failed to parse {}: {e}", path.display()))?;
-    Ok(convert_feature(&parsed))
+    Ok(convert_feature(&parsed, tag_links))
 }
 
-fn convert_feature(f: &gherkin::Feature) -> Feature {
+fn convert_feature(f: &gherkin::Feature, tag_links: &HashMap<&str, &str>) -> Feature {
     Feature {
         keyword: f.keyword.clone(),
         name: f.name.clone(),
         description: f.description.clone(),
-        tags: f.tags.clone(),
+        tags: resolve_tags(&f.tags, tag_links),
         background: f.background.as_ref().map(convert_background),
-        scenarios: f.scenarios.iter().map(convert_scenario).collect(),
-        rules: f.rules.iter().map(convert_rule).collect(),
+        scenarios: f
+            .scenarios
+            .iter()
+            .map(|s| convert_scenario(s, tag_links))
+            .collect(),
+        rules: f.rules.iter().map(|r| convert_rule(r, tag_links)).collect(),
     }
 }
 
@@ -129,25 +160,33 @@ fn convert_background(b: &gherkin::Background) -> Background {
     }
 }
 
-fn convert_rule(r: &gherkin::Rule) -> Rule {
+fn convert_rule(r: &gherkin::Rule, tag_links: &HashMap<&str, &str>) -> Rule {
     Rule {
         keyword: r.keyword.clone(),
         name: r.name.clone(),
         description: r.description.clone(),
-        tags: r.tags.clone(),
+        tags: resolve_tags(&r.tags, tag_links),
         background: r.background.as_ref().map(convert_background),
-        scenarios: r.scenarios.iter().map(convert_scenario).collect(),
+        scenarios: r
+            .scenarios
+            .iter()
+            .map(|s| convert_scenario(s, tag_links))
+            .collect(),
     }
 }
 
-fn convert_scenario(s: &gherkin::Scenario) -> Scenario {
+fn convert_scenario(s: &gherkin::Scenario, tag_links: &HashMap<&str, &str>) -> Scenario {
     Scenario {
         keyword: s.keyword.clone(),
         name: s.name.clone(),
         description: s.description.clone(),
-        tags: s.tags.clone(),
+        tags: resolve_tags(&s.tags, tag_links),
         steps: s.steps.iter().map(convert_step).collect(),
-        examples: s.examples.iter().map(convert_examples).collect(),
+        examples: s
+            .examples
+            .iter()
+            .map(|e| convert_examples(e, tag_links))
+            .collect(),
     }
 }
 
@@ -165,7 +204,7 @@ fn convert_step(s: &gherkin::Step) -> Step {
     }
 }
 
-fn convert_examples(e: &gherkin::Examples) -> Examples {
+fn convert_examples(e: &gherkin::Examples, tag_links: &HashMap<&str, &str>) -> Examples {
     let table = e.table.as_ref().map(convert_table).unwrap_or(Table {
         header: vec![],
         rows: vec![],
@@ -173,7 +212,7 @@ fn convert_examples(e: &gherkin::Examples) -> Examples {
     Examples {
         keyword: e.keyword.clone(),
         name: e.name.clone(),
-        tags: e.tags.clone(),
+        tags: resolve_tags(&e.tags, tag_links),
         table,
     }
 }
@@ -232,6 +271,10 @@ fn main() {
     // Re-run whenever any .feature file changes
     println!("cargo:rerun-if-changed=features/");
 
+    // Tag prefix → URL template mappings used when generating data.json.
+    // "feat:" tags link to the internal documentation hub at https://my-docs/{id}.
+    let tag_links: HashMap<&str, &str> = HashMap::from([("feat:", "https://my-docs/{id}")]);
+
     // Ensure the output directory exists
     std::fs::create_dir_all("template/public").expect("Failed to create template/public directory");
 
@@ -246,7 +289,7 @@ fn main() {
     // Parse all feature files
     let mut features = Vec::new();
     for path in &feature_files {
-        match parse_feature_file(path) {
+        match parse_feature_file(path, &tag_links) {
             Ok(feature) => features.push(feature),
             Err(e) => panic!("{e}"),
         }

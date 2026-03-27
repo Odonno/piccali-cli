@@ -312,7 +312,9 @@ expression: json
                 }
               ],
               "tags": [
-                "feat:22089"
+                {
+                  "name": "feat:22089"
+                }
               ]
             }
           ]
@@ -342,7 +344,9 @@ expression: json
                 }
               ],
               "tags": [
-                "feat:21726"
+                {
+                  "name": "feat:21726"
+                }
               ]
             }
           ]

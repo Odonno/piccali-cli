@@ -1,7 +1,8 @@
-use std::path::PathBuf;
-use std::process;
 use clap::{Parser, ValueEnum};
 use globset::Glob;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::process;
 use walkdir::WalkDir;
 
 mod formatter;
@@ -42,13 +43,16 @@ struct Cli {
     #[arg(short, long)]
     title: Option<String>,
 
-    /// Prefix used to identify tags (e.g. "feat:").
-    #[arg(long)]
-    tag_prefix: Option<String>,
+    /// Tag prefix to match (e.g. "feat:"). Repeat for multiple prefixes.
+    /// Each --tag-prefix must be paired with a corresponding --tag-url-template.
+    #[arg(long, value_name = "PREFIX")]
+    tag_prefix: Vec<String>,
 
-    /// URL template for tags. Use {id} as a placeholder for the tag value.
-    #[arg(long)]
-    tag_url_template: Option<String>,
+    /// URL template for tagged links. Use {id} as placeholder for the part
+    /// after the prefix (e.g. "https://jira.example.com/browse/{id}").
+    /// Repeat to match each --tag-prefix in order.
+    #[arg(long, value_name = "URL_TEMPLATE")]
+    tag_url_template: Vec<String>,
 }
 
 fn main() {
@@ -59,6 +63,24 @@ fn main() {
         eprintln!("Error: either --output or --dry-run must be specified.");
         process::exit(1);
     }
+
+    // Validate that --tag-prefix and --tag-url-template are always paired
+    if cli.tag_prefix.len() != cli.tag_url_template.len() {
+        eprintln!(
+            "Error: --tag-prefix and --tag-url-template must be provided in pairs \
+             (got {} prefix(es) and {} template(s)).",
+            cli.tag_prefix.len(),
+            cli.tag_url_template.len()
+        );
+        process::exit(1);
+    }
+
+    // Build the prefix → url_template map
+    let tag_links: HashMap<String, String> = cli
+        .tag_prefix
+        .into_iter()
+        .zip(cli.tag_url_template)
+        .collect();
 
     // Discover feature files matching the glob pattern
     let feature_files = discover_files(&cli.input);
@@ -73,7 +95,7 @@ fn main() {
     // Parse all feature files
     let mut features = Vec::new();
     for path in &feature_files {
-        match parser::parse_feature_file(path) {
+        match parser::parse_feature_file(path, &tag_links) {
             Ok(feature) => features.push(feature),
             Err(error) => {
                 eprintln!("{error}");

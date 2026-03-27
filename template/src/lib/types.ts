@@ -1,5 +1,10 @@
 export type StepType = "Given" | "When" | "Then";
 
+export type Tag = {
+  name: string;
+  url?: string;
+};
+
 export type Table = {
   header: string[];
   rows: string[][];
@@ -16,7 +21,7 @@ export type Step = {
 export type Examples = {
   keyword: string;
   name?: string;
-  tags?: string[];
+  tags?: Tag[];
   table: Table;
 };
 
@@ -29,7 +34,7 @@ export type Scenario = {
   keyword: string;
   name: string;
   description?: string;
-  tags?: string[];
+  tags?: Tag[];
   steps: Step[];
   examples?: Examples[];
 };
@@ -38,7 +43,7 @@ export type Rule = {
   keyword: string;
   name: string;
   description?: string;
-  tags?: string[];
+  tags?: Tag[];
   background?: Background;
   scenarios?: Scenario[];
 };
@@ -47,7 +52,7 @@ export type Feature = {
   keyword: string;
   name: string;
   description?: string;
-  tags?: string[];
+  tags?: Tag[];
   background?: Background;
   scenarios?: Scenario[];
   rules?: Rule[];
