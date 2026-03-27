@@ -45,15 +45,6 @@ fn no_matching_files_fails() {
         .stderr(predicate::str::contains("No feature files found"));
 }
 
-#[test]
-fn unimplemented_formatter_fails() {
-    piccali()
-        .args(["--formatter", "html", "--dry-run"])
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains("not yet implemented"));
-}
-
 // ---------------------------------------------------------------------------
 // JSON output snapshot tests
 // ---------------------------------------------------------------------------

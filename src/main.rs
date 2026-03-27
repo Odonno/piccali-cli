@@ -107,7 +107,24 @@ fn main() {
     let folders = parser::build_folder_tree(entries);
     let document = models::Document { folders };
 
-    // Format the document
+    // HTML formatter: writes a full site to a directory; dry-run is not supported
+    if matches!(cli.formatter, Formatter::Html) {
+        if cli.dry_run {
+            eprintln!("Error: --dry-run is not supported for the html formatter.");
+            process::exit(1);
+        }
+        let output_path = cli.output.as_deref().unwrap_or(".");
+        let output_dir = std::path::Path::new(output_path);
+        let title = cli.title.as_deref().unwrap_or("Cucumber docs");
+        if let Err(error) = formatter::format_html(&document, output_dir, title) {
+            eprintln!("{error}");
+            process::exit(1);
+        }
+        eprintln!("HTML site written to {output_path}");
+        return;
+    }
+
+    // Format the document (string-based formatters)
     let output = match cli.formatter {
         Formatter::Json => match formatter::format_json(&document) {
             Ok(json) => json,
@@ -116,13 +133,11 @@ fn main() {
                 process::exit(1);
             }
         },
-        Formatter::Html | Formatter::Markdown => {
-            eprintln!(
-                "Error: {:?} formatter is not yet implemented.",
-                cli.formatter
-            );
+        Formatter::Markdown => {
+            eprintln!("Error: Markdown formatter is not yet implemented.");
             process::exit(1);
         }
+        Formatter::Html => unreachable!(),
     };
 
     // Output the result
