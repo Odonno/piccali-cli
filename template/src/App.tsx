@@ -3,6 +3,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -24,7 +25,73 @@ import {
   ListChecks,
   AlertCircle,
 } from "lucide-react";
-import type { Feature, FolderNode, Rule, Step, Tag } from "@/lib/types";
+import type { Examples, Feature, FolderNode, Rule, Step, Tag } from "@/lib/types";
+
+/**
+ * Key for a selected example row: "examplesIndex-rowIndex".
+ * Used to track which row is selected within a single Scenario Outline.
+ */
+type ExampleRowKey = `${number}-${number}`;
+
+/**
+ * Resolves the variable→value mapping from an Examples table row.
+ * Returns null if exampleRowKey is null.
+ */
+function resolveExampleVars(
+  examples: Examples[],
+  exampleRowKey: ExampleRowKey | null,
+): Record<string, string> | null {
+  if (!exampleRowKey) return null;
+  const [eiStr, riStr] = exampleRowKey.split("-");
+  const ei = Number(eiStr);
+  const ri = Number(riStr);
+  const ex = examples[ei];
+  if (!ex) return null;
+  const vars: Record<string, string> = {};
+  ex.table.header.forEach((col, ci) => {
+    vars[col] = ex.table.rows[ri]?.[ci] ?? "";
+  });
+  return vars;
+}
+
+/**
+ * Renders a step text string, replacing <variable> placeholders with
+ * highlighted spans when vars are provided.
+ */
+function StepTextWithVars({
+  text,
+  vars,
+}: {
+  text: string;
+  vars: Record<string, string> | null;
+}) {
+  if (!vars) return <span>{text}</span>;
+
+  // Split on <varname> tokens
+  const parts = text.split(/(<[^>]+>)/g);
+  return (
+    <span>
+      {parts.map((part, i) => {
+        const match = part.match(/^<([^>]+)>$/);
+        if (match) {
+          const varName = match[1];
+          const value = vars[varName];
+          if (value !== undefined) {
+            return (
+              <span
+                key={i}
+                className="rounded px-1 py-0.5 text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/60 font-semibold font-mono text-[0.8em]"
+              >
+                {value}
+              </span>
+            );
+          }
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </span>
+  );
+}
 
 /** Resolve a feature from the folder tree using a folderPath + featureIndex. */
 function resolveFeature(
@@ -112,8 +179,14 @@ function StepTable({ step }: { step: Step }) {
   );
 }
 
-/** Renders a list of steps with optional step tables. */
-function StepList({ steps }: { steps: Step[] }) {
+/** Renders a list of steps with optional step tables and variable substitution. */
+function StepList({
+  steps,
+  vars,
+}: {
+  steps: Step[];
+  vars?: Record<string, string> | null;
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       {steps.map((step, i) => (
@@ -122,7 +195,7 @@ function StepList({ steps }: { steps: Step[] }) {
             <span className="font-mono font-semibold text-primary min-w-[3.5rem] text-right shrink-0">
               {step.keyword.trim()}
             </span>
-            <span>{step.text}</span>
+            <StepTextWithVars text={step.text} vars={vars ?? null} />
           </div>
           {step.table && <StepTable step={step} />}
         </div>
@@ -148,6 +221,29 @@ function FeatureContent({
 
   // Feature with rules and no rule selected: show rules list
   const hasRules = !rule && (feature.rules?.length ?? 0) > 0;
+
+  /**
+   * Map of scenarioIndex → selected ExampleRowKey.
+   * Tracks which example row is selected for each Scenario Outline.
+   */
+  const [selectedExampleRows, setSelectedExampleRows] = useState<
+    Record<number, ExampleRowKey | null>
+  >({});
+
+  function toggleExampleRow(
+    scenarioIndex: number,
+    examplesIndex: number,
+    rowIndex: number,
+  ) {
+    const key: ExampleRowKey = `${examplesIndex}-${rowIndex}`;
+    setSelectedExampleRows((prev) => {
+      const current = prev[scenarioIndex];
+      return {
+        ...prev,
+        [scenarioIndex]: current === key ? null : key,
+      };
+    });
+  }
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
@@ -251,94 +347,167 @@ function FeatureContent({
 
           {scenarios.length > 0 && (
             <div className="flex flex-col gap-4">
-              {scenarios.map((scenario, i) => (
-                <div
-                  key={i}
-                  className="rounded-lg border bg-card p-4 flex flex-col gap-3"
-                >
-                  {/* Scenario header */}
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest shrink-0 pt-0.5">
-                      {scenario.keyword}
-                    </span>
-                    <span className="text-sm font-semibold leading-snug flex-1">
-                      {scenario.name}
-                    </span>
-                    {(scenario.tags ?? []).length > 0 && (
-                      <div className="flex flex-wrap gap-1 ml-auto">
-                        {scenario.tags?.map((tag) => (
-                          <TagBadge key={tag.name} tag={tag} small />
-                        ))}
+              {scenarios.map((scenario, scenarioIndex) => {
+                const isOutline = scenario.keyword === "Scenario Outline";
+                const selectedKey =
+                  selectedExampleRows[scenarioIndex] ?? null;
+                const exampleVars =
+                  isOutline && scenario.examples
+                    ? resolveExampleVars(scenario.examples, selectedKey)
+                    : null;
+
+                return (
+                  <div
+                    key={scenarioIndex}
+                    className="rounded-lg border bg-card p-4 flex flex-col gap-3"
+                  >
+                    {/* Scenario header */}
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest shrink-0 pt-0.5">
+                        {scenario.keyword}
+                      </span>
+                      <span className="text-sm font-semibold leading-snug flex-1">
+                        {scenario.name}
+                      </span>
+                      {(scenario.tags ?? []).length > 0 && (
+                        <div className="flex flex-wrap gap-1 ml-auto">
+                          {scenario.tags?.map((tag) => (
+                            <TagBadge key={tag.name} tag={tag} small />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Scenario description */}
+                    {scenario.description && (
+                      <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line pl-2 border-l-2 border-muted">
+                        {scenario.description.trim()}
+                      </p>
+                    )}
+
+                    {/* Scenario steps */}
+                    {(scenario.steps?.length ?? 0) > 0 && (
+                      <div className="rounded-md bg-muted/40 px-4 py-3">
+                        <StepList
+                          steps={scenario.steps}
+                          vars={exampleVars}
+                        />
+                      </div>
+                    )}
+
+                    {/* Examples (Scenario Outline) */}
+                    {(scenario.examples?.length ?? 0) > 0 && (
+                      <div className="flex flex-col gap-2 mt-1">
+                        {scenario.examples?.map((ex, examplesIndex) => {
+                          // Build a running row offset so "#" ids are
+                          // sequential across multiple Examples blocks.
+                          const priorRowCount =
+                            scenario.examples
+                              ?.slice(0, examplesIndex)
+                              .reduce(
+                                (acc, e) => acc + e.table.rows.length,
+                                0,
+                              ) ?? 0;
+
+                          return (
+                            <div key={examplesIndex} className="flex flex-col gap-1">
+                              <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                                {ex.keyword}
+                                {ex.name ? `: ${ex.name}` : ""}
+                              </span>
+                              {(ex.tags ?? []).length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {ex.tags?.map((tag) => (
+                                    <TagBadge key={tag.name} tag={tag} small />
+                                  ))}
+                                </div>
+                              )}
+                              <div className="overflow-x-auto rounded-md border text-xs">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      {/* # column */}
+                                      <TableHead className="h-7 w-8 px-3 font-mono text-[11px] text-center">
+                                        #
+                                      </TableHead>
+                                      {/* Preview toggle column */}
+                                      <TableHead className="h-7 px-3 font-mono text-[11px]">
+                                        Preview
+                                      </TableHead>
+                                      {/* Data columns */}
+                                      {ex.table.header.map((col, ci) => (
+                                        <TableHead
+                                          key={ci}
+                                          className="h-7 px-3 font-mono text-[11px]"
+                                        >
+                                          {col}
+                                        </TableHead>
+                                      ))}
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {ex.table.rows.map((row, ri) => {
+                                      const key: ExampleRowKey = `${examplesIndex}-${ri}`;
+                                      const isSelected = selectedKey === key;
+                                      return (
+                                        <TableRow
+                                          key={ri}
+                                          data-selected={isSelected}
+                                          className="data-[selected=true]:bg-violet-50 dark:data-[selected=true]:bg-violet-950/30"
+                                        >
+                                          {/* # id */}
+                                          <TableCell className="py-1.5 px-3 font-mono text-[11px] text-center text-muted-foreground">
+                                            {priorRowCount + ri + 1}
+                                          </TableCell>
+                                          {/* Preview toggle */}
+                                          <TableCell className="py-1 px-3">
+                                            <Button
+                                              variant={
+                                                isSelected
+                                                  ? "default"
+                                                  : "outline"
+                                              }
+                                              size="xs"
+                                              aria-pressed={isSelected}
+                                              onClick={() =>
+                                                toggleExampleRow(
+                                                  scenarioIndex,
+                                                  examplesIndex,
+                                                  ri,
+                                                )
+                                              }
+                                              className={
+                                                isSelected
+                                                  ? "bg-violet-600 hover:bg-violet-700 text-white border-transparent"
+                                                  : ""
+                                              }
+                                            >
+                                              {isSelected ? "Selected" : "Select"}
+                                            </Button>
+                                          </TableCell>
+                                          {/* Data cells */}
+                                          {row.map((cell, ci) => (
+                                            <TableCell
+                                              key={ci}
+                                              className="py-1.5 px-3 font-mono text-[11px]"
+                                            >
+                                              {cell}
+                                            </TableCell>
+                                          ))}
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
-
-                  {/* Scenario description */}
-                  {scenario.description && (
-                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line pl-2 border-l-2 border-muted">
-                      {scenario.description.trim()}
-                    </p>
-                  )}
-
-                  {/* Scenario steps */}
-                  {(scenario.steps?.length ?? 0) > 0 && (
-                    <div className="rounded-md bg-muted/40 px-4 py-3">
-                      <StepList steps={scenario.steps} />
-                    </div>
-                  )}
-
-                  {/* Examples (Scenario Outline) */}
-                  {(scenario.examples?.length ?? 0) > 0 && (
-                    <div className="flex flex-col gap-2 mt-1">
-                      {scenario.examples?.map((ex, ei) => (
-                        <div key={ei} className="flex flex-col gap-1">
-                          <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                            {ex.keyword}
-                            {ex.name ? `: ${ex.name}` : ""}
-                          </span>
-                          {(ex.tags ?? []).length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {ex.tags?.map((tag) => (
-                                <TagBadge key={tag.name} tag={tag} small />
-                              ))}
-                            </div>
-                          )}
-                          <div className="overflow-x-auto rounded-md border text-xs">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  {ex.table.header.map((col, ci) => (
-                                    <TableHead
-                                      key={ci}
-                                      className="h-7 px-3 font-mono text-[11px]"
-                                    >
-                                      {col}
-                                    </TableHead>
-                                  ))}
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {ex.table.rows.map((row, ri) => (
-                                  <TableRow key={ri}>
-                                    {row.map((cell, ci) => (
-                                      <TableCell
-                                        key={ci}
-                                        className="py-1.5 px-3 font-mono text-[11px]"
-                                      >
-                                        {cell}
-                                      </TableCell>
-                                    ))}
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </>
