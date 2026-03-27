@@ -25,7 +25,14 @@ import {
   ListChecks,
   AlertCircle,
 } from "lucide-react";
-import type { Examples, Feature, FolderNode, Rule, Step, Tag } from "@/lib/types";
+import type {
+  Examples,
+  Feature,
+  FolderNode,
+  Rule,
+  Step,
+  Tag,
+} from "@/lib/types";
 
 /**
  * Key for a selected example row: "examplesIndex-rowIndex".
@@ -62,10 +69,10 @@ function classifyCell(value: string): CellType {
   //   Month name:        Jan 2024 | January 1st 2024
   const datePatterns = [
     /^\d{4}-\d{2}-\d{2}(T[\d::.Z+-]*)?$/, // ISO
-    /^\d{2}[/-]\d{2}[/-]\d{4}$/,           // DD/MM/YYYY or MM/DD/YYYY
-    /^\d{1,2}\s+\w+\s+\d{4}$/,             // 1 January 2024
-    /^\w+\s+\d{1,2},?\s+\d{4}$/,           // January 1, 2024
-    /^\w{3}\s+\d{4}$/,                     // Jan 2024
+    /^\d{2}[/-]\d{2}[/-]\d{4}$/, // DD/MM/YYYY or MM/DD/YYYY
+    /^\d{1,2}\s+\w+\s+\d{4}$/, // 1 January 2024
+    /^\w+\s+\d{1,2},?\s+\d{4}$/, // January 1, 2024
+    /^\w{3}\s+\d{4}$/, // Jan 2024
   ];
   if (datePatterns.some((re) => re.test(v))) return "date";
 
@@ -86,14 +93,10 @@ function TableCellValue({ value }: { value: string }) {
     return <span className="text-muted-foreground/50 italic">—</span>;
   }
   const styles: Record<CellType, string> = {
-    boolean:
-      "text-blue-600 dark:text-blue-400",
-    number:
-      "text-emerald-600 dark:text-emerald-400",
-    date:
-      "text-amber-600 dark:text-amber-400",
-    string:
-      "text-rose-600 dark:text-rose-400",
+    boolean: "text-blue-600 dark:text-blue-400",
+    number: "text-emerald-600 dark:text-emerald-400",
+    date: "text-amber-600 dark:text-amber-400",
+    string: "text-rose-600 dark:text-rose-400",
   };
   return <span className={styles[type]}>{value}</span>;
 }
@@ -219,7 +222,10 @@ function StepTable({ step }: { step: Step }) {
         <TableHeader>
           <TableRow>
             {header.map((col, i) => (
-              <TableHead key={i} className="h-7 px-3 font-mono text-[11px] font-bold">
+              <TableHead
+                key={i}
+                className="h-7 px-3 font-mono text-[11px] font-bold"
+              >
                 {col}
               </TableHead>
             ))}
@@ -398,9 +404,6 @@ function FeatureContent({
             <span className="text-sm font-medium">
               {scenarios.length} scenario{scenarios.length !== 1 ? "s" : ""}
             </span>
-            <Badge variant="outline" className="text-xs">
-              {scenarios.length > 0 ? "Defined" : "No scenarios"}
-            </Badge>
           </div>
 
           {scenarios.length === 0 && (
@@ -414,8 +417,7 @@ function FeatureContent({
             <div className="flex flex-col gap-4">
               {scenarios.map((scenario, scenarioIndex) => {
                 const isOutline = scenario.keyword === "Scenario Outline";
-                const selectedKey =
-                  selectedExampleRows[scenarioIndex] ?? null;
+                const selectedKey = selectedExampleRows[scenarioIndex] ?? null;
                 const exampleVars =
                   isOutline && scenario.examples
                     ? resolveExampleVars(scenario.examples, selectedKey)
@@ -453,10 +455,7 @@ function FeatureContent({
                     {/* Scenario steps */}
                     {(scenario.steps?.length ?? 0) > 0 && (
                       <div className="rounded-md bg-muted/40 px-4 py-3">
-                        <StepList
-                          steps={scenario.steps}
-                          vars={exampleVars}
-                        />
+                        <StepList steps={scenario.steps} vars={exampleVars} />
                       </div>
                     )}
 
@@ -475,7 +474,10 @@ function FeatureContent({
                               ) ?? 0;
 
                           return (
-                            <div key={examplesIndex} className="flex flex-col gap-1">
+                            <div
+                              key={examplesIndex}
+                              className="flex flex-col gap-1"
+                            >
                               <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
                                 {ex.keyword}
                                 {ex.name ? `: ${ex.name}` : ""}
@@ -547,10 +549,12 @@ function FeatureContent({
                                                   : ""
                                               }
                                             >
-                                              {isSelected ? "Selected" : "Select"}
+                                              {isSelected
+                                                ? "Selected"
+                                                : "Select"}
                                             </Button>
                                           </TableCell>
-                                           {/* Data cells */}
+                                          {/* Data cells */}
                                           {row.map((cell, ci) => (
                                             <TableCell
                                               key={ci}
