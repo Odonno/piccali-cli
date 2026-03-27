@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-
+use chrono::Utc;
 use gherkin::GherkinEnv;
 use globset::Glob;
 use serde::Serialize;
@@ -214,6 +214,17 @@ fn discover_files(glob: &Glob) -> Vec<PathBuf> {
 }
 
 // ---------------------------------------------------------------------------
+// Metadata
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Metadata {
+    title: String,
+    created_at: String,
+}
+
+// ---------------------------------------------------------------------------
 // Build entry point
 // ---------------------------------------------------------------------------
 
@@ -249,4 +260,14 @@ fn main() {
     // Write to template/public/data.json
     std::fs::write("template/public/data.json", json)
         .expect("Failed to write template/public/data.json");
+
+    // Build and write metadata.json
+    let metadata = Metadata {
+        title: "Cucumber docs".to_string(),
+        created_at: Utc::now().to_rfc3339(),
+    };
+    let metadata_json =
+        serde_json::to_string_pretty(&metadata).expect("Metadata JSON serialization failed");
+    std::fs::write("template/public/metadata.json", metadata_json)
+        .expect("Failed to write template/public/metadata.json");
 }

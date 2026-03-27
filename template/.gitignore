@@ -25,3 +25,4 @@ dist-ssr
 
 # custom files
 public/data.json
+public/metadata.json
