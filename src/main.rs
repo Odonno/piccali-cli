@@ -92,11 +92,11 @@ fn main() {
         process::exit(1);
     }
 
-    // Parse all feature files
-    let mut features = Vec::new();
-    for path in &feature_files {
-        match parser::parse_feature_file(path, &tag_links) {
-            Ok(feature) => features.push(feature),
+    // Parse all feature files, keeping the path alongside each feature
+    let mut entries: Vec<(std::path::PathBuf, models::Feature)> = Vec::new();
+    for path in feature_files {
+        match parser::parse_feature_file(&path, &tag_links) {
+            Ok(feature) => entries.push((path, feature)),
             Err(error) => {
                 eprintln!("{error}");
                 process::exit(1);
@@ -104,7 +104,8 @@ fn main() {
         }
     }
 
-    let document = models::Document { features };
+    let folders = parser::build_folder_tree(entries);
+    let document = models::Document { folders };
 
     // Format the document
     let output = match cli.formatter {

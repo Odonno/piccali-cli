@@ -8,9 +8,20 @@ pub struct Tag {
     pub url: Option<String>,
 }
 
-/// Top-level document containing all parsed features.
+/// Top-level document containing a folder tree of parsed features.
 #[derive(Debug, Serialize)]
 pub struct Document {
+    pub folders: Vec<FolderNode>,
+}
+
+/// A node in the folder tree. Folders can be nested and each holds zero or
+/// more feature files directly inside it.
+#[derive(Debug, Serialize)]
+pub struct FolderNode {
+    pub name: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub folders: Vec<FolderNode>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<Feature>,
 }
 

@@ -39,6 +39,100 @@ pub fn parse_feature_file(
     Ok(convert_feature(&parsed, tag_links))
 }
 
+/// Build a nested folder tree from a list of `(path, feature)` pairs.
+///
+/// The path components between the working directory and the feature file
+/// become the folder hierarchy. Files in the same directory are grouped
+/// under the same `FolderNode`.
+///
+/// Example: given paths `features/A/Foo.feature` and `features/A/Bar.feature`
+/// and `features/B/Baz.feature`, the result is:
+/// ```
+/// [ FolderNode("features", folders=[
+///     FolderNode("A", features=[Foo, Bar]),
+///     FolderNode("B", features=[Baz]),
+/// ]) ]
+/// ```
+pub fn build_folder_tree(
+    entries: Vec<(std::path::PathBuf, models::Feature)>,
+) -> Vec<models::FolderNode> {
+    // We build the tree by inserting each entry into a root vec of FolderNodes.
+    let mut root: Vec<models::FolderNode> = Vec::new();
+
+    for (path, feature) in entries {
+        // Strip the leading "./" if present
+        let relative = path.strip_prefix(".").unwrap_or(&path);
+
+        // Collect path components, excluding the filename itself
+        let dir_components: Vec<String> = relative
+            .parent()
+            .map(|p| {
+                p.components()
+                    .filter_map(|c| match c {
+                        std::path::Component::Normal(s) => Some(s.to_string_lossy().into_owned()),
+                        _ => None,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        // Navigate / create the folder hierarchy, then push the feature
+        insert_into_tree(&mut root, &dir_components, feature);
+    }
+
+    root
+}
+
+/// Recursively insert a `feature` at the location described by `path_parts`
+/// within the given `nodes` vec, creating `FolderNode`s as needed.
+fn insert_into_tree(
+    nodes: &mut Vec<models::FolderNode>,
+    path_parts: &[String],
+    feature: models::Feature,
+) {
+    if path_parts.is_empty() {
+        // Features with no parent directory go into a synthetic root folder
+        // named "" — callers should handle this case if desired.
+        // For now, push to the last node or create an anonymous one.
+        if let Some(node) = nodes.last_mut() {
+            node.features.push(feature);
+        } else {
+            nodes.push(models::FolderNode {
+                name: String::new(),
+                folders: Vec::new(),
+                features: vec![feature],
+            });
+        }
+        return;
+    }
+
+    let folder_name = &path_parts[0];
+    let rest = &path_parts[1..];
+
+    // Find or create the folder node at this level
+    let idx = nodes.iter().position(|n| &n.name == folder_name);
+    let idx = match idx {
+        Some(i) => i,
+        None => {
+            nodes.push(models::FolderNode {
+                name: folder_name.clone(),
+                folders: Vec::new(),
+                features: Vec::new(),
+            });
+            nodes.len() - 1
+        }
+    };
+
+    if rest.is_empty() {
+        // Leaf: place the feature directly in this folder
+        nodes[idx].features.push(feature);
+    } else {
+        // Recurse into sub-folders
+        let sub = &mut nodes[idx].folders;
+        insert_into_tree(sub, rest, feature);
+    }
+}
+
 fn convert_feature(
     feature: &gherkin::Feature,
     tag_links: &HashMap<String, String>,

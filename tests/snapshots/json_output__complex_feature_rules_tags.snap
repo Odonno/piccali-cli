@@ -3,382 +3,392 @@ source: tests/json_output.rs
 expression: json
 ---
 {
-  "features": [
+  "folders": [
     {
-      "keyword": "Feature",
-      "name": "Search by dealer name",
-      "rules": [
+      "folders": [
         {
-          "background": {
-            "keyword": "Background",
-            "steps": [
-              {
-                "keyword": "Given ",
-                "table": {
-                  "header": [
-                    "vin",
-                    "company name"
-                  ],
-                  "rows": [
-                    [
-                      "1HGCM82633A004352",
-                      "RAINBOW MOTORS INC"
-                    ],
-                    [
-                      "2T1BURHE0JC043821",
-                      "CENTRAL AUTO GROUP"
-                    ]
-                  ]
-                },
-                "text": "the following dealer contracts:",
-                "type": "Given"
-              },
-              {
-                "keyword": "And ",
-                "table": {
-                  "header": [
-                    "Branch",
-                    "address1",
-                    "address2",
-                    "address3",
-                    "address4",
-                    "zip code",
-                    "city"
-                  ],
-                  "rows": [
-                    [
-                      "Central Auto Midwest",
-                      "LLC",
-                      "22 Industrial Boulevard",
-                      "PO Box 12",
-                      "SUITE",
-                      "60601",
-                      "Chicago"
-                    ],
-                    [
-                      "Central Auto South",
-                      "8 Commerce Street",
-                      "",
-                      "",
-                      "",
-                      "30301",
-                      "Atlanta"
-                    ]
-                  ]
-                },
-                "text": "the company \"CENTRAL AUTO GROUP\" has the following branches:",
-                "type": "Given"
-              },
-              {
-                "keyword": "And ",
-                "table": {
-                  "header": [
-                    "Branch",
-                    "address1",
-                    "address2",
-                    "address3",
-                    "address4",
-                    "zip code",
-                    "city"
-                  ],
-                  "rows": [
-                    [
-                      "Rainbow Fleet Depot",
-                      "LLC",
-                      "23 Industrial Boulevard",
-                      "PO Box 12",
-                      "SUITE",
-                      "60601",
-                      "Chicago"
-                    ]
-                  ]
-                },
-                "text": "the company \"RAINBOW MOTORS INC\" has the following branches:",
-                "type": "Given"
-              }
-            ]
-          },
-          "keyword": "Rule",
-          "name": "The search should display results in the results table",
-          "scenarios": [
+          "features": [
             {
-              "keyword": "Scenario",
+              "keyword": "Feature",
               "name": "Search by dealer name",
-              "steps": [
+              "rules": [
                 {
-                  "keyword": "Given ",
-                  "text": "I am a user on the home page",
-                  "type": "Given"
-                },
-                {
-                  "keyword": "When ",
-                  "text": "I search \"test\"",
-                  "type": "When"
-                },
-                {
-                  "keyword": "Then ",
-                  "table": {
-                    "header": [
-                      "Company Name",
-                      "VIN",
-                      "Scope",
-                      "Address",
-                      "Zip Code",
-                      "City"
-                    ],
-                    "rows": [
-                      [
-                        "CENTRAL AUTO GROUP",
-                        "2T1BURHE0JC043821",
-                        "Parent",
-                        "",
-                        "",
-                        ""
-                      ],
-                      [
-                        "Central Auto Midwest",
-                        "",
-                        "Branch",
-                        "LLC 22 Industrial Boulevard PO Box 12 SUITE",
-                        "60601",
-                        "Chicago"
-                      ],
-                      [
-                        "Central Auto South",
-                        "",
-                        "Branch",
-                        "8 Commerce Street",
-                        "30301",
-                        "Atlanta"
-                      ],
-                      [
-                        "RAINBOW MOTORS INC",
-                        "1HGCM82633A004352",
-                        "Parent",
-                        "",
-                        "",
-                        ""
-                      ],
-                      [
-                        "Rainbow Fleet Depot",
-                        "",
-                        "Branch",
-                        "LLC 23 Industrial Boulevard PO Box 12 SUITE",
-                        "60601",
-                        "Chicago"
-                      ]
+                  "background": {
+                    "keyword": "Background",
+                    "steps": [
+                      {
+                        "keyword": "Given ",
+                        "table": {
+                          "header": [
+                            "vin",
+                            "company name"
+                          ],
+                          "rows": [
+                            [
+                              "1HGCM82633A004352",
+                              "RAINBOW MOTORS INC"
+                            ],
+                            [
+                              "2T1BURHE0JC043821",
+                              "CENTRAL AUTO GROUP"
+                            ]
+                          ]
+                        },
+                        "text": "the following dealer contracts:",
+                        "type": "Given"
+                      },
+                      {
+                        "keyword": "And ",
+                        "table": {
+                          "header": [
+                            "Branch",
+                            "address1",
+                            "address2",
+                            "address3",
+                            "address4",
+                            "zip code",
+                            "city"
+                          ],
+                          "rows": [
+                            [
+                              "Central Auto Midwest",
+                              "LLC",
+                              "22 Industrial Boulevard",
+                              "PO Box 12",
+                              "SUITE",
+                              "60601",
+                              "Chicago"
+                            ],
+                            [
+                              "Central Auto South",
+                              "8 Commerce Street",
+                              "",
+                              "",
+                              "",
+                              "30301",
+                              "Atlanta"
+                            ]
+                          ]
+                        },
+                        "text": "the company \"CENTRAL AUTO GROUP\" has the following branches:",
+                        "type": "Given"
+                      },
+                      {
+                        "keyword": "And ",
+                        "table": {
+                          "header": [
+                            "Branch",
+                            "address1",
+                            "address2",
+                            "address3",
+                            "address4",
+                            "zip code",
+                            "city"
+                          ],
+                          "rows": [
+                            [
+                              "Rainbow Fleet Depot",
+                              "LLC",
+                              "23 Industrial Boulevard",
+                              "PO Box 12",
+                              "SUITE",
+                              "60601",
+                              "Chicago"
+                            ]
+                          ]
+                        },
+                        "text": "the company \"RAINBOW MOTORS INC\" has the following branches:",
+                        "type": "Given"
+                      }
                     ]
                   },
-                  "text": "the following results are displayed",
-                  "type": "Then"
-                }
-              ]
-            },
-            {
-              "keyword": "Scenario",
-              "name": "I press the enter key after typing my search and get my results",
-              "steps": [
-                {
-                  "keyword": "Given ",
-                  "text": "I am a user on the home page",
-                  "type": "Given"
-                },
-                {
-                  "keyword": "When ",
-                  "text": "I type \"test\" in the search field",
-                  "type": "When"
-                },
-                {
-                  "keyword": "And ",
-                  "text": "I press enter in the search field",
-                  "type": "When"
-                },
-                {
-                  "keyword": "Then ",
-                  "table": {
-                    "header": [
-                      "Company Name",
-                      "VIN",
-                      "Scope",
-                      "Address",
-                      "Zip Code",
-                      "City"
-                    ],
-                    "rows": [
-                      [
-                        "CENTRAL AUTO GROUP",
-                        "2T1BURHE0JC043821",
-                        "Parent",
-                        "",
-                        "",
-                        ""
-                      ],
-                      [
-                        "Central Auto Midwest",
-                        "",
-                        "Branch",
-                        "LLC 22 Industrial Boulevard PO Box 12 SUITE",
-                        "60601",
-                        "Chicago"
-                      ],
-                      [
-                        "Central Auto South",
-                        "",
-                        "Branch",
-                        "8 Commerce Street",
-                        "30301",
-                        "Atlanta"
-                      ],
-                      [
-                        "RAINBOW MOTORS INC",
-                        "1HGCM82633A004352",
-                        "Parent",
-                        "",
-                        "",
-                        ""
-                      ],
-                      [
-                        "Rainbow Fleet Depot",
-                        "",
-                        "Branch",
-                        "LLC 23 Industrial Boulevard PO Box 12 SUITE",
-                        "60601",
-                        "Chicago"
+                  "keyword": "Rule",
+                  "name": "The search should display results in the results table",
+                  "scenarios": [
+                    {
+                      "keyword": "Scenario",
+                      "name": "Search by dealer name",
+                      "steps": [
+                        {
+                          "keyword": "Given ",
+                          "text": "I am a user on the home page",
+                          "type": "Given"
+                        },
+                        {
+                          "keyword": "When ",
+                          "text": "I search \"test\"",
+                          "type": "When"
+                        },
+                        {
+                          "keyword": "Then ",
+                          "table": {
+                            "header": [
+                              "Company Name",
+                              "VIN",
+                              "Scope",
+                              "Address",
+                              "Zip Code",
+                              "City"
+                            ],
+                            "rows": [
+                              [
+                                "CENTRAL AUTO GROUP",
+                                "2T1BURHE0JC043821",
+                                "Parent",
+                                "",
+                                "",
+                                ""
+                              ],
+                              [
+                                "Central Auto Midwest",
+                                "",
+                                "Branch",
+                                "LLC 22 Industrial Boulevard PO Box 12 SUITE",
+                                "60601",
+                                "Chicago"
+                              ],
+                              [
+                                "Central Auto South",
+                                "",
+                                "Branch",
+                                "8 Commerce Street",
+                                "30301",
+                                "Atlanta"
+                              ],
+                              [
+                                "RAINBOW MOTORS INC",
+                                "1HGCM82633A004352",
+                                "Parent",
+                                "",
+                                "",
+                                ""
+                              ],
+                              [
+                                "Rainbow Fleet Depot",
+                                "",
+                                "Branch",
+                                "LLC 23 Industrial Boulevard PO Box 12 SUITE",
+                                "60601",
+                                "Chicago"
+                              ]
+                            ]
+                          },
+                          "text": "the following results are displayed",
+                          "type": "Then"
+                        }
                       ]
-                    ]
-                  },
-                  "text": "the following results are displayed",
-                  "type": "Then"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "keyword": "Rule",
-          "name": "Search requires at least 3 characters",
-          "scenarios": [
-            {
-              "examples": [
-                {
-                  "keyword": "Examples",
-                  "table": {
-                    "header": [
-                      "search",
-                      "status"
-                    ],
-                    "rows": [
-                      [
-                        "",
-                        "disabled"
-                      ],
-                      [
-                        "a",
-                        "disabled"
-                      ],
-                      [
-                        "ab",
-                        "disabled"
-                      ],
-                      [
-                        "abc",
-                        "enabled"
-                      ],
-                      [
-                        "azeazeaze",
-                        "enabled"
+                    },
+                    {
+                      "keyword": "Scenario",
+                      "name": "I press the enter key after typing my search and get my results",
+                      "steps": [
+                        {
+                          "keyword": "Given ",
+                          "text": "I am a user on the home page",
+                          "type": "Given"
+                        },
+                        {
+                          "keyword": "When ",
+                          "text": "I type \"test\" in the search field",
+                          "type": "When"
+                        },
+                        {
+                          "keyword": "And ",
+                          "text": "I press enter in the search field",
+                          "type": "When"
+                        },
+                        {
+                          "keyword": "Then ",
+                          "table": {
+                            "header": [
+                              "Company Name",
+                              "VIN",
+                              "Scope",
+                              "Address",
+                              "Zip Code",
+                              "City"
+                            ],
+                            "rows": [
+                              [
+                                "CENTRAL AUTO GROUP",
+                                "2T1BURHE0JC043821",
+                                "Parent",
+                                "",
+                                "",
+                                ""
+                              ],
+                              [
+                                "Central Auto Midwest",
+                                "",
+                                "Branch",
+                                "LLC 22 Industrial Boulevard PO Box 12 SUITE",
+                                "60601",
+                                "Chicago"
+                              ],
+                              [
+                                "Central Auto South",
+                                "",
+                                "Branch",
+                                "8 Commerce Street",
+                                "30301",
+                                "Atlanta"
+                              ],
+                              [
+                                "RAINBOW MOTORS INC",
+                                "1HGCM82633A004352",
+                                "Parent",
+                                "",
+                                "",
+                                ""
+                              ],
+                              [
+                                "Rainbow Fleet Depot",
+                                "",
+                                "Branch",
+                                "LLC 23 Industrial Boulevard PO Box 12 SUITE",
+                                "60601",
+                                "Chicago"
+                              ]
+                            ]
+                          },
+                          "text": "the following results are displayed",
+                          "type": "Then"
+                        }
                       ]
-                    ]
-                  }
-                }
-              ],
-              "keyword": "Scenario Outline",
-              "name": "When I type <search> in the search the button is <status>",
-              "steps": [
-                {
-                  "keyword": "Given ",
-                  "text": "I am a user on the home page",
-                  "type": "Given"
+                    }
+                  ]
                 },
                 {
-                  "keyword": "When ",
-                  "text": "I search \"<search>\"",
-                  "type": "When"
+                  "keyword": "Rule",
+                  "name": "Search requires at least 3 characters",
+                  "scenarios": [
+                    {
+                      "examples": [
+                        {
+                          "keyword": "Examples",
+                          "table": {
+                            "header": [
+                              "search",
+                              "status"
+                            ],
+                            "rows": [
+                              [
+                                "",
+                                "disabled"
+                              ],
+                              [
+                                "a",
+                                "disabled"
+                              ],
+                              [
+                                "ab",
+                                "disabled"
+                              ],
+                              [
+                                "abc",
+                                "enabled"
+                              ],
+                              [
+                                "azeazeaze",
+                                "enabled"
+                              ]
+                            ]
+                          }
+                        }
+                      ],
+                      "keyword": "Scenario Outline",
+                      "name": "When I type <search> in the search the button is <status>",
+                      "steps": [
+                        {
+                          "keyword": "Given ",
+                          "text": "I am a user on the home page",
+                          "type": "Given"
+                        },
+                        {
+                          "keyword": "When ",
+                          "text": "I search \"<search>\"",
+                          "type": "When"
+                        },
+                        {
+                          "keyword": "Then ",
+                          "text": "the \"Search\" button is <status>",
+                          "type": "Then"
+                        }
+                      ],
+                      "tags": [
+                        {
+                          "name": "feat:22089"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
-                  "keyword": "Then ",
-                  "text": "the \"Search\" button is <status>",
-                  "type": "Then"
-                }
-              ],
-              "tags": [
+                  "keyword": "Rule",
+                  "name": "When I have no results, the message \"No results found...\" tells me so",
+                  "scenarios": [
+                    {
+                      "keyword": "Scenario",
+                      "name": "Search by dealer name with no results",
+                      "steps": [
+                        {
+                          "keyword": "Given ",
+                          "text": "I am a user on the home page",
+                          "type": "Given"
+                        },
+                        {
+                          "keyword": "When ",
+                          "text": "I search \"test\"",
+                          "type": "When"
+                        },
+                        {
+                          "keyword": "Then ",
+                          "text": "the error message \"No results found for the search performed\" appears",
+                          "type": "Then"
+                        }
+                      ],
+                      "tags": [
+                        {
+                          "name": "feat:21726"
+                        }
+                      ]
+                    }
+                  ]
+                },
                 {
-                  "name": "feat:22089"
+                  "keyword": "Rule",
+                  "name": "When the search returns an error, the message \"No results found...\" tells me so",
+                  "scenarios": [
+                    {
+                      "keyword": "Scenario",
+                      "name": "Search by dealer name with error",
+                      "steps": [
+                        {
+                          "keyword": "Given ",
+                          "text": "I am a user on the home page and the search returns an error",
+                          "type": "Given"
+                        },
+                        {
+                          "keyword": "When ",
+                          "text": "I search \"test\"",
+                          "type": "When"
+                        },
+                        {
+                          "keyword": "Then ",
+                          "text": "the error message \"No results found for the search performed\" appears",
+                          "type": "Then"
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }
-          ]
-        },
-        {
-          "keyword": "Rule",
-          "name": "When I have no results, the message \"No results found...\" tells me so",
-          "scenarios": [
-            {
-              "keyword": "Scenario",
-              "name": "Search by dealer name with no results",
-              "steps": [
-                {
-                  "keyword": "Given ",
-                  "text": "I am a user on the home page",
-                  "type": "Given"
-                },
-                {
-                  "keyword": "When ",
-                  "text": "I search \"test\"",
-                  "type": "When"
-                },
-                {
-                  "keyword": "Then ",
-                  "text": "the error message \"No results found for the search performed\" appears",
-                  "type": "Then"
-                }
-              ],
-              "tags": [
-                {
-                  "name": "feat:21726"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "keyword": "Rule",
-          "name": "When the search returns an error, the message \"No results found...\" tells me so",
-          "scenarios": [
-            {
-              "keyword": "Scenario",
-              "name": "Search by dealer name with error",
-              "steps": [
-                {
-                  "keyword": "Given ",
-                  "text": "I am a user on the home page and the search returns an error",
-                  "type": "Given"
-                },
-                {
-                  "keyword": "When ",
-                  "text": "I search \"test\"",
-                  "type": "When"
-                },
-                {
-                  "keyword": "Then ",
-                  "text": "the error message \"No results found for the search performed\" appears",
-                  "type": "Then"
-                }
-              ]
-            }
-          ]
+          ],
+          "name": "SearchByDealer"
         }
-      ]
+      ],
+      "name": "features"
     }
   ]
 }

@@ -6,6 +6,8 @@ import {
   BookOpen,
   ListChecks,
   Tag as TagIcon,
+  Folder,
+  FolderOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,19 +36,25 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { Feature } from "@/lib/types";
+import type { Feature, FolderNode } from "@/lib/types";
+
+/** Path to a feature: array of folder indices leading to it, plus the feature index within that folder. */
+export type FeaturePath = {
+  folderPath: number[];
+  featureIndex: number;
+};
 
 export type SelectedFeature =
-  | { type: "feature"; featureIndex: number }
-  | { type: "rule"; featureIndex: number; ruleIndex: number };
+  | { type: "feature"; path: FeaturePath }
+  | { type: "rule"; path: FeaturePath; ruleIndex: number };
 
 type AppSidebarProps = {
-  features: Feature[];
+  folders: FolderNode[];
   selected: SelectedFeature | null;
   onSelect: (selection: SelectedFeature) => void;
 };
 
-function scenarioCount(feature: Feature): number {
+function featureScenarioCount(feature: Feature): number {
   const direct = feature.scenarios?.length ?? 0;
   const fromRules =
     feature.rules?.reduce((sum, r) => sum + (r.scenarios?.length ?? 0), 0) ??
@@ -54,34 +62,342 @@ function scenarioCount(feature: Feature): number {
   return direct + fromRules;
 }
 
+function folderTotalScenarioCount(folder: FolderNode): number {
+  const fromFeatures =
+    folder.features?.reduce((sum, f) => sum + featureScenarioCount(f), 0) ?? 0;
+  const fromSubFolders =
+    folder.folders?.reduce((sum, f) => sum + folderTotalScenarioCount(f), 0) ??
+    0;
+  return fromFeatures + fromSubFolders;
+}
+
 function featureLabel(feature: Feature): string {
   return feature.name || feature.keyword;
 }
 
+function isSameFeaturePath(a: FeaturePath, b: FeaturePath): boolean {
+  return (
+    a.featureIndex === b.featureIndex &&
+    a.folderPath.length === b.folderPath.length &&
+    a.folderPath.every((v, i) => v === b.folderPath[i])
+  );
+}
+
+function isFeatureSelected(
+  selected: SelectedFeature | null,
+  path: FeaturePath
+): boolean {
+  return (
+    selected !== null && isSameFeaturePath(selected.path, path)
+  );
+}
+
+function isRuleSelected(
+  selected: SelectedFeature | null,
+  path: FeaturePath,
+  ruleIndex: number
+): boolean {
+  return (
+    selected?.type === "rule" &&
+    isSameFeaturePath(selected.path, path) &&
+    selected.ruleIndex === ruleIndex
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+type FolderTreeProps = {
+  folders: FolderNode[];
+  folderPath: number[];
+  selected: SelectedFeature | null;
+  onSelect: (s: SelectedFeature) => void;
+  openKeys: Record<string, boolean>;
+  toggleKey: (key: string) => void;
+  depth?: number;
+};
+
+function folderKey(folderPath: number[]): string {
+  return folderPath.join(".");
+}
+
+function FolderTree({
+  folders,
+  folderPath,
+  selected,
+  onSelect,
+  openKeys,
+  toggleKey,
+  depth = 0,
+}: FolderTreeProps) {
+  return (
+    <>
+      {folders.map((folder, folderIdx) => {
+        const currentPath = [...folderPath, folderIdx];
+        const key = folderKey(currentPath);
+        const isOpen = openKeys[key] ?? false;
+        const count = folderTotalScenarioCount(folder);
+        const hasChildren =
+          (folder.folders?.length ?? 0) > 0 ||
+          (folder.features?.length ?? 0) > 0;
+
+        return (
+          <Collapsible
+            key={key}
+            open={isOpen}
+            onOpenChange={() => toggleKey(key)}
+            className="group/collapsible"
+            asChild
+          >
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton
+                  className={cn(depth > 0 && "pl-4")}
+                  tooltip={folder.name}
+                >
+                  {isOpen ? (
+                    <FolderOpen className="shrink-0 text-muted-foreground" />
+                  ) : (
+                    <Folder className="shrink-0 text-muted-foreground" />
+                  )}
+                  <span className="truncate font-medium">{folder.name}</span>
+                  {count > 0 && (
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "ml-auto shrink-0 text-[10px] h-4 px-1.5",
+                        "group-data-[state=open]/collapsible:hidden"
+                      )}
+                    >
+                      {count}
+                    </Badge>
+                  )}
+                  {hasChildren && (
+                    <ChevronRight
+                      className={cn(
+                        "size-3.5 shrink-0 transition-transform duration-200",
+                        "group-data-[state=open]/collapsible:rotate-90",
+                        count > 0 &&
+                          "group-data-[state=closed]/collapsible:hidden"
+                      )}
+                    />
+                  )}
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {/* Sub-folders */}
+                  {(folder.folders?.length ?? 0) > 0 && (
+                    <SidebarMenu>
+                      <FolderTree
+                        folders={folder.folders ?? []}
+                        folderPath={currentPath}
+                        selected={selected}
+                        onSelect={onSelect}
+                        openKeys={openKeys}
+                        toggleKey={toggleKey}
+                        depth={depth + 1}
+                      />
+                    </SidebarMenu>
+                  )}
+
+                  {/* Feature files in this folder */}
+                  {folder.features?.map((feature, featureIdx) => {
+                    const featurePath: FeaturePath = {
+                      folderPath: currentPath,
+                      featureIndex: featureIdx,
+                    };
+                    const hasRules = (feature.rules?.length ?? 0) > 0;
+                    const featureCount = featureScenarioCount(feature);
+                    const featureIsActive = isFeatureSelected(
+                      selected,
+                      featurePath
+                    );
+                    const featureItemKey = `${key}.f${featureIdx}`;
+                    const isFeatureOpen = openKeys[featureItemKey] ?? false;
+
+                    if (!hasRules) {
+                      return (
+                        <SidebarMenuSubItem key={featureIdx}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuSubButton
+                                isActive={featureIsActive}
+                                onClick={() =>
+                                  onSelect({
+                                    type: "feature",
+                                    path: featurePath,
+                                  })
+                                }
+                              >
+                                <FileText className="shrink-0" />
+                                <span className="truncate">
+                                  {featureLabel(feature)}
+                                </span>
+                                {featureCount > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="ml-auto shrink-0 text-[10px] h-4 px-1.5"
+                                  >
+                                    {featureCount}
+                                  </Badge>
+                                )}
+                              </SidebarMenuSubButton>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p className="font-medium">
+                                {featureLabel(feature)}
+                              </p>
+                              {feature.tags && feature.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {feature.tags.map((tag) => {
+                                    const content = (
+                                      <span
+                                        key={tag.name}
+                                        className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground"
+                                      >
+                                        <TagIcon className="size-2.5" />
+                                        {tag.name}
+                                      </span>
+                                    );
+                                    return tag.url ? (
+                                      <a
+                                        key={tag.name}
+                                        href={tag.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        {content}
+                                      </a>
+                                    ) : (
+                                      content
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        </SidebarMenuSubItem>
+                      );
+                    }
+
+                    // Feature with rules — nested collapsible inside the folder
+                    return (
+                      <Collapsible
+                        key={featureIdx}
+                        open={isFeatureOpen}
+                        onOpenChange={() => toggleKey(featureItemKey)}
+                        className="group/feature-collapsible"
+                        asChild
+                      >
+                        <SidebarMenuSubItem>
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuSubButton
+                              isActive={featureIsActive}
+                              onClick={() =>
+                                onSelect({
+                                  type: "feature",
+                                  path: featurePath,
+                                })
+                              }
+                            >
+                              <FileText className="shrink-0" />
+                              <span className="truncate">
+                                {featureLabel(feature)}
+                              </span>
+                              {featureCount > 0 && (
+                                <Badge
+                                  variant="secondary"
+                                  className={cn(
+                                    "ml-auto shrink-0 text-[10px] h-4 px-1.5",
+                                    "group-data-[state=open]/feature-collapsible:hidden"
+                                  )}
+                                >
+                                  {featureCount}
+                                </Badge>
+                              )}
+                              <ChevronRight
+                                className={cn(
+                                  "size-3.5 shrink-0 transition-transform duration-200",
+                                  "group-data-[state=open]/feature-collapsible:rotate-90",
+                                  featureCount > 0 &&
+                                    "group-data-[state=closed]/feature-collapsible:hidden"
+                                )}
+                              />
+                            </SidebarMenuSubButton>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <SidebarMenuSub>
+                              {feature.rules?.map((rule, ruleIdx) => (
+                                <SidebarMenuSubItem key={ruleIdx}>
+                                  <SidebarMenuSubButton
+                                    isActive={isRuleSelected(
+                                      selected,
+                                      featurePath,
+                                      ruleIdx
+                                    )}
+                                    onClick={() =>
+                                      onSelect({
+                                        type: "rule",
+                                        path: featurePath,
+                                        ruleIndex: ruleIdx,
+                                      })
+                                    }
+                                  >
+                                    <ListChecks className="shrink-0" />
+                                    <span className="truncate">
+                                      {rule.name || rule.keyword}
+                                    </span>
+                                    {(rule.scenarios?.length ?? 0) > 0 && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="ml-auto shrink-0 text-[10px] h-4 px-1.5"
+                                      >
+                                        {rule.scenarios?.length}
+                                      </Badge>
+                                    )}
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
+                        </SidebarMenuSubItem>
+                      </Collapsible>
+                    );
+                  })}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+          </Collapsible>
+        );
+      })}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AppSidebar
+// ---------------------------------------------------------------------------
+
 export const AppSidebar = ({
-  features,
+  folders,
   selected,
   onSelect,
 }: AppSidebarProps) => {
-  const [openFeatures, setOpenFeatures] = useState<Record<number, boolean>>(
-    () => {
-      // Open the first feature by default
-      if (features.length > 0) return { 0: true } as Record<number, boolean>;
-      return {} as Record<number, boolean>;
-    }
-  );
+  const [openKeys, setOpenKeys] = useState<Record<string, boolean>>(() => {
+    // Open the first top-level folder by default
+    const init: Record<string, boolean> = {};
+    if (folders.length > 0) init["0"] = true;
+    return init;
+  });
 
-  const toggleFeature = (idx: number) => {
-    setOpenFeatures((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  const toggleKey = (key: string) => {
+    setOpenKeys((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const isFeatureSelected = (featureIndex: number) =>
-    selected?.type === "feature" && selected.featureIndex === featureIndex;
-
-  const isRuleSelected = (featureIndex: number, ruleIndex: number) =>
-    selected?.type === "rule" &&
-    selected.featureIndex === featureIndex &&
-    selected.ruleIndex === ruleIndex;
+  const totalFeatures = countFeaturesInFolders(folders);
 
   return (
     <Sidebar collapsible="icon">
@@ -99,7 +415,7 @@ export const AppSidebar = ({
               <div className="flex flex-col gap-0.5 leading-none">
                 <span className="font-semibold text-sm">Features</span>
                 <span className="text-xs text-muted-foreground">
-                  {features.length} file{features.length !== 1 ? "s" : ""}
+                  {totalFeatures} file{totalFeatures !== 1 ? "s" : ""}
                 </span>
               </div>
             </SidebarMenuButton>
@@ -115,155 +431,14 @@ export const AppSidebar = ({
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {features.map((feature, featureIdx) => {
-                const hasRules = (feature.rules?.length ?? 0) > 0;
-                const count = scenarioCount(feature);
-                const isOpen = openFeatures[featureIdx] ?? false;
-                const isActive = isFeatureSelected(featureIdx);
-
-                if (!hasRules) {
-                  // Simple feature with no rules — flat item
-                  return (
-                    <SidebarMenuItem key={featureIdx}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SidebarMenuButton
-                            isActive={isActive}
-                            onClick={() =>
-                              onSelect({
-                                type: "feature",
-                                featureIndex: featureIdx,
-                              })
-                            }
-                            tooltip={featureLabel(feature)}
-                          >
-                            <FileText className="shrink-0" />
-                            <span className="truncate">{featureLabel(feature)}</span>
-                            {count > 0 && (
-                              <Badge
-                                variant="secondary"
-                                className="ml-auto shrink-0 text-[10px] h-4 px-1.5"
-                              >
-                                {count}
-                              </Badge>
-                            )}
-                          </SidebarMenuButton>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p className="font-medium">{featureLabel(feature)}</p>
-                          {feature.tags && feature.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {feature.tags.map((tag) => {
-                                const content = (
-                                  <span
-                                    key={tag.name}
-                                    className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground"
-                                  >
-                                    <TagIcon className="size-2.5" />
-                                    {tag.name}
-                                  </span>
-                                );
-                                return tag.url ? (
-                                  <a
-                                    key={tag.name}
-                                    href={tag.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    {content}
-                                  </a>
-                                ) : (
-                                  content
-                                );
-                              })}
-                            </div>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    </SidebarMenuItem>
-                  );
-                }
-
-                // Feature with rules — collapsible tree
-                return (
-                  <Collapsible
-                    key={featureIdx}
-                    open={isOpen}
-                    onOpenChange={() => toggleFeature(featureIdx)}
-                    className="group/collapsible"
-                    asChild
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                          isActive={isActive}
-                          onClick={() =>
-                            onSelect({
-                              type: "feature",
-                              featureIndex: featureIdx,
-                            })
-                          }
-                          tooltip={featureLabel(feature)}
-                        >
-                          <FileText className="shrink-0" />
-                          <span className="truncate">{featureLabel(feature)}</span>
-                          {count > 0 && (
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                "ml-auto shrink-0 text-[10px] h-4 px-1.5",
-                                "group-data-[state=open]/collapsible:hidden"
-                              )}
-                            >
-                              {count}
-                            </Badge>
-                          )}
-                          <ChevronRight
-                            className={cn(
-                              "ml-auto size-3.5 shrink-0 transition-transform duration-200",
-                              "group-data-[state=open]/collapsible:rotate-90",
-                              count > 0 &&
-                                "group-data-[state=closed]/collapsible:hidden"
-                            )}
-                          />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {feature.rules?.map((rule, ruleIdx) => (
-                            <SidebarMenuSubItem key={ruleIdx}>
-                              <SidebarMenuSubButton
-                                isActive={isRuleSelected(featureIdx, ruleIdx)}
-                                onClick={() =>
-                                  onSelect({
-                                    type: "rule",
-                                    featureIndex: featureIdx,
-                                    ruleIndex: ruleIdx,
-                                  })
-                                }
-                              >
-                                <ListChecks className="shrink-0" />
-                                <span className="truncate">
-                                  {rule.name || rule.keyword}
-                                </span>
-                                {(rule.scenarios?.length ?? 0) > 0 && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="ml-auto shrink-0 text-[10px] h-4 px-1.5"
-                                  >
-                                    {rule.scenarios?.length}
-                                  </Badge>
-                                )}
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                );
-              })}
+              <FolderTree
+                folders={folders}
+                folderPath={[]}
+                selected={selected}
+                onSelect={onSelect}
+                openKeys={openKeys}
+                toggleKey={toggleKey}
+              />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -273,3 +448,13 @@ export const AppSidebar = ({
     </Sidebar>
   );
 };
+
+function countFeaturesInFolders(folders: FolderNode[]): number {
+  return folders.reduce((sum, folder) => {
+    return (
+      sum +
+      (folder.features?.length ?? 0) +
+      countFeaturesInFolders(folder.folders ?? [])
+    );
+  }, 0);
+}

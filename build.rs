@@ -19,6 +19,15 @@ struct Tag {
 
 #[derive(Debug, Serialize)]
 struct Document {
+    folders: Vec<FolderNode>,
+}
+
+#[derive(Debug, Serialize)]
+struct FolderNode {
+    name: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    folders: Vec<FolderNode>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     features: Vec<Feature>,
 }
 
@@ -253,6 +262,72 @@ fn discover_files(glob: &Glob) -> Vec<PathBuf> {
 }
 
 // ---------------------------------------------------------------------------
+// Folder tree builder (mirrors src/parser.rs build_folder_tree)
+// ---------------------------------------------------------------------------
+
+fn build_folder_tree(entries: Vec<(PathBuf, Feature)>) -> Vec<FolderNode> {
+    let mut root: Vec<FolderNode> = Vec::new();
+
+    for (path, feature) in entries {
+        let relative = path.strip_prefix(".").unwrap_or(&path);
+
+        let dir_components: Vec<String> = relative
+            .parent()
+            .map(|p| {
+                p.components()
+                    .filter_map(|c| match c {
+                        std::path::Component::Normal(s) => Some(s.to_string_lossy().into_owned()),
+                        _ => None,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        insert_into_tree(&mut root, &dir_components, feature);
+    }
+
+    root
+}
+
+fn insert_into_tree(nodes: &mut Vec<FolderNode>, path_parts: &[String], feature: Feature) {
+    if path_parts.is_empty() {
+        if let Some(node) = nodes.last_mut() {
+            node.features.push(feature);
+        } else {
+            nodes.push(FolderNode {
+                name: String::new(),
+                folders: Vec::new(),
+                features: vec![feature],
+            });
+        }
+        return;
+    }
+
+    let folder_name = &path_parts[0];
+    let rest = &path_parts[1..];
+
+    let idx = nodes.iter().position(|n| &n.name == folder_name);
+    let idx = match idx {
+        Some(i) => i,
+        None => {
+            nodes.push(FolderNode {
+                name: folder_name.clone(),
+                folders: Vec::new(),
+                features: Vec::new(),
+            });
+            nodes.len() - 1
+        }
+    };
+
+    if rest.is_empty() {
+        nodes[idx].features.push(feature);
+    } else {
+        let sub = &mut nodes[idx].folders;
+        insert_into_tree(sub, rest, feature);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Metadata
 // ---------------------------------------------------------------------------
 
@@ -286,16 +361,17 @@ fn main() {
         panic!("No feature files found matching pattern: **/*.feature");
     }
 
-    // Parse all feature files
-    let mut features = Vec::new();
-    for path in &feature_files {
-        match parse_feature_file(path, &tag_links) {
-            Ok(feature) => features.push(feature),
+    // Parse all feature files, keeping the path alongside each feature
+    let mut entries: Vec<(PathBuf, Feature)> = Vec::new();
+    for path in feature_files {
+        match parse_feature_file(&path, &tag_links) {
+            Ok(feature) => entries.push((path, feature)),
             Err(e) => panic!("{e}"),
         }
     }
 
-    let document = Document { features };
+    let folders = build_folder_tree(entries);
+    let document = Document { folders };
 
     // Serialize to JSON
     let json = serde_json::to_string_pretty(&document).expect("JSON serialization failed");

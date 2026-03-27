@@ -113,18 +113,40 @@ fn json_all_features_default_glob() {
     let json: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("invalid JSON output");
 
-    // Verify structure: top-level has "features" array
-    assert!(json["features"].is_array(), "expected 'features' array");
+    // Verify structure: top-level has "folders" array
+    assert!(json["folders"].is_array(), "expected 'folders' array");
 
-    let features = json["features"].as_array().unwrap();
+    let folders = json["folders"].as_array().unwrap();
     assert!(
-        features.len() >= 10,
+        !folders.is_empty(),
+        "expected at least one top-level folder"
+    );
+
+    // Collect all features recursively and verify there are at least 10
+    fn collect_features(node: &serde_json::Value, acc: &mut Vec<serde_json::Value>) {
+        if let Some(features) = node["features"].as_array() {
+            acc.extend(features.iter().cloned());
+        }
+        if let Some(sub_folders) = node["folders"].as_array() {
+            for folder in sub_folders {
+                collect_features(folder, acc);
+            }
+        }
+    }
+
+    let mut all_features = Vec::new();
+    for folder in folders {
+        collect_features(folder, &mut all_features);
+    }
+
+    assert!(
+        all_features.len() >= 10,
         "expected at least 10 features, got {}",
-        features.len()
+        all_features.len()
     );
 
     // Each feature should have a keyword and name
-    for feature in features {
+    for feature in &all_features {
         assert_eq!(feature["keyword"], "Feature");
         assert!(feature["name"].is_string(), "feature missing 'name' field");
     }

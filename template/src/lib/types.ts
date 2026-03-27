@@ -58,8 +58,14 @@ export type Feature = {
   rules?: Rule[];
 };
 
+export type FolderNode = {
+  name: string;
+  folders?: FolderNode[];
+  features?: Feature[];
+};
+
 export type PiccaliData = {
-  features: Feature[];
+  folders: FolderNode[];
 };
 
 export type PiccaliMetadata = {

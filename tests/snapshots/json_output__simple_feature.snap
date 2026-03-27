@@ -3,121 +3,131 @@ source: tests/json_output.rs
 expression: json
 ---
 {
-  "features": [
+  "folders": [
     {
-      "keyword": "Feature",
-      "name": "Unconfigured warranty alert",
-      "scenarios": [
+      "folders": [
         {
-          "keyword": "Scenario",
-          "name": "Display alert when some warranties are not configured",
-          "steps": [
+          "features": [
             {
-              "keyword": "Given ",
-              "text": "unconfigured warranties exist",
-              "type": "Given"
-            },
-            {
-              "keyword": "When ",
-              "text": "I am on the main page",
-              "type": "When"
-            },
-            {
-              "keyword": "Then ",
-              "text": "an alert is displayed with the message \"Warning: You have new warranties to configure\"",
-              "type": "Then"
-            },
-            {
-              "keyword": "And ",
-              "text": "a download link is visible",
-              "type": "Then"
+              "keyword": "Feature",
+              "name": "Unconfigured warranty alert",
+              "scenarios": [
+                {
+                  "keyword": "Scenario",
+                  "name": "Display alert when some warranties are not configured",
+                  "steps": [
+                    {
+                      "keyword": "Given ",
+                      "text": "unconfigured warranties exist",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "When ",
+                      "text": "I am on the main page",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "Then ",
+                      "text": "an alert is displayed with the message \"Warning: You have new warranties to configure\"",
+                      "type": "Then"
+                    },
+                    {
+                      "keyword": "And ",
+                      "text": "a download link is visible",
+                      "type": "Then"
+                    }
+                  ]
+                },
+                {
+                  "keyword": "Scenario",
+                  "name": "No alert when all warranties are configured",
+                  "steps": [
+                    {
+                      "keyword": "Given ",
+                      "text": "no unconfigured warranties exist",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "When ",
+                      "text": "I am on the main page",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "Then ",
+                      "text": "no alert is displayed",
+                      "type": "Then"
+                    }
+                  ]
+                },
+                {
+                  "keyword": "Scenario",
+                  "name": "Download the warranty alert file",
+                  "steps": [
+                    {
+                      "keyword": "Given ",
+                      "text": "unconfigured warranties exist",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "And ",
+                      "text": "a warranty alert file is available",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "When ",
+                      "text": "I am on the main page",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "And ",
+                      "text": "I click the download link",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "Then ",
+                      "text": "the file is downloaded successfully",
+                      "type": "Then"
+                    }
+                  ]
+                },
+                {
+                  "keyword": "Scenario",
+                  "name": "Warranty alert file unavailable",
+                  "steps": [
+                    {
+                      "keyword": "Given ",
+                      "text": "unconfigured warranties exist",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "And ",
+                      "text": "retrieving the warranty alert file produces the error \"Unable to download the warranty alert file\"",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "When ",
+                      "text": "I am on the main page",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "And ",
+                      "text": "I click the download link",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "Then ",
+                      "text": "an error message is displayed with the text \"Unable to download the warranty alert file\"",
+                      "type": "Then"
+                    }
+                  ]
+                }
+              ]
             }
-          ]
-        },
-        {
-          "keyword": "Scenario",
-          "name": "No alert when all warranties are configured",
-          "steps": [
-            {
-              "keyword": "Given ",
-              "text": "no unconfigured warranties exist",
-              "type": "Given"
-            },
-            {
-              "keyword": "When ",
-              "text": "I am on the main page",
-              "type": "When"
-            },
-            {
-              "keyword": "Then ",
-              "text": "no alert is displayed",
-              "type": "Then"
-            }
-          ]
-        },
-        {
-          "keyword": "Scenario",
-          "name": "Download the warranty alert file",
-          "steps": [
-            {
-              "keyword": "Given ",
-              "text": "unconfigured warranties exist",
-              "type": "Given"
-            },
-            {
-              "keyword": "And ",
-              "text": "a warranty alert file is available",
-              "type": "Given"
-            },
-            {
-              "keyword": "When ",
-              "text": "I am on the main page",
-              "type": "When"
-            },
-            {
-              "keyword": "And ",
-              "text": "I click the download link",
-              "type": "When"
-            },
-            {
-              "keyword": "Then ",
-              "text": "the file is downloaded successfully",
-              "type": "Then"
-            }
-          ]
-        },
-        {
-          "keyword": "Scenario",
-          "name": "Warranty alert file unavailable",
-          "steps": [
-            {
-              "keyword": "Given ",
-              "text": "unconfigured warranties exist",
-              "type": "Given"
-            },
-            {
-              "keyword": "And ",
-              "text": "retrieving the warranty alert file produces the error \"Unable to download the warranty alert file\"",
-              "type": "Given"
-            },
-            {
-              "keyword": "When ",
-              "text": "I am on the main page",
-              "type": "When"
-            },
-            {
-              "keyword": "And ",
-              "text": "I click the download link",
-              "type": "When"
-            },
-            {
-              "keyword": "Then ",
-              "text": "an error message is displayed with the text \"Unable to download the warranty alert file\"",
-              "type": "Then"
-            }
-          ]
+          ],
+          "name": "WarrantyAlert"
         }
-      ]
+      ],
+      "name": "features"
     }
   ]
 }

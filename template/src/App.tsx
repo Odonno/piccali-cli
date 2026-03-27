@@ -16,7 +16,32 @@ import {
   ListChecks,
   AlertCircle,
 } from "lucide-react";
-import type { Feature, Rule, Tag } from "@/lib/types";
+import type { Feature, FolderNode, Rule, Tag } from "@/lib/types";
+
+/** Resolve a feature from the folder tree using a folderPath + featureIndex. */
+function resolveFeature(
+  folders: FolderNode[],
+  folderPath: number[],
+  featureIndex: number
+): Feature | undefined {
+  let current = folders;
+  for (const idx of folderPath) {
+    const node = current[idx];
+    if (!node) return undefined;
+    current = node.folders ?? [];
+    // If we have consumed all path segments, the feature is in node.features
+    // We handle the leaf case after the loop using the original node reference.
+  }
+  // Walk again to get the leaf folder
+  let leaf: FolderNode | undefined;
+  let nodes = folders;
+  for (const idx of folderPath) {
+    leaf = nodes[idx];
+    if (!leaf) return undefined;
+    nodes = leaf.folders ?? [];
+  }
+  return leaf?.features?.[featureIndex];
+}
 
 /** Renders a single tag as a Badge, optionally wrapped in an <a> link. */
 function TagBadge({ tag, small = false }: { tag: Tag; small?: boolean }) {
@@ -186,14 +211,18 @@ export const App = () => {
     return <LoadingState />;
   }
 
-  const features = data?.features ?? [];
+  const folders = data?.folders ?? [];
 
   // Resolve what's being viewed
   let selectedFeature: Feature | undefined;
   let selectedRule: Rule | undefined;
 
   if (selected !== null) {
-    selectedFeature = features[selected.featureIndex];
+    selectedFeature = resolveFeature(
+      folders,
+      selected.path.folderPath,
+      selected.path.featureIndex
+    );
     if (selected.type === "rule" && selectedFeature) {
       selectedRule = selectedFeature.rules?.[selected.ruleIndex];
     }
@@ -203,7 +232,7 @@ export const App = () => {
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar
-          features={features}
+          folders={folders}
           selected={selected}
           onSelect={setSelected}
         />
