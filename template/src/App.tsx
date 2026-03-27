@@ -4,6 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { LoadingState } from "@/components/LoadingState";
 import { AppSidebar, type SelectedFeature } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
@@ -16,7 +24,7 @@ import {
   ListChecks,
   AlertCircle,
 } from "lucide-react";
-import type { Feature, FolderNode, Rule, Tag } from "@/lib/types";
+import type { Feature, FolderNode, Rule, Step, Tag } from "@/lib/types";
 
 /** Resolve a feature from the folder tree using a folderPath + featureIndex. */
 function resolveFeature(
@@ -29,8 +37,6 @@ function resolveFeature(
     const node = current[idx];
     if (!node) return undefined;
     current = node.folders ?? [];
-    // If we have consumed all path segments, the feature is in node.features
-    // We handle the leaf case after the loop using the original node reference.
   }
   // Walk again to get the leaf folder
   let leaf: FolderNode | undefined;
@@ -70,18 +76,75 @@ function TagBadge({ tag, small = false }: { tag: Tag; small?: boolean }) {
   return badge;
 }
 
+/** Renders a step table (data table attached to a step). */
+function StepTable({ step }: { step: Step }) {
+  if (!step.table) return null;
+  const { header, rows } = step.table;
+
+  return (
+    <div className="mt-2 ml-[3.5rem] overflow-x-auto rounded-md border text-xs">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {header.map((col, i) => (
+              <TableHead key={i} className="h-7 px-3 font-mono text-[11px]">
+                {col}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row, ri) => (
+            <TableRow key={ri}>
+              {row.map((cell, ci) => (
+                <TableCell key={ci} className="py-1.5 px-3 font-mono text-[11px]">
+                  {cell}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+/** Renders a list of steps with optional step tables. */
+function StepList({ steps }: { steps: Step[] }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {steps.map((step, i) => (
+        <div key={i}>
+          <div className="flex items-baseline gap-2 text-sm">
+            <span className="font-mono font-semibold text-primary min-w-[3.5rem] text-right shrink-0">
+              {step.keyword.trim()}
+            </span>
+            <span>{step.text}</span>
+          </div>
+          {step.table && <StepTable step={step} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Placeholder content for the selected feature/rule
 function FeatureContent({
   feature,
   rule,
+  onSelectRule,
 }: {
   feature: Feature;
   rule?: Rule;
+  onSelectRule?: (ruleIndex: number) => void;
 }) {
   const subject = rule ?? feature;
   const scenarios = subject.scenarios ?? [];
   const background = subject.background;
   const tags = subject.tags ?? [];
+
+  // Feature with rules and no rule selected: show rules list
+  const hasRules = !rule && (feature.rules?.length ?? 0) > 0;
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
@@ -123,63 +186,151 @@ function FeatureContent({
             <BookOpen className="size-4 text-muted-foreground" />
             Background
           </div>
-          <div className="rounded-lg border bg-muted/40 px-4 py-3 flex flex-col gap-1.5">
-            {background.steps.map((step, i) => (
-              <div key={i} className="flex items-baseline gap-2 text-sm">
-                <span className="font-mono font-semibold text-primary min-w-[3.5rem] text-right shrink-0">
-                  {step.keyword.trim()}
-                </span>
-                <span>{step.text}</span>
-              </div>
-            ))}
+          <div className="rounded-lg border bg-muted/40 px-4 py-3">
+            <StepList steps={background.steps} />
           </div>
         </div>
       )}
 
-      {/* Scenarios count */}
-      <div className="flex items-center gap-2">
-        <Layers className="size-4 text-muted-foreground" />
-        <span className="text-sm font-medium">
-          {scenarios.length} scenario{scenarios.length !== 1 ? "s" : ""}
-        </span>
-        <Badge variant="outline" className="text-xs">
-          {scenarios.length > 0 ? "Defined" : "No scenarios"}
-        </Badge>
-      </div>
-
-      {scenarios.length === 0 && (
-        <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-          <AlertCircle className="size-8 opacity-40" />
-          <p className="text-sm">No scenarios defined in this section.</p>
+      {/* Rules list (feature with rules, no rule selected) */}
+      {hasRules && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <ListChecks className="size-4 text-muted-foreground" />
+            Rules
+          </div>
+          <div className="flex flex-col gap-2">
+            {feature.rules?.map((r, ruleIdx) => {
+              const ruleScenarioCount = r.scenarios?.length ?? 0;
+              return (
+                <button
+                  key={ruleIdx}
+                  onClick={() => onSelectRule?.(ruleIdx)}
+                  className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  <ListChecks className="size-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium flex-1">
+                    {r.name || r.keyword}
+                  </span>
+                  {ruleScenarioCount > 0 && (
+                    <Badge variant="secondary" className="text-xs shrink-0">
+                      {ruleScenarioCount} scenario{ruleScenarioCount !== 1 ? "s" : ""}
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Scenarios placeholder list */}
-      {scenarios.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {scenarios.map((scenario, i) => (
-            <div
-              key={i}
-              className="rounded-lg border bg-card p-4 flex flex-col gap-2"
-            >
-              <div className="flex items-start gap-2">
-                <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest shrink-0 pt-0.5">
-                  {scenario.keyword}
-                </span>
-                <span className="text-sm font-semibold leading-snug">
-                  {scenario.name}
-                </span>
-                {(scenario.tags ?? []).length > 0 && (
-                  <div className="flex flex-wrap gap-1 ml-auto">
-                    {scenario.tags?.map((tag) => (
-                      <TagBadge key={tag.name} tag={tag} small />
-                    ))}
-                  </div>
-                )}
-              </div>
+      {/* Scenarios (only shown when not a rules-only feature, or when a rule is selected) */}
+      {!hasRules && (
+        <>
+          {/* Scenarios count */}
+          <div className="flex items-center gap-2">
+            <Layers className="size-4 text-muted-foreground" />
+            <span className="text-sm font-medium">
+              {scenarios.length} scenario{scenarios.length !== 1 ? "s" : ""}
+            </span>
+            <Badge variant="outline" className="text-xs">
+              {scenarios.length > 0 ? "Defined" : "No scenarios"}
+            </Badge>
+          </div>
+
+          {scenarios.length === 0 && (
+            <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+              <AlertCircle className="size-8 opacity-40" />
+              <p className="text-sm">No scenarios defined in this section.</p>
             </div>
-          ))}
-        </div>
+          )}
+
+          {scenarios.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {scenarios.map((scenario, i) => (
+                <div
+                  key={i}
+                  className="rounded-lg border bg-card p-4 flex flex-col gap-3"
+                >
+                  {/* Scenario header */}
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest shrink-0 pt-0.5">
+                      {scenario.keyword}
+                    </span>
+                    <span className="text-sm font-semibold leading-snug flex-1">
+                      {scenario.name}
+                    </span>
+                    {(scenario.tags ?? []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 ml-auto">
+                        {scenario.tags?.map((tag) => (
+                          <TagBadge key={tag.name} tag={tag} small />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Scenario description */}
+                  {scenario.description && (
+                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line pl-2 border-l-2 border-muted">
+                      {scenario.description.trim()}
+                    </p>
+                  )}
+
+                  {/* Scenario steps */}
+                  {(scenario.steps?.length ?? 0) > 0 && (
+                    <div className="rounded-md bg-muted/40 px-4 py-3">
+                      <StepList steps={scenario.steps} />
+                    </div>
+                  )}
+
+                  {/* Examples (Scenario Outline) */}
+                  {(scenario.examples?.length ?? 0) > 0 && (
+                    <div className="flex flex-col gap-2 mt-1">
+                      {scenario.examples?.map((ex, ei) => (
+                        <div key={ei} className="flex flex-col gap-1">
+                          <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                            {ex.keyword}{ex.name ? `: ${ex.name}` : ""}
+                          </span>
+                          {(ex.tags ?? []).length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {ex.tags?.map((tag) => (
+                                <TagBadge key={tag.name} tag={tag} small />
+                              ))}
+                            </div>
+                          )}
+                          <div className="overflow-x-auto rounded-md border text-xs">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  {ex.table.header.map((col, ci) => (
+                                    <TableHead key={ci} className="h-7 px-3 font-mono text-[11px]">
+                                      {col}
+                                    </TableHead>
+                                  ))}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {ex.table.rows.map((row, ri) => (
+                                  <TableRow key={ri}>
+                                    {row.map((cell, ci) => (
+                                      <TableCell key={ci} className="py-1.5 px-3 font-mono text-[11px]">
+                                        {cell}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -228,6 +379,16 @@ export const App = () => {
     }
   }
 
+  /** Navigate to a rule from the feature's rules list. */
+  function handleSelectRule(ruleIndex: number) {
+    if (!selected) return;
+    setSelected({
+      type: "rule",
+      path: selected.path,
+      ruleIndex,
+    });
+  }
+
   return (
     <TooltipProvider>
       <SidebarProvider>
@@ -250,6 +411,7 @@ export const App = () => {
                   <FeatureContent
                     feature={selectedFeature}
                     rule={selectedRule}
+                    onSelectRule={handleSelectRule}
                   />
                 )}
               </main>
