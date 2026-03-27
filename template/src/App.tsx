@@ -33,6 +33,71 @@ import type { Examples, Feature, FolderNode, Rule, Step, Tag } from "@/lib/types
  */
 type ExampleRowKey = `${number}-${number}`;
 
+/** Cell value type categories for colour-coding. */
+type CellType = "boolean" | "number" | "date" | "string";
+
+/**
+ * Detects the semantic type of a raw table cell string.
+ *
+ * - boolean  → "true" / "false" (case-insensitive)
+ * - number   → anything parseable as a finite number (incl. decimals, negatives)
+ * - date     → ISO 8601, DD/MM/YYYY, MM-DD-YYYY, common date-like patterns
+ * - string   → everything else
+ */
+function classifyCell(value: string): CellType {
+  const v = value.trim();
+  if (v === "") return "string";
+
+  // Boolean
+  if (/^(true|false)$/i.test(v)) return "boolean";
+
+  // Number — allow optional leading sign, digits, optional decimal, no trailing alpha
+  if (/^[+-]?\d+(\.\d+)?$/.test(v)) return "number";
+
+  // Date patterns:
+  //   ISO 8601:          2024-01-31  or  2024-01-31T12:00:00Z
+  //   DD/MM/YYYY:        31/01/2024
+  //   MM/DD/YYYY:        01/31/2024
+  //   DD-MM-YYYY:        31-01-2024
+  //   Month name:        Jan 2024 | January 1st 2024
+  const datePatterns = [
+    /^\d{4}-\d{2}-\d{2}(T[\d::.Z+-]*)?$/, // ISO
+    /^\d{2}[/-]\d{2}[/-]\d{4}$/,           // DD/MM/YYYY or MM/DD/YYYY
+    /^\d{1,2}\s+\w+\s+\d{4}$/,             // 1 January 2024
+    /^\w+\s+\d{1,2},?\s+\d{4}$/,           // January 1, 2024
+    /^\w{3}\s+\d{4}$/,                     // Jan 2024
+  ];
+  if (datePatterns.some((re) => re.test(v))) return "date";
+
+  return "string";
+}
+
+/**
+ * Renders a single table cell value with colour coding based on its type.
+ *
+ * - boolean → blue
+ * - number  → green
+ * - date    → yellow/amber
+ * - string  → red (non-trivial values stand out; empty stays neutral)
+ */
+function TableCellValue({ value }: { value: string }) {
+  const type = classifyCell(value);
+  if (value.trim() === "") {
+    return <span className="text-muted-foreground/50 italic">—</span>;
+  }
+  const styles: Record<CellType, string> = {
+    boolean:
+      "text-blue-600 dark:text-blue-400",
+    number:
+      "text-emerald-600 dark:text-emerald-400",
+    date:
+      "text-amber-600 dark:text-amber-400",
+    string:
+      "text-rose-600 dark:text-rose-400",
+  };
+  return <span className={styles[type]}>{value}</span>;
+}
+
 /**
  * Resolves the variable→value mapping from an Examples table row.
  * Returns null if exampleRowKey is null.
@@ -154,7 +219,7 @@ function StepTable({ step }: { step: Step }) {
         <TableHeader>
           <TableRow>
             {header.map((col, i) => (
-              <TableHead key={i} className="h-7 px-3 font-mono text-[11px]">
+              <TableHead key={i} className="h-7 px-3 font-mono text-[11px] font-bold">
                 {col}
               </TableHead>
             ))}
@@ -168,7 +233,7 @@ function StepTable({ step }: { step: Step }) {
                   key={ci}
                   className="py-1.5 px-3 font-mono text-[11px]"
                 >
-                  {cell}
+                  <TableCellValue value={cell} />
                 </TableCell>
               ))}
             </TableRow>
@@ -427,18 +492,18 @@ function FeatureContent({
                                   <TableHeader>
                                     <TableRow>
                                       {/* # column */}
-                                      <TableHead className="h-7 w-8 px-3 font-mono text-[11px] text-center">
+                                      <TableHead className="h-7 w-8 px-3 font-mono text-[11px] font-bold text-center">
                                         #
                                       </TableHead>
                                       {/* Preview toggle column */}
-                                      <TableHead className="h-7 px-3 font-mono text-[11px]">
+                                      <TableHead className="h-7 px-3 font-mono text-[11px] font-bold">
                                         Preview
                                       </TableHead>
                                       {/* Data columns */}
                                       {ex.table.header.map((col, ci) => (
                                         <TableHead
                                           key={ci}
-                                          className="h-7 px-3 font-mono text-[11px]"
+                                          className="h-7 px-3 font-mono text-[11px] font-bold"
                                         >
                                           {col}
                                         </TableHead>
@@ -485,13 +550,13 @@ function FeatureContent({
                                               {isSelected ? "Selected" : "Select"}
                                             </Button>
                                           </TableCell>
-                                          {/* Data cells */}
+                                           {/* Data cells */}
                                           {row.map((cell, ci) => (
                                             <TableCell
                                               key={ci}
                                               className="py-1.5 px-3 font-mono text-[11px]"
                                             >
-                                              {cell}
+                                              <TableCellValue value={cell} />
                                             </TableCell>
                                           ))}
                                         </TableRow>
