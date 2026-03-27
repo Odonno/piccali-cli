@@ -654,7 +654,13 @@ export const App = () => {
         />
         <SidebarInset>
           <div className="flex flex-col h-svh">
-            {metadata && <AppHeader metadata={metadata} />}
+            {metadata && (
+                <AppHeader
+                  metadata={metadata}
+                  folders={folders}
+                  onSelectResult={setSelected}
+                />
+              )}
 
             <ScrollArea className="flex-1">
               <main className="p-6">
