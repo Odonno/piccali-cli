@@ -136,21 +136,6 @@ function ResultRow({
           )}
         </span>
       </span>
-
-      {/* Kind badge */}
-      <span
-        className={cn(
-          "ml-auto flex-none text-[10px] font-medium px-1.5 py-0.5 rounded-full border",
-          result.kind === "feature" &&
-            "border-primary/30 text-primary bg-primary/5",
-          result.kind === "scenario" &&
-            "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5",
-          result.kind === "step" &&
-            "border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5",
-        )}
-      >
-        {KIND_LABEL[result.kind]}
-      </span>
     </button>
   );
 }
