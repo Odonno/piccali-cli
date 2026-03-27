@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
@@ -6,6 +8,17 @@ import babel from '@rolldown/plugin-babel'
 export default defineConfig({
   plugins: [
     react(),
-    babel({ presets: [reactCompilerPreset()] })
+    babel({ presets: [reactCompilerPreset()] }),
+    // Remove the generated data.json from the build output — it is produced at
+    // Cargo build time and should not be bundled as a static asset.
+    {
+      name: 'exclude-data-json',
+      closeBundle() {
+        const outPath = path.resolve(__dirname, 'dist', 'data.json')
+        if (fs.existsSync(outPath)) {
+          fs.unlinkSync(outPath)
+        }
+      },
+    },
   ],
 })
