@@ -1,15 +1,15 @@
-import type { FolderNode } from "@/lib/types";
+import type { FolderNode, Tag } from "@/lib/types";
 import type { FeaturePath, SelectedFeature } from "@/components/AppSidebar";
 
 // ---------------------------------------------------------------------------
 // Result types
 // ---------------------------------------------------------------------------
 
-export type SearchResultKind = "feature" | "scenario" | "step";
+export type SearchResultKind = "feature" | "scenario" | "step" | "tag";
 
 export type SearchResult = {
   kind: SearchResultKind;
-  /** Human-readable label for the match (feature name, scenario name, step text) */
+  /** Human-readable label for the match (feature name, scenario name, step text, tag name) */
   label: string;
   /** Context: folder path as breadcrumb string, e.g. "Administration / Login" */
   breadcrumb: string;
@@ -19,6 +19,8 @@ export type SearchResult = {
   scenarioName?: string;
   /** The exact matched text fragment to highlight */
   matchText: string;
+  /** Matched tag — present when kind is "tag" */
+  matchedTag?: Tag;
 };
 
 // ---------------------------------------------------------------------------
@@ -36,8 +38,31 @@ function matchesQuery(text: string, query: string): boolean {
 }
 
 /**
- * Search all features, scenarios, and steps in the folder tree.
- * Returns up to MAX_RESULTS results, sorted: features first, then scenarios, then steps.
+ * Normalises a tag query: strips a leading "@" so that both "@smoke" and
+ * "smoke" match tag names stored without the "@" prefix.
+ */
+function normaliseTagQuery(query: string): string {
+  return query.startsWith("@") ? query.slice(1) : query;
+}
+
+/**
+ * Returns true when `tag.name` matches `query` either as a plain substring
+ * or via a tag-prefixed "@…" lookup.
+ */
+function tagMatchesQuery(tag: Tag, query: string): boolean {
+  // Always attempt a plain substring match against the raw tag name
+  if (matchesQuery(tag.name, query)) return true;
+  // If the query starts with "@", also try matching the query without "@"
+  const stripped = normaliseTagQuery(query);
+  if (stripped !== query) {
+    return matchesQuery(tag.name, stripped);
+  }
+  return false;
+}
+
+/**
+ * Search all features, scenarios, steps, and tags in the folder tree.
+ * Returns up to MAX_RESULTS results, sorted: features → scenarios → steps → tags.
  */
 export function searchData(
   folders: FolderNode[],
@@ -49,6 +74,7 @@ export function searchData(
   const featureResults: SearchResult[] = [];
   const scenarioResults: SearchResult[] = [];
   const stepResults: SearchResult[] = [];
+  const tagResults: SearchResult[] = [];
 
   function walkFolders(
     nodes: FolderNode[],
@@ -74,16 +100,20 @@ export function searchData(
           featureIndex: featureIdx,
         };
         const featureBreadcrumb = currentBreadcrumb.join(" / ");
+        const featureLabel = feature.name || feature.keyword;
+        const featureSelection: SelectedFeature = {
+          type: "feature",
+          path: featurePath,
+        };
 
         // --- Feature name match ---
-        const featureLabel = feature.name || feature.keyword;
         if (matchesQuery(featureLabel, query)) {
           featureResults.push({
             kind: "feature",
             label: featureLabel,
             breadcrumb: featureBreadcrumb,
             matchText: featureLabel,
-            selection: { type: "feature", path: featurePath },
+            selection: featureSelection,
           });
         }
 
@@ -98,32 +128,69 @@ export function searchData(
             label: featureLabel,
             breadcrumb: featureBreadcrumb,
             matchText: feature.description,
-            selection: { type: "feature", path: featurePath },
+            selection: featureSelection,
           });
+        }
+
+        // --- Feature tag matches ---
+        for (const tag of feature.tags ?? []) {
+          if (tagMatchesQuery(tag, query)) {
+            tagResults.push({
+              kind: "tag",
+              label: featureLabel,
+              breadcrumb: featureBreadcrumb,
+              matchText: tag.name,
+              matchedTag: tag,
+              selection: featureSelection,
+            });
+          }
         }
 
         // Collect all scenarios: direct + from rules
         const allScenarioSources: Array<{
           scenarios: typeof feature.scenarios;
           selection: SelectedFeature;
+          ruleLabel?: string;
         }> = [];
 
         // Direct scenarios on the feature
         if ((feature.scenarios?.length ?? 0) > 0) {
           allScenarioSources.push({
             scenarios: feature.scenarios,
-            selection: { type: "feature", path: featurePath },
+            selection: featureSelection,
           });
         }
 
-        // Scenarios inside each rule
+        // Scenarios and tags inside each rule
         const rules = feature.rules ?? [];
         for (let ruleIdx = 0; ruleIdx < rules.length; ruleIdx++) {
           const rule = rules[ruleIdx];
+          const ruleSelection: SelectedFeature = {
+            type: "rule",
+            path: featurePath,
+            ruleIndex: ruleIdx,
+          };
+          const ruleLabel = rule.name || rule.keyword;
+
+          // Rule tag matches
+          for (const tag of rule.tags ?? []) {
+            if (tagMatchesQuery(tag, query)) {
+              tagResults.push({
+                kind: "tag",
+                label: ruleLabel,
+                breadcrumb: `${featureBreadcrumb} / ${featureLabel}`,
+                matchText: tag.name,
+                matchedTag: tag,
+                selection: ruleSelection,
+              });
+            }
+          }
+
           if ((rule.scenarios?.length ?? 0) > 0) {
             allScenarioSources.push({
               scenarios: rule.scenarios,
-              selection: { type: "rule", path: featurePath, ruleIndex: ruleIdx },
+              selection: ruleSelection,
+              ruleLabel,
             });
           }
         }
@@ -133,16 +200,49 @@ export function searchData(
           const scenarios = source.scenarios ?? [];
           for (const scenario of scenarios) {
             const scenarioName = scenario.name || scenario.keyword;
+            const scenarioBreadcrumb = source.ruleLabel
+              ? `${featureBreadcrumb} / ${featureLabel} / ${source.ruleLabel}`
+              : `${featureBreadcrumb} / ${featureLabel}`;
 
             // --- Scenario name match ---
             if (matchesQuery(scenarioName, query)) {
               scenarioResults.push({
                 kind: "scenario",
                 label: scenarioName,
-                breadcrumb: `${featureBreadcrumb} / ${featureLabel}`,
+                breadcrumb: scenarioBreadcrumb,
                 matchText: scenarioName,
                 selection: source.selection,
               });
+            }
+
+            // --- Scenario tag matches ---
+            for (const tag of scenario.tags ?? []) {
+              if (tagMatchesQuery(tag, query)) {
+                tagResults.push({
+                  kind: "tag",
+                  label: scenarioName,
+                  breadcrumb: scenarioBreadcrumb,
+                  matchText: tag.name,
+                  matchedTag: tag,
+                  selection: source.selection,
+                });
+              }
+            }
+
+            // --- Examples tag matches ---
+            for (const examples of scenario.examples ?? []) {
+              for (const tag of examples.tags ?? []) {
+                if (tagMatchesQuery(tag, query)) {
+                  tagResults.push({
+                    kind: "tag",
+                    label: scenarioName,
+                    breadcrumb: scenarioBreadcrumb,
+                    matchText: tag.name,
+                    matchedTag: tag,
+                    selection: source.selection,
+                  });
+                }
+              }
             }
 
             // --- Step text match ---
@@ -152,7 +252,7 @@ export function searchData(
                 stepResults.push({
                   kind: "step",
                   label: `${step.keyword.trim()} ${step.text}`,
-                  breadcrumb: `${featureBreadcrumb} / ${featureLabel}`,
+                  breadcrumb: scenarioBreadcrumb,
                   matchText: step.text,
                   scenarioName,
                   selection: source.selection,
@@ -169,10 +269,10 @@ export function searchData(
             stepResults.push({
               kind: "step",
               label: `${step.keyword.trim()} ${step.text}`,
-              breadcrumb: `${featureBreadcrumb} / ${featureLabel}`,
+              breadcrumb: featureBreadcrumb,
               matchText: step.text,
               scenarioName: "Background",
-              selection: { type: "feature", path: featurePath },
+              selection: featureSelection,
             });
           }
         }
@@ -186,6 +286,7 @@ export function searchData(
     ...featureResults,
     ...scenarioResults,
     ...stepResults,
+    ...tagResults,
   ];
 
   return combined.slice(0, MAX_RESULTS);
@@ -203,14 +304,17 @@ export function highlightMatches(
   text: string,
   query: string,
 ): Array<{ text: string; highlight: boolean }> {
-  if (!query.trim()) return [{ text, highlight: false }];
+  // Normalise tag queries for highlight matching too
+  const normQuery = normStr(
+    query.startsWith("@") ? query.slice(1) : query,
+  ).trim();
+  if (!normQuery) return [{ text, highlight: false }];
   const lower = normStr(text);
-  const lowerQuery = normStr(query.trim());
   const parts: Array<{ text: string; highlight: boolean }> = [];
   let cursor = 0;
 
   while (cursor < text.length) {
-    const idx = lower.indexOf(lowerQuery, cursor);
+    const idx = lower.indexOf(normQuery, cursor);
     if (idx === -1) {
       parts.push({ text: text.slice(cursor), highlight: false });
       break;
@@ -219,10 +323,10 @@ export function highlightMatches(
       parts.push({ text: text.slice(cursor, idx), highlight: false });
     }
     parts.push({
-      text: text.slice(idx, idx + lowerQuery.length),
+      text: text.slice(idx, idx + normQuery.length),
       highlight: true,
     });
-    cursor = idx + lowerQuery.length;
+    cursor = idx + normQuery.length;
   }
 
   return parts;

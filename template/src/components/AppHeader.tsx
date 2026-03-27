@@ -12,6 +12,7 @@ import {
   FileText,
   ListChecks,
   ChevronRight,
+  Tag as TagIcon,
   X,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -80,12 +81,14 @@ const KIND_ICON: Record<SearchResultKind, React.ReactNode> = {
   feature: <FileText className="size-3.5 shrink-0 text-primary" />,
   scenario: <ListChecks className="size-3.5 shrink-0 text-emerald-500" />,
   step: <ChevronRight className="size-3.5 shrink-0 text-amber-500" />,
+  tag: <TagIcon className="size-3.5 shrink-0 text-violet-500" />,
 };
 
 const KIND_LABEL: Record<SearchResultKind, string> = {
   feature: "Feature",
   scenario: "Scenario",
   step: "Step",
+  tag: "Tag",
 };
 
 // ---------------------------------------------------------------------------
@@ -135,6 +138,14 @@ function ResultRow({
             </>
           )}
         </span>
+        {result.kind === "tag" && result.matchedTag && (
+          <span className="flex items-center gap-1 mt-0.5">
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+              <TagIcon className="size-2.5" />
+              <HighlightedText text={result.matchedTag.name} query={query} />
+            </span>
+          </span>
+        )}
       </span>
     </button>
   );
@@ -169,7 +180,7 @@ function SearchDropdown({
       <div className="px-4 py-8 flex flex-col items-center gap-2 text-center">
         <Search className="size-6 text-muted-foreground/40" />
         <p className="text-sm text-muted-foreground">
-          Search features, scenarios and steps
+          Search features, scenarios, steps and tags
         </p>
       </div>
     );
@@ -193,7 +204,7 @@ function SearchDropdown({
     items: Array<{ result: SearchResult; globalIndex: number }>;
   }> = [];
   let globalIdx = 0;
-  const kinds: SearchResultKind[] = ["feature", "scenario", "step"];
+  const kinds: SearchResultKind[] = ["feature", "scenario", "step", "tag"];
   for (const kind of kinds) {
     const items = results
       .map((r, i) => ({ result: r, globalIndex: i }))
