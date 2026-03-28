@@ -8,6 +8,7 @@ use walkdir::WalkDir;
 mod formatter;
 mod models;
 mod parser;
+mod server;
 
 /// Output format for generated documentation.
 #[derive(Debug, Clone, ValueEnum)]
@@ -27,9 +28,10 @@ struct Cli {
     #[arg(short, long, default_value = "**/*.feature")]
     input: Glob,
 
-    /// Output formatter to use.
+    /// Output formatter to use. If omitted (along with --output and --dry-run),
+    /// starts a local web server to browse the documentation interactively.
     #[arg(short, long)]
-    formatter: Formatter,
+    formatter: Option<Formatter>,
 
     /// Path to the output file/folder.
     #[arg(short, long, conflicts_with = "dry_run")]
@@ -42,6 +44,10 @@ struct Cli {
     /// Title of the generated document.
     #[arg(short, long)]
     title: Option<String>,
+
+    /// Port for the web server (only used when no formatter is specified).
+    #[arg(short, long, default_value_t = 3000)]
+    port: u16,
 
     /// Tag prefix to match (e.g. "feat:"). Repeat for multiple prefixes.
     /// Each --tag-prefix must be paired with a corresponding --tag-url-template.
@@ -58,8 +64,10 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
-    // Require either --output or --dry-run
-    if cli.output.is_none() && !cli.dry_run {
+    let serve_mode = cli.formatter.is_none() && cli.output.is_none() && !cli.dry_run;
+
+    // When a formatter is explicitly given, require --output or --dry-run
+    if cli.formatter.is_some() && cli.output.is_none() && !cli.dry_run {
         eprintln!("Error: either --output or --dry-run must be specified.");
         process::exit(1);
     }
@@ -107,8 +115,19 @@ fn main() {
     let folders = parser::build_folder_tree(entries);
     let document = models::Document { folders };
 
-    // HTML formatter: writes a full site to a directory; dry-run is not supported
-    if matches!(cli.formatter, Formatter::Html) {
+    // ── Serve mode ─────────────────────────────────────────────────────────────
+    if serve_mode {
+        let title = cli.title.unwrap_or_else(|| "Cucumber docs".to_string());
+
+        if let Err(error) = server::serve(cli.port, document, title) {
+            eprintln!("{error}");
+            process::exit(1);
+        }
+        return;
+    }
+
+    // ── HTML formatter ──────────────────────────────────────────────────────────
+    if matches!(cli.formatter, Some(Formatter::Html)) {
         if cli.dry_run {
             eprintln!("Error: --dry-run is not supported for the html formatter.");
             process::exit(1);
@@ -124,20 +143,21 @@ fn main() {
         return;
     }
 
-    // Format the document (string-based formatters)
+    // ── String-based formatters (JSON, Markdown) ────────────────────────────────
     let output = match cli.formatter {
-        Formatter::Json => match formatter::format_json(&document) {
+        Some(Formatter::Json) => match formatter::format_json(&document) {
             Ok(json) => json,
             Err(error) => {
                 eprintln!("{error}");
                 process::exit(1);
             }
         },
-        Formatter::Markdown => {
+        Some(Formatter::Markdown) => {
             eprintln!("Error: Markdown formatter is not yet implemented.");
             process::exit(1);
         }
-        Formatter::Html => unreachable!(),
+        Some(Formatter::Html) => unreachable!(),
+        None => unreachable!(),
     };
 
     // Output the result

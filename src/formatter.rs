@@ -3,10 +3,27 @@ use chrono::Utc;
 use serde::Serialize;
 use std::path::Path;
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Metadata<'a> {
+    title: &'a str,
+    created_at: String,
+}
+
 /// Format a document as a pretty-printed JSON string.
 pub fn format_json(document: &Document) -> Result<String, String> {
     serde_json::to_string_pretty(document)
         .map_err(|error| format!("JSON serialization failed: {error}"))
+}
+
+/// Produce the `metadata.json` payload as a pretty-printed JSON string.
+pub fn format_metadata(title: &str) -> Result<String, String> {
+    let metadata = Metadata {
+        title,
+        created_at: Utc::now().to_rfc3339(),
+    };
+    serde_json::to_string_pretty(&metadata)
+        .map_err(|e| format!("Metadata JSON serialization failed: {e}"))
 }
 
 /// Write an HTML site to `output_dir` by:
@@ -44,23 +61,11 @@ pub fn format_html(document: &Document, output_dir: &Path, title: &str) -> Resul
     // Write data.json
     let data_json = format_json(document)?;
     let data_path = output_dir.join("data.json");
-    std::fs::write(&data_path, data_json)
+    std::fs::write(&data_path, &data_json)
         .map_err(|e| format!("Failed to write {}: {e}", data_path.display()))?;
 
     // Write metadata.json
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Metadata<'a> {
-        title: &'a str,
-        created_at: String,
-    }
-
-    let metadata = Metadata {
-        title,
-        created_at: Utc::now().to_rfc3339(),
-    };
-    let metadata_json = serde_json::to_string_pretty(&metadata)
-        .map_err(|e| format!("Metadata JSON serialization failed: {e}"))?;
+    let metadata_json = format_metadata(title)?;
     let metadata_path = output_dir.join("metadata.json");
     std::fs::write(&metadata_path, metadata_json)
         .map_err(|e| format!("Failed to write {}: {e}", metadata_path.display()))?;
