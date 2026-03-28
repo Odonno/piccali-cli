@@ -5,9 +5,9 @@ import { App } from "./App.tsx";
 import { DataContextProvider } from "@/context/DataContextProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <DataContextProvider>
-      <App />
-    </DataContextProvider>
-  </StrictMode>,
+	<StrictMode>
+		<DataContextProvider>
+			<App />
+		</DataContextProvider>
+	</StrictMode>,
 );

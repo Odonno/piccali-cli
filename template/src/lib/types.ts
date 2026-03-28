@@ -1,74 +1,74 @@
 export type StepType = "Given" | "When" | "Then";
 
 export type Tag = {
-  name: string;
-  url?: string;
+	name: string;
+	url?: string;
 };
 
 export type Table = {
-  header: string[];
-  rows: string[][];
+	header: string[];
+	rows: string[][];
 };
 
 export type Step = {
-  keyword: string;
-  type: StepType;
-  text: string;
-  doc_string?: string;
-  table?: Table;
+	keyword: string;
+	type: StepType;
+	text: string;
+	doc_string?: string;
+	table?: Table;
 };
 
 export type Examples = {
-  keyword: string;
-  name?: string;
-  tags?: Tag[];
-  table: Table;
+	keyword: string;
+	name?: string;
+	tags?: Tag[];
+	table: Table;
 };
 
 export type Background = {
-  keyword: string;
-  steps: Step[];
+	keyword: string;
+	steps: Step[];
 };
 
 export type Scenario = {
-  keyword: string;
-  name: string;
-  description?: string;
-  tags?: Tag[];
-  steps: Step[];
-  examples?: Examples[];
+	keyword: string;
+	name: string;
+	description?: string;
+	tags?: Tag[];
+	steps: Step[];
+	examples?: Examples[];
 };
 
 export type Rule = {
-  keyword: string;
-  name: string;
-  description?: string;
-  tags?: Tag[];
-  background?: Background;
-  scenarios?: Scenario[];
+	keyword: string;
+	name: string;
+	description?: string;
+	tags?: Tag[];
+	background?: Background;
+	scenarios?: Scenario[];
 };
 
 export type Feature = {
-  keyword: string;
-  name: string;
-  description?: string;
-  tags?: Tag[];
-  background?: Background;
-  scenarios?: Scenario[];
-  rules?: Rule[];
+	keyword: string;
+	name: string;
+	description?: string;
+	tags?: Tag[];
+	background?: Background;
+	scenarios?: Scenario[];
+	rules?: Rule[];
 };
 
 export type FolderNode = {
-  name: string;
-  folders?: FolderNode[];
-  features?: Feature[];
+	name: string;
+	folders?: FolderNode[];
+	features?: Feature[];
 };
 
 export type PiccaliData = {
-  folders: FolderNode[];
+	folders: FolderNode[];
 };
 
 export type PiccaliMetadata = {
-  title: string;
-  createdAt: string;
+	title: string;
+	createdAt: string;
 };

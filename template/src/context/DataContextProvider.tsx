@@ -3,46 +3,46 @@ import type { PiccaliData, PiccaliMetadata } from "@/lib/types";
 import { DataContext } from "@/context/DataContext";
 
 export const DataContextProvider = ({ children }: { children: ReactNode }) => {
-  const [data, setData] = useState<PiccaliData | null>(null);
-  const [metadata, setMetadata] = useState<PiccaliMetadata | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+	const [data, setData] = useState<PiccaliData | null>(null);
+	const [metadata, setMetadata] = useState<PiccaliMetadata | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
+	useEffect(() => {
+		let cancelled = false;
 
-    const fetchAll = async () => {
-      try {
-        const [dataRes, metadataRes] = await Promise.all([
-          fetch("/data.json"),
-          fetch("/metadata.json"),
-        ]);
+		const fetchAll = async () => {
+			try {
+				const [dataRes, metadataRes] = await Promise.all([
+					fetch("/data.json"),
+					fetch("/metadata.json"),
+				]);
 
-        const [dataJson, metadataJson] = await Promise.all([
-          dataRes.json() as Promise<PiccaliData>,
-          metadataRes.json() as Promise<PiccaliMetadata>,
-        ]);
+				const [dataJson, metadataJson] = await Promise.all([
+					dataRes.json() as Promise<PiccaliData>,
+					metadataRes.json() as Promise<PiccaliMetadata>,
+				]);
 
-        if (!cancelled) {
-          setData(dataJson);
-          setMetadata(metadataJson);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
+				if (!cancelled) {
+					setData(dataJson);
+					setMetadata(metadataJson);
+				}
+			} finally {
+				if (!cancelled) {
+					setIsLoading(false);
+				}
+			}
+		};
 
-    void fetchAll();
+		void fetchAll();
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
-  return (
-    <DataContext.Provider value={{ data, metadata, isLoading }}>
-      {children}
-    </DataContext.Provider>
-  );
+	return (
+		<DataContext.Provider value={{ data, metadata, isLoading }}>
+			{children}
+		</DataContext.Provider>
+	);
 };
