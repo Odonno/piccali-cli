@@ -1,0 +1,11 @@
+{
+  "name": "@piccali/darwin-arm64",
+  "version": "0.1.0",
+  "description": "macOS arm64 binary for piccali-cli",
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "files": [
+    "piccali-cli"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@piccali/linux-arm64",
+  "version": "0.1.0",
+  "description": "Linux arm64 binary for piccali-cli",
+  "os": ["linux"],
+  "cpu": ["arm64"],
+  "files": [
+    "piccali-cli"
+  ],
+  "license": "MIT"
+}

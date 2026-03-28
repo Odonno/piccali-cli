@@ -4,6 +4,10 @@ on:
   release:
     types: [created]
 
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
 jobs:
   frontend-build:
     name: Frontend Build
@@ -43,21 +47,29 @@ jobs:
             runner: ubuntu-latest
             use_cross: false
             archive_ext: tar.gz
+            npm_dir: linux-x64
+            bin_name: piccali-cli
 
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-latest
             use_cross: true
             archive_ext: tar.gz
+            npm_dir: linux-arm64
+            bin_name: piccali-cli
 
           - target: aarch64-apple-darwin
             runner: macos-latest
             use_cross: false
             archive_ext: tar.gz
+            npm_dir: darwin-arm64
+            bin_name: piccali-cli
 
           - target: x86_64-pc-windows-msvc
             runner: windows-latest
             use_cross: false
             archive_ext: zip
+            npm_dir: win32-x64
+            bin_name: piccali-cli.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -121,6 +133,29 @@ jobs:
         with:
           files: ${{ env.ARCHIVE }}
 
+      # --- Copy binary into npm platform package for publishing ---
+      - name: Stage binary for npm (Unix)
+        if: matrix.archive_ext == 'tar.gz'
+        shell: bash
+        run: |
+          cp target/${{ matrix.target }}/release/${{ matrix.bin_name }} \
+             package/npm/${{ matrix.npm_dir }}/${{ matrix.bin_name }}
+          chmod +x package/npm/${{ matrix.npm_dir }}/${{ matrix.bin_name }}
+
+      - name: Stage binary for npm (Windows)
+        if: matrix.archive_ext == 'zip'
+        shell: pwsh
+        run: |
+          Copy-Item "target\${{ matrix.target }}\release\${{ matrix.bin_name }}" `
+            -Destination "package\npm\${{ matrix.npm_dir }}\${{ matrix.bin_name }}"
+
+      - name: Upload npm platform artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-${{ matrix.npm_dir }}
+          path: package/npm/${{ matrix.npm_dir }}/
+          if-no-files-found: error
+
   publish:
     name: Publish to crates.io
     needs: build
@@ -147,3 +182,94 @@ jobs:
 
       - name: Publish
         run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  publish-npm:
+    name: Publish to npm
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      # Bump versions in all package.json files to match the git tag (strips leading "v")
+      - name: Set version from tag
+        shell: bash
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "NPM_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+          # Update version in the wrapper and all platform packages
+          for f in package/package.json package/npm/*/package.json; do
+            npm pkg set version="$VERSION" --prefix "$(dirname "$f")"
+          done
+
+          # Update optionalDependencies in the wrapper to match
+          npm pkg set \
+            optionalDependencies.@piccali/linux-x64="$VERSION" \
+            optionalDependencies.@piccali/linux-arm64="$VERSION" \
+            optionalDependencies.@piccali/darwin-arm64="$VERSION" \
+            optionalDependencies.@piccali/win32-x64="$VERSION" \
+            --prefix package
+
+      # Download all per-platform binaries staged by the build jobs
+      - name: Download linux-x64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-linux-x64
+          path: package/npm/linux-x64/
+
+      - name: Download linux-arm64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-linux-arm64
+          path: package/npm/linux-arm64/
+
+      - name: Download darwin-arm64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-darwin-arm64
+          path: package/npm/darwin-arm64/
+
+      - name: Download win32-x64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-win32-x64
+          path: package/npm/win32-x64/
+
+      # Publish platform packages first (the wrapper depends on them)
+      - name: Publish @piccali/linux-x64
+        run: npm publish --access public
+        working-directory: package/npm/linux-x64
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @piccali/linux-arm64
+        run: npm publish --access public
+        working-directory: package/npm/linux-arm64
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @piccali/darwin-arm64
+        run: npm publish --access public
+        working-directory: package/npm/darwin-arm64
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @piccali/win32-x64
+        run: npm publish --access public
+        working-directory: package/npm/win32-x64
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Publish the main wrapper package last
+      - name: Publish piccali-cli
+        run: npm publish --access public
+        working-directory: package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
