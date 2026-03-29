@@ -26,3 +26,6 @@ dist-ssr
 # custom files
 public/data.json
 public/metadata.json
+
+# TanStack Router generated files
+routeTree.gen.ts

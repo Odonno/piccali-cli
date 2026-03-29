@@ -1,4 +1,5 @@
-import type { Feature, FolderNode } from "@/types/data";
+import { slugify } from "@/lib/utils";
+import type { Feature, FolderNode, Rule } from "@/types/data";
 import type { FeaturePath, SelectedFeature } from "@/types/navigation";
 
 export const featureScenarioCount = (feature: Feature): number => {
@@ -64,4 +65,105 @@ export const resolveFeature = (
 		nodes = leaf.folders ?? [];
 	}
 	return leaf?.features?.[featureIndex];
+};
+
+/**
+ * Build the URL path for a feature page.
+ * Format: /features/<folder-slug>/.../<feature-slug>
+ */
+export const buildFeatureUrl = (
+	folders: FolderNode[],
+	path: FeaturePath,
+): string => {
+	const segments: string[] = [];
+	let nodes = folders;
+	let leafFolder: FolderNode | undefined;
+	for (const idx of path.folderPath) {
+		leafFolder = nodes[idx];
+		if (!leafFolder) break;
+		segments.push(slugify(leafFolder.name));
+		nodes = leafFolder.folders ?? [];
+	}
+	const feature = leafFolder?.features?.[path.featureIndex];
+	if (feature) {
+		segments.push(slugify(featureLabel(feature)));
+	}
+	return `/features/${segments.join("/")}`;
+};
+
+/**
+ * Build the URL path for a rule page.
+ * Format: /features/<...>/rules/<rule-slug>
+ */
+export const buildRuleUrl = (
+	folders: FolderNode[],
+	path: FeaturePath,
+	rule: Rule,
+): string => {
+	return `${buildFeatureUrl(folders, path)}/rules/${slugify(rule.name || rule.keyword)}`;
+};
+
+/**
+ * Resolve a feature from the folder tree using URL slugs.
+ * @param slugSegments - Array of slugs: [...folderSlugs, featureSlug]
+ * Returns the feature and its FeaturePath, or undefined if not found.
+ */
+export const resolveFeatureBySlug = (
+	folders: FolderNode[],
+	slugSegments: string[],
+): { feature: Feature; path: FeaturePath } | undefined => {
+	if (slugSegments.length === 0) return undefined;
+
+	const folderSlugs = slugSegments.slice(0, -1);
+	const featureSlug = slugSegments[slugSegments.length - 1];
+
+	let nodes = folders;
+	const folderPath: number[] = [];
+
+	for (const slug of folderSlugs) {
+		const idx = nodes.findIndex((f) => slugify(f.name) === slug);
+		if (idx === -1) return undefined;
+		folderPath.push(idx);
+		nodes = nodes[idx].folders ?? [];
+	}
+
+	// The last node's parent contains the features
+	let featureNodes: Feature[] = [];
+	if (folderPath.length > 0) {
+		let leaf = folders[folderPath[0]];
+		for (let i = 1; i < folderPath.length; i++) {
+			leaf = leaf.folders?.[folderPath[i]] ?? leaf;
+		}
+		featureNodes = leaf.features ?? [];
+	} else {
+		// No folder path — features are in the top-level... but the data model
+		// wraps everything in FolderNode. In practice, featureSlugs always has
+		// at least one folder segment. Handle gracefully anyway.
+		featureNodes = [];
+	}
+
+	const featureIndex = featureNodes.findIndex(
+		(f) => slugify(featureLabel(f)) === featureSlug,
+	);
+	if (featureIndex === -1) return undefined;
+
+	return {
+		feature: featureNodes[featureIndex],
+		path: { folderPath, featureIndex },
+	};
+};
+
+/**
+ * Resolve a rule from a feature using a rule slug.
+ */
+export const resolveRuleBySlug = (
+	feature: Feature,
+	ruleSlug: string,
+): { rule: Rule; ruleIndex: number } | undefined => {
+	const ruleIndex =
+		feature.rules?.findIndex(
+			(r) => slugify(r.name || r.keyword) === ruleSlug,
+		) ?? -1;
+	if (ruleIndex === -1 || !feature.rules) return undefined;
+	return { rule: feature.rules[ruleIndex], ruleIndex };
 };

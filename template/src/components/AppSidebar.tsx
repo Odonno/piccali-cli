@@ -1,4 +1,4 @@
-import { useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { Layers, BookOpen } from "lucide-react";
 import {
 	Sidebar,
@@ -13,28 +13,20 @@ import {
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import type { FolderNode } from "@/types/data";
-import type { FeaturePath, SelectedFeature } from "@/types/navigation";
 import { countFeaturesInFolders } from "@/functions/feature";
 import { FolderTree } from "@/components/FolderTree";
 
 type AppSidebarProps = {
 	folders: FolderNode[];
-	selected: SelectedFeature | null;
-	onSelect: (selection: SelectedFeature) => void;
+	openKeys: Record<string, boolean>;
+	setOpenKeys: Dispatch<SetStateAction<Record<string, boolean>>>;
 };
 
 export const AppSidebar = ({
 	folders,
-	selected,
-	onSelect,
+	openKeys,
+	setOpenKeys,
 }: AppSidebarProps) => {
-	const [openKeys, setOpenKeys] = useState<Record<string, boolean>>(() => {
-		// Open the first top-level folder by default
-		const init: Record<string, boolean> = {};
-		if (folders.length > 0) init["0"] = true;
-		return init;
-	});
-
 	const toggleKey = (key: string) => {
 		setOpenKeys((prev) => ({ ...prev, [key]: !prev[key] }));
 	};
@@ -75,9 +67,8 @@ export const AppSidebar = ({
 						<SidebarMenu>
 							<FolderTree
 								folders={folders}
+								rootFolders={folders}
 								folderPath={[]}
-								selected={selected}
-								onSelect={onSelect}
 								openKeys={openKeys}
 								toggleKey={toggleKey}
 							/>
@@ -90,5 +81,3 @@ export const AppSidebar = ({
 		</Sidebar>
 	);
 };
-
-export type { FeaturePath, SelectedFeature };

@@ -6,6 +6,7 @@ import {
 	ListChecks,
 	AlertCircle,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -26,13 +27,14 @@ import type { Feature, Rule } from "@/types/data";
 type FeatureContentProps = {
 	feature: Feature;
 	rule?: Rule;
-	onSelectRule?: (ruleIndex: number) => void;
+	/** Return the URL for a given rule index; used to generate Link hrefs. */
+	getRuleUrl?: (ruleIndex: number) => string;
 };
 
 export const FeatureContent = ({
 	feature,
 	rule,
-	onSelectRule,
+	getRuleUrl,
 }: FeatureContentProps) => {
 	const subject = rule ?? feature;
 	const scenarios = subject.scenarios ?? [];
@@ -121,11 +123,11 @@ export const FeatureContent = ({
 					<div className="flex flex-col gap-2">
 						{feature.rules?.map((r, ruleIdx) => {
 							const ruleScenarioCount = r.scenarios?.length ?? 0;
+							const ruleUrl = getRuleUrl?.(ruleIdx);
 							return (
-								<button
-									key={ruleIdx}
-									type="button"
-									onClick={() => onSelectRule?.(ruleIdx)}
+								<Link
+									key={r.name || r.keyword}
+									to={ruleUrl ?? "/"}
 									className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground transition-colors"
 								>
 									<ListChecks className="size-4 text-muted-foreground shrink-0" />
@@ -138,7 +140,7 @@ export const FeatureContent = ({
 											{ruleScenarioCount !== 1 ? "s" : ""}
 										</Badge>
 									)}
-								</button>
+								</Link>
 							);
 						})}
 					</div>
