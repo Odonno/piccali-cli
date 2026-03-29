@@ -1,55 +1,26 @@
-import type { FolderNode, Tag } from "@/lib/types";
-import type { FeaturePath, SelectedFeature } from "@/components/AppSidebar";
-
-// ---------------------------------------------------------------------------
-// Result types
-// ---------------------------------------------------------------------------
-
-export type SearchResultKind = "feature" | "scenario" | "step" | "tag";
-
-export type SearchResult = {
-	kind: SearchResultKind;
-	/** Human-readable label for the match (feature name, scenario name, step text, tag name) */
-	label: string;
-	/** Context: folder path as breadcrumb string, e.g. "Administration / Login" */
-	breadcrumb: string;
-	/** What to navigate to when this result is activated */
-	selection: SelectedFeature;
-	/** Scenario name — present when kind is "step" */
-	scenarioName?: string;
-	/** The exact matched text fragment to highlight */
-	matchText: string;
-	/** Matched tag — present when kind is "tag" */
-	matchedTag?: Tag;
-};
-
-// ---------------------------------------------------------------------------
-// Search implementation
-// ---------------------------------------------------------------------------
+import type { FolderNode, Tag } from "@/types/data";
+import type { FeaturePath, SelectedFeature } from "@/types/navigation";
+import type { SearchResult, SearchResultKind } from "@/types/search";
 
 const MAX_RESULTS = 50;
 
-function normStr(s: string): string {
-	return s.toLowerCase();
-}
+const normStr = (s: string): string => s.toLowerCase();
 
-function matchesQuery(text: string, query: string): boolean {
-	return normStr(text).includes(query);
-}
+const matchesQuery = (text: string, query: string): boolean =>
+	normStr(text).includes(query);
 
 /**
  * Normalises a tag query: strips a leading "@" so that both "@smoke" and
  * "smoke" match tag names stored without the "@" prefix.
  */
-function normaliseTagQuery(query: string): string {
-	return query.startsWith("@") ? query.slice(1) : query;
-}
+const normaliseTagQuery = (query: string): string =>
+	query.startsWith("@") ? query.slice(1) : query;
 
 /**
  * Returns true when `tag.name` matches `query` either as a plain substring
  * or via a tag-prefixed "@…" lookup.
  */
-function tagMatchesQuery(tag: Tag, query: string): boolean {
+const tagMatchesQuery = (tag: Tag, query: string): boolean => {
 	// Always attempt a plain substring match against the raw tag name
 	if (matchesQuery(tag.name, query)) return true;
 	// If the query starts with "@", also try matching the query without "@"
@@ -58,16 +29,16 @@ function tagMatchesQuery(tag: Tag, query: string): boolean {
 		return matchesQuery(tag.name, stripped);
 	}
 	return false;
-}
+};
 
 /**
  * Search all features, scenarios, steps, and tags in the folder tree.
  * Returns up to MAX_RESULTS results, sorted: features → scenarios → steps → tags.
  */
-export function searchData(
+export const searchData = (
 	folders: FolderNode[],
 	rawQuery: string,
-): SearchResult[] {
+): SearchResult[] => {
 	const query = normStr(rawQuery.trim());
 	if (!query) return [];
 
@@ -76,11 +47,11 @@ export function searchData(
 	const stepResults: SearchResult[] = [];
 	const tagResults: SearchResult[] = [];
 
-	function walkFolders(
+	const walkFolders = (
 		nodes: FolderNode[],
 		folderPath: number[],
 		breadcrumbParts: string[],
-	): void {
+	): void => {
 		for (let fi = 0; fi < nodes.length; fi++) {
 			const folder = nodes[fi];
 			const currentPath = [...folderPath, fi];
@@ -278,7 +249,7 @@ export function searchData(
 				}
 			}
 		}
-	}
+	};
 
 	walkFolders(folders, [], []);
 
@@ -290,20 +261,16 @@ export function searchData(
 	];
 
 	return combined.slice(0, MAX_RESULTS);
-}
-
-// ---------------------------------------------------------------------------
-// Highlight helper
-// ---------------------------------------------------------------------------
+};
 
 /**
  * Splits `text` into parts: non-matching and matching segments.
  * Returns array of { text, highlight } objects for rendering.
  */
-export function highlightMatches(
+export const highlightMatches = (
 	text: string,
 	query: string,
-): Array<{ text: string; highlight: boolean }> {
+): Array<{ text: string; highlight: boolean }> => {
 	// Normalise tag queries for highlight matching too
 	const normQuery = normStr(
 		query.startsWith("@") ? query.slice(1) : query,
@@ -330,4 +297,6 @@ export function highlightMatches(
 	}
 
 	return parts;
-}
+};
+
+export type { SearchResultKind, SearchResult };

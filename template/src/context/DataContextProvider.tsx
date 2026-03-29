@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import type { PiccaliData, PiccaliMetadata } from "@/lib/types";
+import type { PiccaliData, PiccaliMetadata } from "@/types/data";
 import { DataContext } from "@/context/DataContext";
 
 export const DataContextProvider = ({ children }: { children: ReactNode }) => {

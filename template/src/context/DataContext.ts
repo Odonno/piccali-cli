@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { PiccaliData, PiccaliMetadata } from "@/lib/types";
+import type { PiccaliData, PiccaliMetadata } from "@/types/data";
 
 export type DataContextValue = {
 	data: PiccaliData | null;
