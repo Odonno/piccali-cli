@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::process;
 use walkdir::WalkDir;
 
+mod assets;
 mod formatter;
 mod models;
 mod parser;

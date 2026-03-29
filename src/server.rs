@@ -1,15 +1,10 @@
+use crate::assets::FrontendAssets;
 use crate::formatter;
 use crate::models::Document;
-use rust_embed::RustEmbed;
 use std::io::Cursor;
 use std::sync::{Arc, OnceLock};
 use std::thread;
 use tiny_http::{Header, Response, Server};
-
-/// Embeds all files from `template/dist/` at compile time.
-#[derive(RustEmbed)]
-#[folder = "template/dist/"]
-struct FrontendAssets;
 
 /// Shared server state, cheaply cloneable across threads via `Arc`.
 struct ServerState {
