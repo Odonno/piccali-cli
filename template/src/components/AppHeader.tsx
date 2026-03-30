@@ -9,6 +9,7 @@ import { CalendarClock, Sparkles, Search, X } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SearchDropdown } from "@/components/SearchDropdown";
+import { ModeToggle } from "@/components/ModeToggle";
 import { searchData } from "@/functions/search";
 import { formatDate } from "@/functions/date";
 import { cn } from "@/lib/utils";
@@ -196,9 +197,13 @@ export const AppHeader = ({
 				)}
 			</div>
 
-			<div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-				<CalendarClock className="size-3.5" />
-				<span>Generated {formatDate(metadata.createdAt)}</span>
+			<div className="ml-auto flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+					<CalendarClock className="size-3.5" />
+					<span>Generated {formatDate(metadata.createdAt)}</span>
+				</div>
+				<Separator orientation="vertical" className="h-5 mx-1" />
+				<ModeToggle />
 			</div>
 		</header>
 	);
