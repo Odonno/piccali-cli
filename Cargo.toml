@@ -6,7 +6,7 @@ description = "A Rust CLI tool that parses Gherkin files and outputs structured 
 repository = "https://github.com/Odonno/piccali-cli"
 readme = "README.md"
 license-file = "LICENSE"
-keywords = ["cli", "gherkin", "cucumber", "json", "markdown", "html"]
+keywords = ["cli", "gherkin", "cucumber"]
 categories = ["command-line-utilities"]
 
 [dependencies]
