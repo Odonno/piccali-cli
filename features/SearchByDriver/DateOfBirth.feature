@@ -1,6 +1,12 @@
+@user-data
+
+@validation
+@date-of-birth
+
+@feat:20824
 Feature: Date of birth validation
 
-  @feat:20824
+  @date @feat:20824
   Scenario Outline: I type an invalid date of birth and the help message shows an error: <Case>
     Given today's date is 10/03/2020
     Given I perform a driver search
@@ -16,7 +22,7 @@ Feature: Date of birth validation
       | date in the future        | 11/03/2020 |
       | date too far in the past  | 31/12/1899 |
 
-  @feat:20824
+  @date @feat:20824
   Scenario Outline: I type a valid date of birth and the help message does not show an error: <Case>
     Given today's date is 07/03/2022
     And I perform a driver search

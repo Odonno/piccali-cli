@@ -92,6 +92,27 @@ fn json_complex_feature_with_rules_and_tags() {
 }
 
 #[test]
+fn json_complex_feature_with_multi_tags() {
+    let output = piccali()
+        .args([
+            "--formatter",
+            "json",
+            "--dry-run",
+            "--input",
+            "features/SearchByDriver/DateOfBirth.feature",
+        ])
+        .output()
+        .expect("failed to execute");
+
+    assert!(output.status.success(), "command failed: {:?}", output);
+
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("invalid JSON output");
+
+    insta::assert_json_snapshot!("complex_feature_multi_tags", json);
+}
+
+#[test]
 fn json_all_features_default_glob() {
     // Use the default glob which matches all .feature files
     let output = piccali()

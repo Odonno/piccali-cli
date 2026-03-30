@@ -1,0 +1,170 @@
+---
+source: tests/json_output.rs
+expression: json
+---
+{
+  "folders": [
+    {
+      "folders": [
+        {
+          "features": [
+            {
+              "keyword": "Feature",
+              "name": "Date of birth validation",
+              "scenarios": [
+                {
+                  "examples": [
+                    {
+                      "keyword": "Examples",
+                      "table": {
+                        "header": [
+                          "Case",
+                          "Value"
+                        ],
+                        "rows": [
+                          [
+                            "wrong format #1",
+                            "01/10"
+                          ],
+                          [
+                            "wrong format #2",
+                            "01-01-2020"
+                          ],
+                          [
+                            "invalid date #1",
+                            "30/02/1980"
+                          ],
+                          [
+                            "date in the future",
+                            "11/03/2020"
+                          ],
+                          [
+                            "date too far in the past",
+                            "31/12/1899"
+                          ]
+                        ]
+                      }
+                    }
+                  ],
+                  "keyword": "Scenario Outline",
+                  "name": "I type an invalid date of birth and the help message shows an error: <Case>",
+                  "steps": [
+                    {
+                      "keyword": "Given ",
+                      "text": "today's date is 10/03/2020",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "Given ",
+                      "text": "I perform a driver search",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "When ",
+                      "text": "I type <Value> in the date of birth field",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "And ",
+                      "text": "I leave the date of birth field",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "Then ",
+                      "text": "I have an error on the date of birth field",
+                      "type": "Then"
+                    }
+                  ],
+                  "tags": [
+                    {
+                      "name": "date"
+                    },
+                    {
+                      "name": "feat:20824"
+                    }
+                  ]
+                },
+                {
+                  "examples": [
+                    {
+                      "keyword": "Examples",
+                      "table": {
+                        "header": [
+                          "Case",
+                          "Value"
+                        ],
+                        "rows": [
+                          [
+                            "lower limit",
+                            "01/01/1900"
+                          ],
+                          [
+                            "today's date",
+                            "07/03/2022"
+                          ]
+                        ]
+                      }
+                    }
+                  ],
+                  "keyword": "Scenario Outline",
+                  "name": "I type a valid date of birth and the help message does not show an error: <Case>",
+                  "steps": [
+                    {
+                      "keyword": "Given ",
+                      "text": "today's date is 07/03/2022",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "And ",
+                      "text": "I perform a driver search",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "When ",
+                      "text": "I type <Value> in the date of birth field",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "And ",
+                      "text": "I leave the date of birth field",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "Then ",
+                      "text": "I have no error on the date of birth field",
+                      "type": "Then"
+                    }
+                  ],
+                  "tags": [
+                    {
+                      "name": "date"
+                    },
+                    {
+                      "name": "feat:20824"
+                    }
+                  ]
+                }
+              ],
+              "tags": [
+                {
+                  "name": "user-data"
+                },
+                {
+                  "name": "validation"
+                },
+                {
+                  "name": "date-of-birth"
+                },
+                {
+                  "name": "feat:20824"
+                }
+              ]
+            }
+          ],
+          "name": "SearchByDriver"
+        }
+      ],
+      "name": "features"
+    }
+  ]
+}
