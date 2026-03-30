@@ -178,7 +178,7 @@ jobs:
 
   publish-crate:
     name: Publish to crates.io
-    needs: build
+    needs: frontend-build
     runs-on: ubuntu-latest
 
     steps:
