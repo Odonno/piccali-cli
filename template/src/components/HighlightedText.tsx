@@ -10,16 +10,18 @@ export const HighlightedText = ({
 	const parts = highlightMatches(text, query);
 	return (
 		<span>
-			{parts.map((part, i) =>
+			{parts.map((part, index) =>
 				part.highlight ? (
 					<mark
-						key={i}
+						// biome-ignore lint/suspicious/noArrayIndexKey: required
+						key={index}
 						className="bg-primary/20 text-primary font-semibold rounded-[2px] px-px"
 					>
 						{part.text}
 					</mark>
 				) : (
-					<span key={i}>{part.text}</span>
+					// biome-ignore lint/suspicious/noArrayIndexKey: required
+					<span key={index}>{part.text}</span>
 				),
 			)}
 		</span>

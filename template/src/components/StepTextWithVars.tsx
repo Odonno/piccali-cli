@@ -15,7 +15,7 @@ export const StepTextWithVars = ({
 	const parts = text.split(/(<[^>]+>)/g);
 	return (
 		<span>
-			{parts.map((part, i) => {
+			{parts.map((part, index) => {
 				const match = part.match(/^<([^>]+)>$/);
 				if (match) {
 					const varName = match[1];
@@ -23,7 +23,8 @@ export const StepTextWithVars = ({
 					if (value !== undefined) {
 						return (
 							<span
-								key={i}
+								// biome-ignore lint/suspicious/noArrayIndexKey: required
+								key={index}
 								className="rounded px-1 py-0.5 text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/60 font-semibold font-mono text-[0.8em]"
 							>
 								{value}
@@ -31,7 +32,8 @@ export const StepTextWithVars = ({
 						);
 					}
 				}
-				return <span key={i}>{part}</span>;
+				// biome-ignore lint/suspicious/noArrayIndexKey: required
+				return <span key={index}>{part}</span>;
 			})}
 		</span>
 	);

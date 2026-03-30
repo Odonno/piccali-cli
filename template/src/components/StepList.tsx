@@ -11,8 +11,9 @@ export const StepList = ({
 	vars?: Record<string, string> | null;
 }) => (
 	<div className="flex flex-col gap-1.5">
-		{steps.map((step, i) => (
-			<div key={i}>
+		{steps.map((step, index) => (
+			// biome-ignore lint/suspicious/noArrayIndexKey: required
+			<div key={index}>
 				<div className="flex items-baseline gap-2 text-sm">
 					<span className="font-mono font-semibold text-primary min-w-[3.5rem] text-right shrink-0">
 						{step.keyword.trim()}

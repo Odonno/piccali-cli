@@ -18,15 +18,16 @@ export const LoadingState = () => {
 					<div className="px-2 py-1 mb-1">
 						<Skeleton className="h-3 w-16" />
 					</div>
-					{Array.from({ length: 6 }).map((_, i) => (
+					{Array.from({ length: 6 }).map((_, index) => (
 						<div
-							key={i}
+							// biome-ignore lint/suspicious/noArrayIndexKey: required
+							key={index}
 							className="flex items-center gap-2 px-2 py-1.5 rounded"
 						>
 							<FileText className="size-4 text-muted-foreground shrink-0" />
 							<Skeleton
 								className="h-3.5"
-								style={{ width: `${55 + (i % 3) * 18}%` }}
+								style={{ width: `${55 + (index % 3) * 18}%` }}
 							/>
 						</div>
 					))}
@@ -63,20 +64,22 @@ export const LoadingState = () => {
 								</p>
 							</div>
 							<div className="flex gap-1.5 mt-2">
-								{Array.from({ length: 3 }).map((_, i) => (
+								{Array.from({ length: 3 }).map((_, index) => (
 									<span
-										key={i}
+										// biome-ignore lint/suspicious/noArrayIndexKey: required
+										key={index}
 										className="size-1.5 rounded-full bg-primary/40 animate-bounce"
-										style={{ animationDelay: `${i * 150}ms` }}
+										style={{ animationDelay: `${index * 150}ms` }}
 									/>
 								))}
 							</div>
 						</div>
 
 						{/* Skeleton cards below */}
-						{Array.from({ length: 3 }).map((_, i) => (
+						{Array.from({ length: 3 }).map((_, index) => (
 							<div
-								key={i}
+								// biome-ignore lint/suspicious/noArrayIndexKey: required
+								key={index}
 								className="rounded-lg border bg-card p-5 flex flex-col gap-3"
 							>
 								<div className="flex items-center gap-2">

@@ -19,9 +19,10 @@ export const StepTable = ({ step }: { step: Step }) => {
 			<Table>
 				<TableHeader>
 					<TableRow>
-						{header.map((col, i) => (
+						{header.map((col, index) => (
 							<TableHead
-								key={i}
+								// biome-ignore lint/suspicious/noArrayIndexKey: required
+								key={index}
 								className="h-7 px-3 font-mono text-[11px] font-bold"
 							>
 								{col}
@@ -30,11 +31,13 @@ export const StepTable = ({ step }: { step: Step }) => {
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{rows.map((row, ri) => (
-						<TableRow key={ri}>
-							{row.map((cell, ci) => (
+					{rows.map((row, rowIndex) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: required
+						<TableRow key={rowIndex}>
+							{row.map((cell, cellIndex) => (
 								<TableCell
-									key={ci}
+									// biome-ignore lint/suspicious/noArrayIndexKey: required
+									key={cellIndex}
 									className="py-1.5 px-3 font-mono text-[11px]"
 								>
 									<TableCellValue value={cell} />

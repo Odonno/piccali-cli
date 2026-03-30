@@ -177,6 +177,7 @@ export const FeatureContent = ({
 
 								return (
 									<div
+										// biome-ignore lint/suspicious/noArrayIndexKey: required
 										key={scenarioIndex}
 										className="rounded-lg border bg-card p-4 flex flex-col gap-3"
 									>
@@ -227,6 +228,7 @@ export const FeatureContent = ({
 
 													return (
 														<div
+															// biome-ignore lint/suspicious/noArrayIndexKey: required
 															key={examplesIndex}
 															className="flex flex-col gap-1"
 														>
@@ -256,6 +258,7 @@ export const FeatureContent = ({
 																			{/* Data columns */}
 																			{ex.table.header.map((col, ci) => (
 																				<TableHead
+																					// biome-ignore lint/suspicious/noArrayIndexKey: required
 																					key={ci}
 																					className="h-7 px-3 font-mono text-[11px] font-bold"
 																				>
@@ -265,18 +268,19 @@ export const FeatureContent = ({
 																		</TableRow>
 																	</TableHeader>
 																	<TableBody>
-																		{ex.table.rows.map((row, ri) => {
-																			const key: ExampleRowKey = `${examplesIndex}-${ri}`;
+																		{ex.table.rows.map((row, rowIndex) => {
+																			const key: ExampleRowKey = `${examplesIndex}-${rowIndex}`;
 																			const isSelected = selectedKey === key;
 																			return (
 																				<TableRow
-																					key={ri}
+																					// biome-ignore lint/suspicious/noArrayIndexKey: required
+																					key={rowIndex}
 																					data-selected={isSelected}
 																					className="data-[selected=true]:bg-violet-50 dark:data-[selected=true]:bg-violet-950/30"
 																				>
 																					{/* # id */}
 																					<TableCell className="py-1.5 px-3 font-mono text-[11px] text-center text-muted-foreground">
-																						{priorRowCount + ri + 1}
+																						{priorRowCount + rowIndex + 1}
 																					</TableCell>
 																					{/* Preview toggle */}
 																					<TableCell className="py-1 px-3">
@@ -292,7 +296,7 @@ export const FeatureContent = ({
 																								toggleExampleRow(
 																									scenarioIndex,
 																									examplesIndex,
-																									ri,
+																									rowIndex,
 																								)
 																							}
 																							className={
@@ -307,9 +311,10 @@ export const FeatureContent = ({
 																						</Button>
 																					</TableCell>
 																					{/* Data cells */}
-																					{row.map((cell, ci) => (
+																					{row.map((cell, cellIndex) => (
 																						<TableCell
-																							key={ci}
+																							// biome-ignore lint/suspicious/noArrayIndexKey: required
+																							key={cellIndex}
 																							className="py-1.5 px-3 font-mono text-[11px]"
 																						>
 																							<TableCellValue value={cell} />

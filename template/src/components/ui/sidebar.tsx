@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import Cookies from "js-cookie";
 import { Slot } from "radix-ui";
 
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -90,7 +91,10 @@ function SidebarProvider({
 			}
 
 			// This sets the cookie to keep the sidebar state.
-			document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+			Cookies.set(SIDEBAR_COOKIE_NAME, String(openState), {
+				path: "/",
+				expires: SIDEBAR_COOKIE_MAX_AGE / (60 * 60 * 24),
+			});
 		},
 		[setOpenProp, open],
 	);
@@ -98,7 +102,7 @@ function SidebarProvider({
 	// Helper to toggle the sidebar.
 	const toggleSidebar = React.useCallback(() => {
 		return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
-	}, [isMobile, setOpen, setOpenMobile]);
+	}, [isMobile, setOpen]);
 
 	// Adds a keyboard shortcut to toggle the sidebar.
 	React.useEffect(() => {
@@ -127,7 +131,7 @@ function SidebarProvider({
 			if (stored) {
 				const parsed = Number(stored);
 				if (
-					!isNaN(parsed) &&
+					!Number.isNaN(parsed) &&
 					parsed >= SIDEBAR_WIDTH_PX_MIN &&
 					parsed <= SIDEBAR_WIDTH_PX_MAX
 				) {
@@ -175,7 +179,6 @@ function SidebarProvider({
 			setOpen,
 			isMobile,
 			openMobile,
-			setOpenMobile,
 			toggleSidebar,
 			sidebarWidth,
 			setSidebarWidth,

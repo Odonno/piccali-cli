@@ -21,6 +21,7 @@ export const SearchDropdown = ({
 	const activeRef = useRef<HTMLDivElement>(null);
 
 	// Scroll active item into view
+	// biome-ignore lint/correctness/useExhaustiveDependencies: required
 	useEffect(() => {
 		activeRef.current?.scrollIntoView({ block: "nearest" });
 	}, [activeIndex]);
