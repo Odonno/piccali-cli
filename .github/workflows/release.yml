@@ -211,31 +211,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: oven-sh/setup-bun@v2
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
-
-      # Bump versions in all package.json files to match the git tag (strips leading "v")
-      - name: Set version from tag
-        shell: bash
-        run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
-          echo "NPM_VERSION=$VERSION" >> "$GITHUB_ENV"
-
-          # Update version in the wrapper and all platform packages
-          for f in package/package.json package/npm/*/package.json; do
-            npm pkg set version="$VERSION" --prefix "$(dirname "$f")"
-          done
-
-          # Update optionalDependencies in the wrapper to match
-          npm pkg set \
-            optionalDependencies.@piccali/linux-x64="$VERSION" \
-            optionalDependencies.@piccali/linux-arm64="$VERSION" \
-            optionalDependencies.@piccali/darwin-arm64="$VERSION" \
-            optionalDependencies.@piccali/win32-x64="$VERSION" \
-            --prefix package
 
       # Download all per-platform binaries staged by the build jobs
       - name: Download linux-x64 binary
@@ -261,6 +242,10 @@ jobs:
         with:
           name: npm-win32-x64
           path: package/npm/win32-x64/
+
+      # Bump versions in all package.json files to match the git tag
+      - name: Set version from tag
+        run: bun run package/scripts/set-version.ts "${{ github.ref_name }}"
 
       # Publish platform packages first (the wrapper depends on them)
       - name: Publish @piccali/linux-x64
