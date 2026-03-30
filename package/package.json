@@ -2,7 +2,13 @@
   "name": "piccali-cli",
   "version": "0.1.0",
   "description": "Parse Gherkin .feature files and output structured data (JSON, Markdown, HTML)",
-  "keywords": ["gherkin", "bdd", "feature", "cli", "parser"],
+  "keywords": [
+    "gherkin",
+    "bdd",
+    "feature",
+    "cli",
+    "parser"
+  ],
   "license": "MIT",
   "bin": {
     "piccali": "./bin/piccali.js"
