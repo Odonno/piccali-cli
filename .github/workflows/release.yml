@@ -128,10 +128,12 @@ jobs:
           Compress-Archive -Path $bin -DestinationPath $archive
           "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Upload release asset
-        uses: softprops/action-gh-release@v2
+      - name: Upload archive artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: ${{ env.ARCHIVE }}
+          name: archive-${{ matrix.target }}
+          path: ${{ env.ARCHIVE }}
+          if-no-files-found: error
 
       # --- Copy binary into npm platform package for publishing ---
       - name: Stage binary for npm (Unix)
@@ -156,7 +158,25 @@ jobs:
           path: package/npm/${{ matrix.npm_dir }}/
           if-no-files-found: error
 
-  publish:
+  upload-release-assets:
+    name: Upload release assets
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: archive-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Upload assets to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**
+
+  publish-crate:
     name: Publish to crates.io
     needs: build
     runs-on: ubuntu-latest
