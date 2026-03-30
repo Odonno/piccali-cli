@@ -38,6 +38,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        working-directory: template
+
+      - name: Build
+        run: bun run build
+        working-directory: template
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -59,6 +69,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        working-directory: template
+
+      - name: Build
+        run: bun run build
+        working-directory: template
 
       - uses: dtolnay/rust-toolchain@stable
 
