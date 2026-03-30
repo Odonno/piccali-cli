@@ -389,16 +389,4 @@ fn main() {
         serde_json::to_string_pretty(&metadata).expect("Metadata JSON serialization failed");
     std::fs::write("template/public/metadata.json", metadata_json)
         .expect("Failed to write template/public/metadata.json");
-
-    // Build the frontend template
-    let template_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("template");
-    let status = std::process::Command::new("bun")
-        .args(["run", "build"])
-        .current_dir(&template_dir)
-        .status()
-        .expect("Failed to run 'bun run build' in template/");
-
-    if !status.success() {
-        panic!("'bun run build' failed in template/");
-    }
 }
