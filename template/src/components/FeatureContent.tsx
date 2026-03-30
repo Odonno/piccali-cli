@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
 	Table,
@@ -284,31 +284,19 @@ export const FeatureContent = ({
 																					</TableCell>
 																					{/* Preview toggle */}
 																					<TableCell className="py-1 px-3">
-																						<Button
-																							variant={
-																								isSelected
-																									? "default"
-																									: "outline"
-																							}
-																							size="xs"
-																							aria-pressed={isSelected}
-																							onClick={() =>
-																								toggleExampleRow(
-																									scenarioIndex,
-																									examplesIndex,
-																									rowIndex,
-																								)
-																							}
-																							className={
-																								isSelected
-																									? "bg-violet-600 hover:bg-violet-700 text-white border-transparent"
-																									: ""
-																							}
-																						>
-																							{isSelected
-																								? "Selected"
-																								: "Select"}
-																						</Button>
+																						<div className="overflow-hidden py-0.5 px-3">
+																							<Switch
+																								checked={isSelected}
+																								onCheckedChange={() =>
+																									toggleExampleRow(
+																										scenarioIndex,
+																										examplesIndex,
+																										rowIndex,
+																									)
+																								}
+																								aria-label="Preview this example row"
+																							/>
+																						</div>
 																					</TableCell>
 																					{/* Data cells */}
 																					{row.map((cell, cellIndex) => (
