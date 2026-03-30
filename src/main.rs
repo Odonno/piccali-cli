@@ -144,7 +144,24 @@ fn main() {
         return;
     }
 
-    // ── String-based formatters (JSON, Markdown) ────────────────────────────────
+    // ── Markdown formatter ──────────────────────────────────────────────────────
+    if matches!(cli.formatter, Some(Formatter::Markdown)) {
+        if cli.dry_run {
+            let output = formatter::format_markdown_dry_run(&document);
+            println!("{output}");
+            return;
+        }
+        let output_path = cli.output.as_deref().unwrap_or(".");
+        let output_dir = std::path::Path::new(output_path);
+        if let Err(error) = formatter::format_markdown(&document, output_dir) {
+            eprintln!("{error}");
+            process::exit(1);
+        }
+        eprintln!("Markdown files written to {output_path}");
+        return;
+    }
+
+    // ── String-based formatters (JSON) ──────────────────────────────────────────
     let output = match cli.formatter {
         Some(Formatter::Json) => match formatter::format_json(&document) {
             Ok(json) => json,
@@ -153,10 +170,7 @@ fn main() {
                 process::exit(1);
             }
         },
-        Some(Formatter::Markdown) => {
-            eprintln!("Error: Markdown formatter is not yet implemented.");
-            process::exit(1);
-        }
+        Some(Formatter::Markdown) => unreachable!(),
         Some(Formatter::Html) => unreachable!(),
         None => unreachable!(),
     };

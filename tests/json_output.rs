@@ -1,53 +1,6 @@
-use assert_cmd::Command;
-use predicates::prelude::*;
+mod common;
 
-/// Helper to build a Command for the piccali-cli binary.
-fn piccali() -> Command {
-    Command::cargo_bin("piccali-cli").expect("binary not found")
-}
-
-// ---------------------------------------------------------------------------
-// CLI argument validation tests
-// ---------------------------------------------------------------------------
-
-#[test]
-fn missing_output_and_dry_run_fails() {
-    piccali()
-        .args(["--formatter", "json"])
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains(
-            "either --output or --dry-run must be specified",
-        ));
-}
-
-#[test]
-fn output_and_dry_run_conflict() {
-    piccali()
-        .args(["--formatter", "json", "--output", "out.json", "--dry-run"])
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains("cannot be used with"));
-}
-
-#[test]
-fn no_matching_files_fails() {
-    piccali()
-        .args([
-            "--formatter",
-            "json",
-            "--dry-run",
-            "--input",
-            "nonexistent/**/*.feature",
-        ])
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains("No feature files found"));
-}
-
-// ---------------------------------------------------------------------------
-// JSON output snapshot tests
-// ---------------------------------------------------------------------------
+use common::piccali;
 
 #[test]
 fn json_simple_feature() {
