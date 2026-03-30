@@ -1,7 +1,7 @@
 use crate::assets::FrontendAssets;
 use crate::formatter;
 use crate::models::Document;
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use std::io::Cursor;
 use std::sync::{Arc, OnceLock};
 use std::thread;

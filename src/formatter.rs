@@ -16,8 +16,7 @@ struct Metadata<'a> {
 
 /// Format a document as a pretty-printed JSON string.
 pub fn format_json(document: &Document) -> Result<String> {
-    serde_json::to_string_pretty(document)
-        .wrap_err("JSON serialization failed")
+    serde_json::to_string_pretty(document).wrap_err("JSON serialization failed")
 }
 
 /// Produce the `metadata.json` payload as a pretty-printed JSON string.
@@ -26,8 +25,7 @@ pub fn format_metadata(title: &str) -> Result<String> {
         title,
         created_at: Utc::now().to_rfc3339(),
     };
-    serde_json::to_string_pretty(&metadata)
-        .wrap_err("Metadata JSON serialization failed")
+    serde_json::to_string_pretty(&metadata).wrap_err("Metadata JSON serialization failed")
 }
 
 /// Write an HTML site to `output_dir` by:
@@ -36,12 +34,8 @@ pub fn format_metadata(title: &str) -> Result<String> {
 /// 3. Writing `metadata.json`
 pub fn format_html(document: &Document, output_dir: &Path, title: &str) -> Result<()> {
     // Create output directory
-    std::fs::create_dir_all(output_dir).wrap_err_with(|| {
-        format!(
-            "Failed to create output directory {}",
-            output_dir.display()
-        )
-    })?;
+    std::fs::create_dir_all(output_dir)
+        .wrap_err_with(|| format!("Failed to create output directory {}", output_dir.display()))?;
 
     // Extract all embedded frontend assets into output_dir
     for file_path in FrontendAssets::iter() {
@@ -100,12 +94,8 @@ fn collect_folder_markdown(folders: &[FolderNode], parts: &mut Vec<String>) {
 /// Write one `.md` file per feature into `output_dir`, preserving the folder
 /// hierarchy from the document tree.
 pub fn format_markdown(document: &Document, output_dir: &Path) -> Result<()> {
-    std::fs::create_dir_all(output_dir).wrap_err_with(|| {
-        format!(
-            "Failed to create output directory {}",
-            output_dir.display()
-        )
-    })?;
+    std::fs::create_dir_all(output_dir)
+        .wrap_err_with(|| format!("Failed to create output directory {}", output_dir.display()))?;
 
     write_folder_markdown(&document.folders, output_dir)
 }
@@ -119,8 +109,9 @@ fn write_folder_markdown(folders: &[FolderNode], base: &Path) -> Result<()> {
             let slug = slugify(&feature.name);
             let file_path = folder_path.join(format!("{slug}.md"));
 
-            std::fs::create_dir_all(&folder_path)
-                .wrap_err_with(|| format!("Failed to create directory {}", folder_path.display()))?;
+            std::fs::create_dir_all(&folder_path).wrap_err_with(|| {
+                format!("Failed to create directory {}", folder_path.display())
+            })?;
 
             let content = format_feature_markdown(feature);
             std::fs::write(&file_path, content)
