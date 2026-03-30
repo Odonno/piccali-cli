@@ -18,6 +18,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { TagBadge } from "@/components/TagBadge";
 import { StepList } from "@/components/StepList";
 import { TableCellValue } from "@/components/TableCellValue";
@@ -84,9 +85,9 @@ export const FeatureContent = ({
 				<h2 className="text-2xl font-bold tracking-tight">{subject.name}</h2>
 
 				{subject.description && (
-					<p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-						{subject.description.trim()}
-					</p>
+					<div className="text-sm text-muted-foreground">
+						<MarkdownContent content={subject.description.trim()} />
+					</div>
 				)}
 
 				{tags.length > 0 && (
@@ -200,9 +201,11 @@ export const FeatureContent = ({
 
 										{/* Scenario description */}
 										{scenario.description && (
-											<p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line pl-2 border-l-2 border-muted">
-												{scenario.description.trim()}
-											</p>
+											<div className="text-xs text-muted-foreground pl-2 border-l-2 border-muted">
+												<MarkdownContent
+													content={scenario.description.trim()}
+												/>
+											</div>
 										)}
 
 										{/* Scenario steps */}

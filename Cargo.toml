@@ -2,11 +2,11 @@
 name = "piccali-cli"
 version = "0.1.0"
 edition = "2024"
-description = "A Rust CLI tool that parses Gherkin `.feature` files and outputs structured data (JSON, MARKDOWN, HTML)"
+description = "A Rust CLI tool that parses Gherkin files and outputs structured data (JSON, MARKDOWN, HTML)"
 repository = "https://github.com/Odonno/piccali-cli"
 readme = "README.md"
 license-file = "LICENSE"
-keywords = ["cli", "gherkin", "cucumber", "json", "html"]
+keywords = ["cli", "gherkin", "cucumber", "json", "markdown", "html"]
 categories = ["command-line-utilities"]
 
 [dependencies]

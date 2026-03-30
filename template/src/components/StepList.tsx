@@ -1,4 +1,5 @@
 import type { Step } from "@/types/data";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import { StepTable } from "@/components/StepTable";
 import { StepTextWithVars } from "@/components/StepTextWithVars";
 
@@ -21,6 +22,11 @@ export const StepList = ({
 					<StepTextWithVars text={step.text} vars={vars ?? null} />
 				</div>
 				{step.table && <StepTable step={step} />}
+				{step.doc_string && (
+					<div className="mt-2 ml-[calc(3.5rem+0.5rem)] rounded-md border border-border bg-muted/30 px-4 py-3 text-muted-foreground">
+						<MarkdownContent content={step.doc_string} />
+					</div>
+				)}
 			</div>
 		))}
 	</div>
