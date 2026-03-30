@@ -8,6 +8,7 @@
 			"outputs": ["dist/**"]
 		},
 		"check:types": {
+			"dependsOn": ["router:generate"],
 			"inputs": ["$TURBO_DEFAULT$", "!src/routeTree.gen.ts"]
 		},
 		"router:generate": {
