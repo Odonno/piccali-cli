@@ -29,3 +29,6 @@ public/metadata.json
 
 # TanStack Router generated files
 routeTree.gen.ts
+
+# Turbo
+.turbo

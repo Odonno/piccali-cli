@@ -1,0 +1,41 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"ui": "tui",
+	"tasks": {
+		"build": {
+			"dependsOn": ["check:types", "router:generate"],
+			"inputs": ["$TURBO_DEFAULT$", "!src/routeTree.gen.ts"],
+			"outputs": ["dist/**"]
+		},
+		"check:types": {
+			"inputs": ["$TURBO_DEFAULT$", "!src/routeTree.gen.ts"]
+		},
+		"router:generate": {
+			"inputs": ["src/routes/**"],
+			"outputs": ["src/routeTree.gen.ts"]
+		},
+		"format": {
+			"inputs": ["$TURBO_DEFAULT$"]
+		},
+		"format:fix": {
+			"inputs": ["$TURBO_DEFAULT$"],
+			"outputs": ["**/*.ts", "**/*.tsx"]
+		},
+		"lint": {
+			"inputs": ["$TURBO_DEFAULT$"]
+		},
+		"lint:fix": {
+			"inputs": ["$TURBO_DEFAULT$"],
+			"outputs": ["**/*.ts", "**/*.tsx"]
+		},
+		"start": {
+			"cache": false,
+			"persistent": true
+		},
+		"preview": {
+			"cache": false,
+			"persistent": true,
+			"dependsOn": ["build"]
+		}
+	}
+}

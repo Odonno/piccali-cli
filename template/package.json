@@ -3,14 +3,18 @@
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
+	"packageManager": "bun@1.3.11",
 	"scripts": {
-		"build": "tsc -b && vite build",
+		"build": "vite build",
+		"check:types": "tsc -b",
 		"format": "biome format .",
 		"format:fix": "biome format --write .",
 		"lint": "biome lint .",
 		"lint:fix": "biome lint --write .",
 		"preview": "vite preview",
-		"start": "vite"
+		"router:generate": "tsr generate",
+		"start": "vite",
+		"turbo": "turbo"
 	},
 	"dependencies": {
 		"@fontsource-variable/ibm-plex-sans": "^5.2.8",
@@ -32,6 +36,7 @@
 		"@rolldown/plugin-babel": "^0.2.1",
 		"@tailwindcss/vite": "^4.2.2",
 		"@tanstack/react-router-devtools": "^1.166.7",
+		"@tanstack/router-cli": "^1.166.23",
 		"@tanstack/router-plugin": "^1.166.7",
 		"@types/babel__core": "^7.20.5",
 		"@types/js-cookie": "^3.0.6",
@@ -42,6 +47,7 @@
 		"babel-plugin-react-compiler": "^1.0.0",
 		"globals": "^17.4.0",
 		"tailwindcss": "^4.2.2",
+		"turbo": "^2.8.21",
 		"typescript": "~5.9.3",
 		"vite": "^8.0.1"
 	}
