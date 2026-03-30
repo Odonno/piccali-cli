@@ -1,3 +1,4 @@
+use color_eyre::eyre::{Result, WrapErr};
 use gherkin::GherkinEnv;
 use std::collections::HashMap;
 use std::path::Path;
@@ -32,10 +33,10 @@ fn resolve_tags(raw: &[String], tag_links: &HashMap<String, String>) -> Vec<mode
 pub fn parse_feature_file(
     path: &Path,
     tag_links: &HashMap<String, String>,
-) -> Result<models::Feature, String> {
+) -> Result<models::Feature> {
     let env = GherkinEnv::default();
     let parsed = gherkin::Feature::parse_path(path, env)
-        .map_err(|error| format!("Failed to parse {}: {error}", path.display()))?;
+        .wrap_err_with(|| format!("Failed to parse {}", path.display()))?;
     Ok(convert_feature(&parsed, tag_links))
 }
 
@@ -239,4 +240,158 @@ fn convert_table(table: &gherkin::Table) -> models::Table {
     let header = rows_iter.next().cloned().unwrap_or_default();
     let rows: Vec<Vec<String>> = rows_iter.cloned().collect();
     models::Table { header, rows }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    // --- helpers ---
+
+    /// Write Gherkin content to a temporary `.feature` file and return it.
+    fn write_feature(content: &str) -> NamedTempFile {
+        let mut tmp = NamedTempFile::with_suffix(".feature").unwrap();
+        write!(tmp, "{content}").unwrap();
+        tmp
+    }
+
+    /// Collect the full eyre error chain as a `Vec<String>`.
+    fn error_chain(err: &color_eyre::eyre::Error) -> Vec<String> {
+        err.chain().map(|c| c.to_string()).collect()
+    }
+
+    // --- parse_feature_file: success cases ---
+
+    #[test]
+    fn parse_valid_feature_file_succeeds() {
+        let tmp = write_feature(
+            "Feature: Warranty alert\n\
+             \n\
+               Scenario: Alert is shown\n\
+             \n\
+                 Given a warranty is about to expire\n\
+             \n\
+                 Then an alert is displayed\n",
+        );
+
+        let feature = parse_feature_file(tmp.path(), &HashMap::new()).unwrap();
+
+        insta::assert_json_snapshot!(feature, @r#"
+        {
+          "keyword": "Feature",
+          "name": "Warranty alert",
+          "scenarios": [
+            {
+              "keyword": "Scenario",
+              "name": "Alert is shown",
+              "steps": [
+                {
+                  "keyword": "Given ",
+                  "type": "Given",
+                  "text": "a warranty is about to expire"
+                },
+                {
+                  "keyword": "Then ",
+                  "type": "Then",
+                  "text": "an alert is displayed"
+                }
+              ]
+            }
+          ]
+        }
+        "#);
+    }
+
+    #[test]
+    fn parse_feature_file_with_tag_links_resolves_url() {
+        let tmp = write_feature(
+            "@us:TICKET-42\n\
+             Feature: Tagged feature\n\
+             \n\
+               Scenario: A scenario\n\
+             \n\
+                 Given something\n",
+        );
+
+        let mut tag_links = HashMap::new();
+        tag_links.insert(
+            "us:".to_string(),
+            "https://tracker.example.com/browse/{id}".to_string(),
+        );
+
+        let feature = parse_feature_file(tmp.path(), &tag_links).unwrap();
+
+        insta::assert_json_snapshot!(feature, @r#"
+        {
+          "keyword": "Feature",
+          "name": "Tagged feature",
+          "tags": [
+            {
+              "name": "us:TICKET-42",
+              "url": "https://tracker.example.com/browse/TICKET-42"
+            }
+          ],
+          "scenarios": [
+            {
+              "keyword": "Scenario",
+              "name": "A scenario",
+              "steps": [
+                {
+                  "keyword": "Given ",
+                  "type": "Given",
+                  "text": "something"
+                }
+              ]
+            }
+          ]
+        }
+        "#);
+    }
+
+    // --- parse_feature_file: error cases ---
+
+    #[test]
+    fn parse_missing_feature_file_returns_error() {
+        let path = std::path::Path::new("nonexistent_path/does_not_exist.feature");
+        let err = parse_feature_file(path, &HashMap::new()).unwrap_err();
+        let chain = error_chain(&err);
+
+        // Top-level context wraps the gherkin error with our path message
+        insta::assert_snapshot!(chain[0], @"Failed to parse nonexistent_path/does_not_exist.feature");
+
+        // Gherkin surface error
+        insta::assert_snapshot!(chain[1], @"Could not read path: nonexistent_path/does_not_exist.feature");
+
+        // Root cause: OS error
+        insta::assert_snapshot!(chain[2], @"No such file or directory (os error 2)");
+    }
+
+    #[test]
+    fn parse_invalid_gherkin_reports_line_and_column() {
+        // The invalid keyword starts at line 4, column 5 (4 spaces of indent).
+        // gherkin's ParseError records the exact position where parsing failed.
+        let tmp = write_feature(
+            "Feature: Broken feature\n\
+               Scenario: A scenario\n\
+                 Given a valid step\n\
+                 INVALID_KEYWORD this line causes a parse error\n",
+        );
+
+        let err = parse_feature_file(tmp.path(), &HashMap::new()).unwrap_err();
+        let chain = error_chain(&err);
+
+        // Top-level context — redact the non-deterministic temp path
+        let path_str = tmp.path().display().to_string();
+        let top = chain[0].replace(&path_str, "[PATH]");
+        insta::assert_snapshot!(top, @"Failed to parse [PATH]");
+
+        // Gherkin's own surface error — path also varies
+        let mid = chain[1].replace(&path_str, "[PATH]");
+        insta::assert_snapshot!(mid, @"Could not parse feature file: [PATH]");
+
+        // ParseError with line/column — stable, no path involved
+        insta::assert_snapshot!(chain[2], @r#"Error at 4:18: {"unknown keyword"}"#);
+    }
 }

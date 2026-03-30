@@ -1,8 +1,8 @@
 use clap::{Parser, ValueEnum};
+use color_eyre::eyre::{Result, bail, eyre};
 use globset::Glob;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::process;
 use walkdir::WalkDir;
 
 mod assets;
@@ -63,25 +63,32 @@ struct Cli {
 }
 
 fn main() {
+    color_eyre::install().expect("failed to install color-eyre");
+
+    if let Err(error) = run() {
+        eprintln!("{error:?}");
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<()> {
     let cli = Cli::parse();
 
     let serve_mode = cli.formatter.is_none() && cli.output.is_none() && !cli.dry_run;
 
     // When a formatter is explicitly given, require --output or --dry-run
     if cli.formatter.is_some() && cli.output.is_none() && !cli.dry_run {
-        eprintln!("Error: either --output or --dry-run must be specified.");
-        process::exit(1);
+        bail!("either --output or --dry-run must be specified.");
     }
 
     // Validate that --tag-prefix and --tag-url-template are always paired
     if cli.tag_prefix.len() != cli.tag_url_template.len() {
-        eprintln!(
-            "Error: --tag-prefix and --tag-url-template must be provided in pairs \
+        bail!(
+            "--tag-prefix and --tag-url-template must be provided in pairs \
              (got {} prefix(es) and {} template(s)).",
             cli.tag_prefix.len(),
             cli.tag_url_template.len()
         );
-        process::exit(1);
     }
 
     // Build the prefix → url_template map
@@ -94,23 +101,17 @@ fn main() {
     // Discover feature files matching the glob pattern
     let feature_files = discover_files(&cli.input);
     if feature_files.is_empty() {
-        eprintln!(
+        bail!(
             "No feature files found matching pattern: {}",
             cli.input.glob()
         );
-        process::exit(1);
     }
 
     // Parse all feature files, keeping the path alongside each feature
     let mut entries: Vec<(std::path::PathBuf, models::Feature)> = Vec::new();
     for path in feature_files {
-        match parser::parse_feature_file(&path, &tag_links) {
-            Ok(feature) => entries.push((path, feature)),
-            Err(error) => {
-                eprintln!("{error}");
-                process::exit(1);
-            }
-        }
+        let feature = parser::parse_feature_file(&path, &tag_links)?;
+        entries.push((path, feature));
     }
 
     let folders = parser::build_folder_tree(entries);
@@ -119,29 +120,21 @@ fn main() {
     // ── Serve mode ─────────────────────────────────────────────────────────────
     if serve_mode {
         let title = cli.title.unwrap_or_else(|| "Cucumber docs".to_string());
-
-        if let Err(error) = server::serve(cli.port, document, title) {
-            eprintln!("{error}");
-            process::exit(1);
-        }
-        return;
+        server::serve(cli.port, document, title)?;
+        return Ok(());
     }
 
     // ── HTML formatter ──────────────────────────────────────────────────────────
     if matches!(cli.formatter, Some(Formatter::Html)) {
         if cli.dry_run {
-            eprintln!("Error: --dry-run is not supported for the html formatter.");
-            process::exit(1);
+            bail!("--dry-run is not supported for the html formatter.");
         }
         let output_path = cli.output.as_deref().unwrap_or(".");
         let output_dir = std::path::Path::new(output_path);
         let title = cli.title.as_deref().unwrap_or("Cucumber docs");
-        if let Err(error) = formatter::format_html(&document, output_dir, title) {
-            eprintln!("{error}");
-            process::exit(1);
-        }
+        formatter::format_html(&document, output_dir, title)?;
         eprintln!("HTML site written to {output_path}");
-        return;
+        return Ok(());
     }
 
     // ── Markdown formatter ──────────────────────────────────────────────────────
@@ -149,42 +142,33 @@ fn main() {
         if cli.dry_run {
             let output = formatter::format_markdown_dry_run(&document);
             println!("{output}");
-            return;
+            return Ok(());
         }
         let output_path = cli.output.as_deref().unwrap_or(".");
         let output_dir = std::path::Path::new(output_path);
-        if let Err(error) = formatter::format_markdown(&document, output_dir) {
-            eprintln!("{error}");
-            process::exit(1);
-        }
+        formatter::format_markdown(&document, output_dir)?;
         eprintln!("Markdown files written to {output_path}");
-        return;
+        return Ok(());
     }
 
     // ── String-based formatters (JSON) ──────────────────────────────────────────
     let output = match cli.formatter {
-        Some(Formatter::Json) => match formatter::format_json(&document) {
-            Ok(json) => json,
-            Err(error) => {
-                eprintln!("{error}");
-                process::exit(1);
-            }
-        },
+        Some(Formatter::Json) => formatter::format_json(&document)?,
         Some(Formatter::Markdown) => unreachable!(),
         Some(Formatter::Html) => unreachable!(),
-        None => unreachable!(),
+        None => return Err(eyre!("no formatter specified")),
     };
 
     // Output the result
     if cli.dry_run {
         println!("{output}");
     } else if let Some(ref output_path) = cli.output {
-        if let Err(error) = std::fs::write(output_path, &output) {
-            eprintln!("Failed to write output to {output_path}: {error}");
-            process::exit(1);
-        }
+        std::fs::write(output_path, &output)
+            .map_err(|e| eyre!("Failed to write output to {output_path}: {e}"))?;
         eprintln!("Written to {output_path}");
     }
+
+    Ok(())
 }
 
 /// Walk the current directory and return all file paths matching the glob pattern.

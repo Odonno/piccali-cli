@@ -12,6 +12,7 @@ categories = ["command-line-utilities"]
 [dependencies]
 chrono = "0.4"
 clap = { version = "4.6.0", features = ["derive"] }
+color-eyre = { version = "0.6", default-features = false }
 gherkin = { version = "0.15", features = ["parser"] }
 globset = "0.4"
 rust-embed = { version = "8", features = ["mime-guess"] }

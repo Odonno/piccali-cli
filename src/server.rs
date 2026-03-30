@@ -1,6 +1,7 @@
 use crate::assets::FrontendAssets;
 use crate::formatter;
 use crate::models::Document;
+use color_eyre::eyre::{eyre, Result};
 use std::io::Cursor;
 use std::sync::{Arc, OnceLock};
 use std::thread;
@@ -19,16 +20,16 @@ struct ServerState {
 }
 
 impl ServerState {
-    fn get_data_json(&self) -> Result<&str, &str> {
+    fn get_data_json(&self) -> std::result::Result<&str, &str> {
         self.data_json
-            .get_or_init(|| formatter::format_json(&self.document))
+            .get_or_init(|| formatter::format_json(&self.document).map_err(|e| e.to_string()))
             .as_deref()
             .map_err(|e| e.as_str())
     }
 
-    fn get_metadata_json(&self) -> Result<&str, &str> {
+    fn get_metadata_json(&self) -> std::result::Result<&str, &str> {
         self.metadata_json
-            .get_or_init(|| formatter::format_metadata(&self.title))
+            .get_or_init(|| formatter::format_metadata(&self.title).map_err(|e| e.to_string()))
             .as_deref()
             .map_err(|e| e.as_str())
     }
@@ -43,10 +44,10 @@ impl ServerState {
 ///
 /// Blocks the calling thread until the process exits. Returns `Err` if the
 /// server socket cannot be bound.
-pub fn serve(port: u16, document: Document, title: String) -> Result<(), String> {
+pub fn serve(port: u16, document: Document, title: String) -> Result<()> {
     let addr = format!("127.0.0.1:{port}");
     let server =
-        Server::http(&addr).map_err(|e| format!("Failed to start HTTP server on {addr}: {e}"))?;
+        Server::http(&addr).map_err(|e| eyre!("Failed to start HTTP server on {addr}: {e}"))?;
 
     let url = format!("http://{addr}");
     eprintln!("Piccali server running at {url}");
