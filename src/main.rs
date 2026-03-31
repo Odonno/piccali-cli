@@ -200,8 +200,7 @@ fn collect_and_rewrite_images(
         // Collect from the feature description and all nested descriptions.
         let descs = description_strings(feature);
         for desc in descs {
-            let refs =
-                parser::extract_local_image_refs(Some(desc), feature_dir, &folder_prefix);
+            let refs = parser::extract_local_image_refs(Some(desc), feature_dir, &folder_prefix);
             for r in refs {
                 if seen.insert(r.output_name.clone()) {
                     all_refs.push(r);
@@ -226,7 +225,8 @@ fn collect_and_rewrite_images(
             // We re-extract so we get the raw_path strings for this feature.
             let descs = description_strings_owned(feature);
             for desc in &descs {
-                let refs = parser::extract_local_image_refs(Some(desc), feature_dir, &folder_prefix);
+                let refs =
+                    parser::extract_local_image_refs(Some(desc), feature_dir, &folder_prefix);
                 for r in refs {
                     // raw_path is the filename (or relative path) as it appears in the markdown.
                     // We need to recover the original raw path from the description.

@@ -2,7 +2,7 @@ use crate::assets::FrontendAssets;
 use crate::formatter;
 use crate::models::Document;
 use crate::parser::ImageRef;
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::PathBuf;

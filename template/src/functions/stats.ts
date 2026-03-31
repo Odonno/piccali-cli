@@ -53,22 +53,6 @@ export const countScenarioOutlines = (folders: FolderNode[]): number =>
 		0,
 	);
 
-/** Count steps in a feature (background + all scenarios + rules). */
-const featureTotalSteps = (feature: Feature): number => {
-	const bgSteps = feature.background?.steps.length ?? 0;
-	const directSteps =
-		feature.scenarios?.reduce((sum, s) => sum + s.steps.length, 0) ?? 0;
-	const ruleSteps =
-		feature.rules?.reduce(
-			(sum, r) =>
-				sum +
-				(r.background?.steps.length ?? 0) +
-				(r.scenarios?.reduce((s2, s) => s2 + s.steps.length, 0) ?? 0),
-			0,
-		) ?? 0;
-	return bgSteps + directSteps + ruleSteps;
-};
-
 /** Collect all unique steps across the entire folder tree, deduplicated by (text + type). */
 export const collectUniqueSteps = (folders: FolderNode[]): Step[] => {
 	const seen = new Set<string>();
