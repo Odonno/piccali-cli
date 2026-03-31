@@ -675,6 +675,7 @@ dependencies = [
  "globset",
  "insta",
  "predicates",
+ "regex",
  "rust-embed",
  "serde",
  "serde_json",

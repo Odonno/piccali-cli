@@ -1,8 +1,11 @@
 use crate::assets::FrontendAssets;
 use crate::formatter;
 use crate::models::Document;
-use color_eyre::eyre::{Result, eyre};
+use crate::parser::ImageRef;
+use color_eyre::eyre::{eyre, Result};
+use std::collections::HashMap;
 use std::io::Cursor;
+use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use std::thread;
 use tiny_http::{Header, Response, Server};
@@ -17,6 +20,9 @@ struct ServerState {
     document: Document,
     /// Page title — needed to produce `metadata.json` on demand.
     title: String,
+    /// Map from `/images/{output_name}` → absolute source path on disk.
+    /// Used to serve local images referenced in feature descriptions.
+    images: HashMap<String, PathBuf>,
 }
 
 impl ServerState {
@@ -38,13 +44,21 @@ impl ServerState {
 /// Start a local HTTP server on `port`, serving the embedded frontend and the
 /// lazily-generated JSON data for the given `document` and `title`.
 ///
+/// `image_refs` is the list of local images referenced in feature descriptions.
+/// They are served at `/images/{output_name}` directly from disk.
+///
 /// Requests are handled concurrently — each incoming request is dispatched to a
 /// new thread so that parallel browser requests (assets + data) never block each
 /// other.
 ///
 /// Blocks the calling thread until the process exits. Returns `Err` if the
 /// server socket cannot be bound.
-pub fn serve(port: u16, document: Document, title: String) -> Result<()> {
+pub fn serve(
+    port: u16,
+    document: Document,
+    title: String,
+    image_refs: Vec<ImageRef>,
+) -> Result<()> {
     let addr = format!("127.0.0.1:{port}");
     let server =
         Server::http(&addr).map_err(|e| eyre!("Failed to start HTTP server on {addr}: {e}"))?;
@@ -53,11 +67,18 @@ pub fn serve(port: u16, document: Document, title: String) -> Result<()> {
     eprintln!("Piccali server running at {url}");
     eprintln!("Press Ctrl+C to stop.");
 
+    // Build the images lookup map.
+    let images: HashMap<String, PathBuf> = image_refs
+        .into_iter()
+        .map(|r| (r.output_name, r.src_path))
+        .collect();
+
     let state = Arc::new(ServerState {
         data_json: OnceLock::new(),
         metadata_json: OnceLock::new(),
         document,
         title,
+        images,
     });
 
     for request in server.incoming_requests() {
@@ -85,6 +106,22 @@ fn handle_request(request: tiny_http::Request, state: &ServerState) {
         match state.get_metadata_json() {
             Ok(json) => (json.as_bytes().to_vec(), "application/json", 200),
             Err(e) => (e.as_bytes().to_vec(), "text/plain", 500),
+        }
+    } else if let Some(image_name) = path.strip_prefix("/images/") {
+        // Serve a local image from disk.
+        match state.images.get(image_name) {
+            Some(src_path) => match std::fs::read(src_path) {
+                Ok(bytes) => {
+                    let mime = mime_for(image_name);
+                    (bytes, mime, 200)
+                }
+                Err(e) => (
+                    format!("Failed to read image: {e}").into_bytes(),
+                    "text/plain",
+                    500,
+                ),
+            },
+            None => (b"Image not found".to_vec(), "text/plain", 404),
         }
     } else {
         // Resolve asset path: strip leading '/'

@@ -2,6 +2,7 @@ use crate::assets::FrontendAssets;
 use crate::models::{
     Background, Document, Examples, Feature, FolderNode, Rule, Scenario, Step, Table, Tag,
 };
+use crate::parser::ImageRef;
 use chrono::Utc;
 use color_eyre::eyre::{Result, WrapErr, eyre};
 use serde::Serialize;
@@ -32,7 +33,14 @@ pub fn format_metadata(title: &str) -> Result<String> {
 /// 1. Extracting the embedded `template/dist/` assets into `output_dir`
 /// 2. Writing `data.json` (the JSON-formatted document)
 /// 3. Writing `metadata.json`
-pub fn format_html(document: &Document, output_dir: &Path, title: &str) -> Result<()> {
+/// 4. Copying any local images referenced in feature descriptions into
+///    `output_dir/images/`
+pub fn format_html(
+    document: &Document,
+    output_dir: &Path,
+    title: &str,
+    image_refs: &[ImageRef],
+) -> Result<()> {
     // Create output directory
     std::fs::create_dir_all(output_dir)
         .wrap_err_with(|| format!("Failed to create output directory {}", output_dir.display()))?;
@@ -64,6 +72,24 @@ pub fn format_html(document: &Document, output_dir: &Path, title: &str) -> Resul
     let metadata_path = output_dir.join("metadata.json");
     std::fs::write(&metadata_path, metadata_json)
         .wrap_err_with(|| format!("Failed to write {}", metadata_path.display()))?;
+
+    // Copy local images into output_dir/images/
+    if !image_refs.is_empty() {
+        let images_dir = output_dir.join("images");
+        std::fs::create_dir_all(&images_dir)
+            .wrap_err_with(|| format!("Failed to create directory {}", images_dir.display()))?;
+
+        for img in image_refs {
+            let dest = images_dir.join(&img.output_name);
+            std::fs::copy(&img.src_path, &dest).wrap_err_with(|| {
+                format!(
+                    "Failed to copy image {} to {}",
+                    img.src_path.display(),
+                    dest.display()
+                )
+            })?;
+        }
+    }
 
     Ok(())
 }

@@ -1,9 +1,140 @@
 use color_eyre::eyre::{Result, WrapErr};
 use gherkin::GherkinEnv;
+use regex::Regex;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use crate::models;
+
+// ---------------------------------------------------------------------------
+// Local image reference handling
+// ---------------------------------------------------------------------------
+
+/// A resolved reference to a local image found in a Gherkin description.
+///
+/// `src_path` is the absolute (or CWD-relative) path to the source image on
+/// disk.  `output_name` is the de-duplicated name used under the `/images/`
+/// prefix in every output mode (e.g. `SearchByVin_lego-car.jpg`).
+#[derive(Debug, Clone)]
+pub struct ImageRef {
+    /// Absolute / CWD-relative path to the source image on disk.
+    pub src_path: PathBuf,
+    /// Name under which the image should be served/written (collision-safe).
+    pub output_name: String,
+}
+
+/// Lazily-compiled regex that matches `![alt](path)` — all image syntax.
+/// Remote / absolute paths are filtered out in Rust after matching.
+fn local_image_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        // Capture group "path": anything inside `![...](...)`.
+        Regex::new(r"!\[[^\]]*\]\((?P<path>[^)]+)\)").expect("local image regex is valid")
+    })
+}
+
+/// Return `true` if `path` looks like a remote URL or absolute path that should
+/// not be treated as a local file reference.
+fn is_remote_or_absolute(path: &str) -> bool {
+    // Absolute filesystem paths.
+    if path.starts_with('/') {
+        return true;
+    }
+    // URL schemes: one or more word chars followed by `:` (e.g. `http:`, `data:`, …).
+    if let Some(colon_pos) = path.find(':') {
+        let scheme = &path[..colon_pos];
+        if !scheme.is_empty()
+            && scheme
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.')
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// Extract every local image reference from an optional description string.
+///
+/// `feature_dir` is the directory that contains the `.feature` file; relative
+/// image paths are resolved against it.  `folder_prefix` is a filesystem-safe
+/// label (e.g. `SearchByVin`) prepended to each filename to avoid collisions
+/// when multiple feature folders contain images with the same name.
+///
+/// Only paths that resolve to an existing file on disk are included.
+pub fn extract_local_image_refs(
+    description: Option<&str>,
+    feature_dir: &Path,
+    folder_prefix: &str,
+) -> Vec<ImageRef> {
+    let Some(desc) = description else {
+        return Vec::new();
+    };
+
+    let re = local_image_re();
+    let mut refs = Vec::new();
+
+    for cap in re.captures_iter(desc) {
+        let raw_path = &cap["path"];
+        // Skip remote URLs and absolute paths.
+        if is_remote_or_absolute(raw_path) {
+            continue;
+        }
+
+        let src_path = feature_dir.join(raw_path);
+        if !src_path.exists() {
+            continue;
+        }
+
+        // Derive a collision-safe output name: `{prefix}_{filename}`.
+        let file_name = src_path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+
+        let output_name = if folder_prefix.is_empty() {
+            file_name
+        } else {
+            format!("{folder_prefix}_{file_name}")
+        };
+
+        refs.push(ImageRef {
+            src_path,
+            output_name,
+        });
+    }
+
+    refs
+}
+
+/// Rewrite local image paths inside a description string so that they point to
+/// `/images/{output_name}`.
+///
+/// `image_map` maps the original relative path (as it appears in the markdown,
+/// e.g. `lego-car.jpg`) to the `output_name` (e.g. `SearchByVin_lego-car.jpg`).
+pub fn rewrite_local_image_refs(description: &str, image_map: &HashMap<String, String>) -> String {
+    let re = local_image_re();
+    re.replace_all(description, |caps: &regex::Captures<'_>| {
+        let full_match = caps.get(0).map_or("", |m| m.as_str());
+        let raw_path = &caps["path"];
+
+        // Leave remote URLs and absolute paths unchanged.
+        if is_remote_or_absolute(raw_path) {
+            return full_match.to_owned();
+        }
+
+        // Look up the output name; leave unchanged if not in the map.
+        match image_map.get(raw_path) {
+            Some(output_name) => {
+                // Replace just the path portion inside `![alt](...)`.
+                full_match.replace(raw_path, &format!("/images/{output_name}"))
+            }
+            None => full_match.to_owned(),
+        }
+    })
+    .into_owned()
+}
 
 /// Resolve a raw tag string into a `models::Tag`, optionally expanding a URL
 /// using the provided prefix→url_template map.
