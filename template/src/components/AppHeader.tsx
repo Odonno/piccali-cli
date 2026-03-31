@@ -6,6 +6,7 @@ import {
 	type KeyboardEvent,
 } from "react";
 import { CalendarClock, Sparkles, Search, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SearchDropdown } from "@/components/SearchDropdown";
@@ -113,14 +114,17 @@ export const AppHeader = ({
 
 			<Separator orientation="vertical" className="h-5 mx-1" />
 
-			<div className="flex items-center gap-2.5 min-w-0 flex-none">
+			<Link
+				to="/"
+				className="flex items-center gap-2.5 min-w-0 flex-none group"
+			>
 				<div className="flex items-center gap-1.5 shrink-0">
 					<Sparkles className="size-4 text-primary" />
 				</div>
-				<h1 className="text-base font-semibold tracking-tight truncate">
+				<h1 className="text-base font-semibold tracking-tight truncate group-hover:opacity-75 transition-opacity">
 					{metadata.title}
 				</h1>
-			</div>
+			</Link>
 
 			{/* Search bar — grows to fill available space */}
 			<div ref={containerRef} className="relative flex-1 max-w-lg mx-4">
