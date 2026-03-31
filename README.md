@@ -58,7 +58,13 @@
 
 ### Installation
 
-**From crates.io (recommended):**
+**From npm (recommended):**
+
+```bash
+npx piccali-cli
+```
+
+**From crates.io:**
 
 ```bash
 cargo install piccali-cli
@@ -73,7 +79,7 @@ cargo build --release
 # binary is at ./target/release/piccali-cli
 ```
 
-> **Prerequisites:** Rust (edition 2024), and [bun](https://bun.sh/) (required to build the frontend during `cargo build`).
+> **Prerequisites:** Rust (edition 2024), and [bun](https://bun.sh/) (required to build the frontend template).
 
 ---
 
