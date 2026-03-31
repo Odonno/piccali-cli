@@ -16,7 +16,7 @@ const StepsPage = () => {
 	const steps = collectUniqueSteps(folders);
 
 	return (
-		<div className="max-w-3xl mx-auto px-6 py-8">
+		<div className="max-w-5xl mx-auto px-6 py-8">
 			<div className="flex items-center gap-3 mb-6">
 				<div className="size-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
 					<BookOpen className="size-5 text-muted-foreground" />

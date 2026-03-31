@@ -76,7 +76,7 @@ const RootComponent = () => {
 						)}
 
 						<ScrollArea className="flex-1">
-							<main className="p-6">
+							<main>
 								<Outlet />
 							</main>
 						</ScrollArea>

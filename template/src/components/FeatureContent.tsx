@@ -69,7 +69,7 @@ export const FeatureContent = ({
 	};
 
 	return (
-		<div className="flex flex-col gap-6 max-w-4xl">
+		<div className="flex flex-col gap-6 max-w-5xl mx-auto px-6 py-8">
 			{/* Feature/Rule header */}
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center gap-2">
@@ -152,9 +152,9 @@ export const FeatureContent = ({
 			{!hasRules && (
 				<>
 					{/* Scenarios count */}
-					<div className="flex items-center gap-2">
-						<Layers className="size-4 text-muted-foreground" />
-						<span className="text-sm font-medium">
+					<div className="flex items-center gap-2 text-muted-foreground">
+						<Layers className="size-3.5" />
+						<span className="text-xs font-medium uppercase tracking-wider">
 							{scenarios.length} scenario{scenarios.length !== 1 ? "s" : ""}
 						</span>
 					</div>

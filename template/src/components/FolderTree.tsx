@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarMenuSub,
@@ -118,16 +117,14 @@ export const FolderTree = ({
 								<SidebarMenuSub>
 									{/* Sub-folders */}
 									{(folder.folders?.length ?? 0) > 0 && (
-										<SidebarMenu>
-											<FolderTree
-												folders={folder.folders ?? []}
-												rootFolders={rootFolders}
-												folderPath={currentPath}
-												openKeys={openKeys}
-												toggleKey={toggleKey}
-												depth={depth + 1}
-											/>
-										</SidebarMenu>
+										<FolderTree
+											folders={folder.folders ?? []}
+											rootFolders={rootFolders}
+											folderPath={currentPath}
+											openKeys={openKeys}
+											toggleKey={toggleKey}
+											depth={depth + 1}
+										/>
 									)}
 
 									{/* Feature files in this folder */}

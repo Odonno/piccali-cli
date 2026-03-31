@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, ListChecks, Layers, BookOpen } from "lucide-react";
+import { FileText, ListChecks, BookOpen } from "lucide-react";
 import { useDataContext } from "@/hooks/useDataContext";
 import {
 	countFeatures,
@@ -19,7 +19,7 @@ const IndexPage = () => {
 	const steps = countSteps(folders);
 
 	return (
-		<div className="max-w-2xl mx-auto px-6 py-10">
+		<div className="max-w-4xl mx-auto px-6 py-10">
 			<div className="mb-8">
 				<h1 className="text-2xl font-bold tracking-tight">Overview</h1>
 				<p className="text-muted-foreground text-sm mt-1">
@@ -27,7 +27,7 @@ const IndexPage = () => {
 				</p>
 			</div>
 
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<StatCard
 					icon={<FileText className="size-4 text-muted-foreground" />}
 					value={features}
@@ -44,7 +44,7 @@ const IndexPage = () => {
 						{outlines > 0 && (
 							<>
 								{" "}
-								<span className="text-foreground/60">
+								<span className="text-foreground/50 text-xs">
 									({outlines} outline{outlines !== 1 ? "s" : ""})
 								</span>
 							</>
@@ -64,12 +64,6 @@ const IndexPage = () => {
 						{steps === 1 ? "step" : "steps"} — view definitions
 					</Link>
 				</StatCard>
-
-				<StatCard
-					icon={<Layers className="size-4 text-muted-foreground" />}
-					value={outlines}
-					label={outlines === 1 ? "scenario outline" : "scenario outlines"}
-				/>
 			</div>
 		</div>
 	);
