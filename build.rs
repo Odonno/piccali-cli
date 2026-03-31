@@ -140,10 +140,58 @@ fn resolve_tags(raw: &[String], tag_links: &HashMap<&str, &str>) -> Vec<Tag> {
 // ---------------------------------------------------------------------------
 
 fn parse_feature_file(path: &Path, tag_links: &HashMap<&str, &str>) -> Result<Feature, String> {
+    let raw = std::fs::read_to_string(path)
+        .map_err(|e| format!("Could not read path: {}: {e}", path.display()))?;
+    let preprocessed = escape_backslashes_in_table_cells(&raw);
     let env = GherkinEnv::default();
-    let parsed = gherkin::Feature::parse_path(path, env)
+    let parsed = gherkin::Feature::parse(&preprocessed, env)
         .map_err(|e| format!("Failed to parse {}: {e}", path.display()))?;
     Ok(convert_feature(&parsed, tag_links))
+}
+
+/// Pre-process raw Gherkin text to escape backslashes inside table cells that
+/// are not part of a recognised Gherkin escape sequence (`\n`, `\|`, `\\`).
+fn escape_backslashes_in_table_cells(source: &str) -> String {
+    let mut result = String::with_capacity(source.len());
+
+    for line in source.split('\n') {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with('|') {
+            result.push_str(&escape_table_row(line));
+        } else {
+            result.push_str(line);
+        }
+        result.push('\n');
+    }
+
+    if !source.ends_with('\n') {
+        result.pop();
+    }
+
+    result
+}
+
+fn escape_table_row(line: &str) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut chars = line.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            match chars.peek() {
+                Some('n') | Some('|') | Some('\\') => {
+                    out.push(ch);
+                }
+                _ => {
+                    out.push('\\');
+                    out.push(ch);
+                }
+            }
+        } else {
+            out.push(ch);
+        }
+    }
+
+    out
 }
 
 fn convert_feature(f: &gherkin::Feature, tag_links: &HashMap<&str, &str>) -> Feature {

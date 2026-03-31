@@ -1,0 +1,86 @@
+---
+source: tests/json_output.rs
+expression: json
+---
+{
+  "folders": [
+    {
+      "folders": [
+        {
+          "features": [
+            {
+              "keyword": "Feature",
+              "name": "Input validation with regex patterns",
+              "scenarios": [
+                {
+                  "keyword": "Scenario",
+                  "name": "Validate a field using a regex pattern in step text",
+                  "steps": [
+                    {
+                      "keyword": "Given ",
+                      "text": "a field matching pattern \"\\(\\d+\\)\"",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "When ",
+                      "text": "I validate input \"(123)\"",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "Then ",
+                      "text": "the validation succeeds",
+                      "type": "Then"
+                    }
+                  ]
+                },
+                {
+                  "keyword": "Scenario",
+                  "name": "Validate patterns stored in a table",
+                  "steps": [
+                    {
+                      "keyword": "Given ",
+                      "table": {
+                        "header": [
+                          "pattern",
+                          "description"
+                        ],
+                        "rows": [
+                          [
+                            "\\(\\d+\\)",
+                            "parenthesised digits"
+                          ],
+                          [
+                            "^\\d{3}$",
+                            "exactly three digits"
+                          ],
+                          [
+                            "\\w+@\\w+\\.\\w",
+                            "simple email-like format"
+                          ]
+                        ]
+                      },
+                      "text": "the following validation rules:",
+                      "type": "Given"
+                    },
+                    {
+                      "keyword": "When ",
+                      "text": "I apply the validation rules",
+                      "type": "When"
+                    },
+                    {
+                      "keyword": "Then ",
+                      "text": "all rules are applied correctly",
+                      "type": "Then"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "name": "RegexPatterns"
+        }
+      ],
+      "name": "features"
+    }
+  ]
+}

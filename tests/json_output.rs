@@ -142,3 +142,29 @@ fn json_output_is_valid_and_pretty_printed() {
         "expected JSON object at top level"
     );
 }
+
+#[test]
+fn json_feature_with_regex_patterns_in_table_cells() {
+    let output = piccali()
+        .args([
+            "--formatter",
+            "json",
+            "--dry-run",
+            "--input",
+            "features/RegexPatterns/InputValidation.feature",
+        ])
+        .output()
+        .expect("failed to execute");
+
+    assert!(
+        output.status.success(),
+        "command failed: {:?}\nstderr: {}",
+        output.status,
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("invalid JSON output");
+
+    insta::assert_json_snapshot!("feature_with_regex_patterns", json);
+}

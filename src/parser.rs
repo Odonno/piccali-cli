@@ -34,10 +34,80 @@ pub fn parse_feature_file(
     path: &Path,
     tag_links: &HashMap<String, String>,
 ) -> Result<models::Feature> {
+    let raw = std::fs::read_to_string(path)
+        .wrap_err_with(|| format!("Could not read path: {}", path.display()))
+        .wrap_err_with(|| format!("Failed to parse {}", path.display()))?;
+
+    let preprocessed = escape_backslashes_in_table_cells(&raw);
+
     let env = GherkinEnv::default();
-    let parsed = gherkin::Feature::parse_path(path, env)
+    let parsed = gherkin::Feature::parse(&preprocessed, env)
+        .wrap_err_with(|| format!("Could not parse feature file: {}", path.display()))
         .wrap_err_with(|| format!("Failed to parse {}", path.display()))?;
     Ok(convert_feature(&parsed, tag_links))
+}
+
+/// Pre-process raw Gherkin text to escape backslashes inside table cells that
+/// are not part of a recognised Gherkin escape sequence (`\n`, `\|`, `\\`).
+///
+/// The Gherkin table-cell parser only recognises those three escape sequences;
+/// any other `\X` causes a parse error.  Real-world feature files often contain
+/// regex patterns such as `\(\d+\)` in table cells, which would otherwise fail
+/// to parse.  By doubling unrecognised backslashes (`\(` → `\\(`) before
+/// handing the source to the Gherkin library we preserve the intended literal
+/// value while staying within the library's grammar.
+fn escape_backslashes_in_table_cells(source: &str) -> String {
+    let mut result = String::with_capacity(source.len());
+
+    for line in source.split('\n') {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with('|') {
+            result.push_str(&escape_table_row(line));
+        } else {
+            result.push_str(line);
+        }
+        result.push('\n');
+    }
+
+    // Remove the trailing newline we unconditionally added if the original
+    // source did not end with one.
+    if !source.ends_with('\n') {
+        result.pop();
+    }
+
+    result
+}
+
+/// Escape unrecognised backslash sequences inside a single table row line.
+///
+/// Gherkin recognises `\n`, `\|`, and `\\` as escape sequences inside table
+/// cells.  Any other `\X` is left as-is by doubling the backslash so that the
+/// Gherkin parser ultimately delivers the original single `\` in the cell
+/// value.
+fn escape_table_row(line: &str) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut chars = line.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            match chars.peek() {
+                // Recognised Gherkin escape sequences — leave unchanged.
+                Some('n') | Some('|') | Some('\\') => {
+                    out.push(ch);
+                }
+                // Any other character after `\`: double the backslash so that
+                // the Gherkin parser interprets `\\` as a literal `\`.
+                _ => {
+                    out.push('\\');
+                    out.push(ch);
+                }
+            }
+        } else {
+            out.push(ch);
+        }
+    }
+
+    out
 }
 
 /// Build a nested folder tree from a list of `(path, feature)` pairs.
@@ -342,6 +412,105 @@ mod tests {
                   "keyword": "Given ",
                   "type": "Given",
                   "text": "something"
+                }
+              ]
+            }
+          ]
+        }
+        "#);
+    }
+
+    // --- parse_feature_file: regex text ---
+
+    #[test]
+    fn parse_feature_file_with_regex_in_step_text_succeeds() {
+        let tmp = write_feature(
+            "Feature: Regex in step text\n\
+             \n\
+               Scenario: Validate with regex\n\
+             \n\
+                 Given a field matching pattern \"\\(\\d+\\)\"\n\
+                 When I validate input \"(123)\"\n\
+                 Then the value matches regex \"^\\d{3}$\"\n",
+        );
+
+        let feature = parse_feature_file(tmp.path(), &HashMap::new()).unwrap();
+
+        insta::assert_json_snapshot!(feature, @r#"
+        {
+          "keyword": "Feature",
+          "name": "Regex in step text",
+          "scenarios": [
+            {
+              "keyword": "Scenario",
+              "name": "Validate with regex",
+              "steps": [
+                {
+                  "keyword": "Given ",
+                  "type": "Given",
+                  "text": "a field matching pattern \"\\(\\d+\\)\""
+                },
+                {
+                  "keyword": "When ",
+                  "type": "When",
+                  "text": "I validate input \"(123)\""
+                },
+                {
+                  "keyword": "Then ",
+                  "type": "Then",
+                  "text": "the value matches regex \"^\\d{3}$\""
+                }
+              ]
+            }
+          ]
+        }
+        "#);
+    }
+
+    #[test]
+    fn parse_feature_file_with_regex_in_table_cell_succeeds() {
+        let tmp = write_feature(
+            "Feature: Regex in table\n\
+             \n\
+               Scenario: Validate patterns from table\n\
+             \n\
+                 Given the following patterns:\n\
+                   | pattern    | valid  |\n\
+                   | \\(\\d+\\) | true   |\n\
+                   | ^\\d{3}$   | false  |\n",
+        );
+
+        let feature = parse_feature_file(tmp.path(), &HashMap::new()).unwrap();
+
+        insta::assert_json_snapshot!(feature, @r#"
+        {
+          "keyword": "Feature",
+          "name": "Regex in table",
+          "scenarios": [
+            {
+              "keyword": "Scenario",
+              "name": "Validate patterns from table",
+              "steps": [
+                {
+                  "keyword": "Given ",
+                  "type": "Given",
+                  "text": "the following patterns:",
+                  "table": {
+                    "header": [
+                      "pattern",
+                      "valid"
+                    ],
+                    "rows": [
+                      [
+                        "\\(\\d+\\)",
+                        "true"
+                      ],
+                      [
+                        "^\\d{3}$",
+                        "false"
+                      ]
+                    ]
+                  }
                 }
               ]
             }
