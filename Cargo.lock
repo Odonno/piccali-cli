@@ -665,7 +665,7 @@ checksum = "9555b1514d2d99d78150d3c799d4c357a3e2c2a8062cd108e93a06d9057629c5"
 
 [[package]]
 name = "piccali-cli"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "assert_cmd",
  "chrono",
