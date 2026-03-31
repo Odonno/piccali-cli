@@ -69,14 +69,15 @@ const featureTotalSteps = (feature: Feature): number => {
 	return bgSteps + directSteps + ruleSteps;
 };
 
-/** Collect all unique step texts across the entire folder tree. */
+/** Collect all unique steps across the entire folder tree, deduplicated by (text + type). */
 export const collectUniqueSteps = (folders: FolderNode[]): Step[] => {
 	const seen = new Set<string>();
 	const unique: Step[] = [];
 
 	const visit = (step: Step) => {
-		if (!seen.has(step.text)) {
-			seen.add(step.text);
+		const key = `${step.type}:${step.text}`;
+		if (!seen.has(key)) {
+			seen.add(key);
 			unique.push(step);
 		}
 	};
