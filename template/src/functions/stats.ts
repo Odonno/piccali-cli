@@ -69,16 +69,6 @@ const featureTotalSteps = (feature: Feature): number => {
 	return bgSteps + directSteps + ruleSteps;
 };
 
-/** Count all steps in a folder tree. */
-export const countSteps = (folders: FolderNode[]): number =>
-	folders.reduce(
-		(sum, folder) =>
-			sum +
-			(folder.features?.reduce((s, f) => s + featureTotalSteps(f), 0) ?? 0) +
-			countSteps(folder.folders ?? []),
-		0,
-	);
-
 /** Collect all unique step texts across the entire folder tree. */
 export const collectUniqueSteps = (folders: FolderNode[]): Step[] => {
 	const seen = new Set<string>();

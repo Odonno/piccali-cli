@@ -5,7 +5,7 @@ import {
 	countFeatures,
 	countScenarios,
 	countScenarioOutlines,
-	countSteps,
+	collectUniqueSteps,
 } from "@/functions/stats";
 import { StatCard } from "@/components/StatCard";
 
@@ -16,7 +16,7 @@ const IndexPage = () => {
 	const features = countFeatures(folders);
 	const scenarios = countScenarios(folders);
 	const outlines = countScenarioOutlines(folders);
-	const steps = countSteps(folders);
+	const steps = collectUniqueSteps(folders);
 
 	return (
 		<div className="max-w-4xl mx-auto px-6 py-10">
@@ -54,14 +54,14 @@ const IndexPage = () => {
 
 				<StatCard
 					icon={<BookOpen className="size-4 text-muted-foreground" />}
-					value={steps}
+					value={steps.length}
 					label=""
 				>
 					<Link
 						to="/steps"
 						className="text-sm text-primary underline-offset-4 hover:underline"
 					>
-						{steps === 1 ? "step" : "steps"} — view definitions
+						{steps.length === 1 ? "step" : "steps"} — view definitions
 					</Link>
 				</StatCard>
 			</div>
