@@ -7,4 +7,4 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const slugify = (name: string) =>
-	internalSlugify.default(name, { lower: true });
+	internalSlugify.default(name, { lower: true, remove: /['']/g });
