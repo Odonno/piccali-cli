@@ -31,6 +31,27 @@ jobs:
       - name: Build
         run: bun run turbo -- build --ui=stream
 
+  frontend-test:
+    name: Frontend Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: template
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install chromium --with-deps
+
+      - name: Test
+        run: bun run turbo -- test --ui=stream
+
   rust-build:
     name: Rust Build
     runs-on: ubuntu-latest

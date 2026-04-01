@@ -33,6 +33,13 @@
 			"cache": false,
 			"persistent": true
 		},
+		"test": {
+			"inputs": ["$TURBO_DEFAULT$", "!src/routeTree.gen.ts"]
+		},
+		"test:watch": {
+			"cache": false,
+			"persistent": true
+		},
 		"preview": {
 			"cache": false,
 			"persistent": true,
