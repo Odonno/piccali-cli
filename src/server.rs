@@ -1,8 +1,8 @@
 use crate::assets::FrontendAssets;
-use crate::formatter;
+use crate::format;
 use crate::models::Document;
 use crate::parser::ImageRef;
-use color_eyre::eyre::{Result, eyre};
+use color_eyre::eyre::{eyre, Result};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::PathBuf;
@@ -28,14 +28,14 @@ struct ServerState {
 impl ServerState {
     fn get_data_json(&self) -> std::result::Result<&str, &str> {
         self.data_json
-            .get_or_init(|| formatter::format_json(&self.document).map_err(|e| e.to_string()))
+            .get_or_init(|| format::format_json(&self.document).map_err(|e| e.to_string()))
             .as_deref()
             .map_err(|e| e.as_str())
     }
 
     fn get_metadata_json(&self) -> std::result::Result<&str, &str> {
         self.metadata_json
-            .get_or_init(|| formatter::format_metadata(&self.title).map_err(|e| e.to_string()))
+            .get_or_init(|| format::format_metadata(&self.title).map_err(|e| e.to_string()))
             .as_deref()
             .map_err(|e| e.as_str())
     }

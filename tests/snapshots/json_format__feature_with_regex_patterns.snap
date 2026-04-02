@@ -1,5 +1,5 @@
 ---
-source: tests/json_output.rs
+source: tests/json_format.rs
 expression: json
 ---
 {

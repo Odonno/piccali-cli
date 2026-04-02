@@ -1,6 +1,6 @@
 ---
-source: tests/markdown_output.rs
-expression: stdout
+source: tests/markdown_format.rs
+expression: content
 ---
 # Unconfigured warranty alert
 

@@ -1,5 +1,5 @@
 ---
-source: tests/markdown_output.rs
+source: tests/markdown_format.rs
 expression: content
 ---
 # Date of birth validation

@@ -10,7 +10,7 @@ use common::piccali;
 fn markdown_dry_run_simple_feature() {
     let output = piccali()
         .args([
-            "--formatter",
+            "--format",
             "markdown",
             "--dry-run",
             "--input",
@@ -29,7 +29,7 @@ fn markdown_dry_run_simple_feature() {
 fn markdown_dry_run_complex_feature_with_rules_and_tags() {
     let output = piccali()
         .args([
-            "--formatter",
+            "--format",
             "markdown",
             "--dry-run",
             "--input",
@@ -48,7 +48,7 @@ fn markdown_dry_run_complex_feature_with_rules_and_tags() {
 fn markdown_dry_run_multiple_features_separated_by_divider() {
     let output = piccali()
         .args([
-            "--formatter",
+            "--format",
             "markdown",
             "--dry-run",
             "--input",
@@ -78,7 +78,7 @@ fn markdown_simple_feature() {
 
     piccali()
         .args([
-            "--formatter",
+            "--format",
             "markdown",
             "--output",
             output_dir.path().to_str().unwrap(),
@@ -105,7 +105,7 @@ fn markdown_complex_feature_with_rules_and_tags() {
 
     piccali()
         .args([
-            "--formatter",
+            "--format",
             "markdown",
             "--output",
             output_dir.path().to_str().unwrap(),
@@ -131,7 +131,7 @@ fn markdown_complex_feature_with_multi_tags() {
 
     piccali()
         .args([
-            "--formatter",
+            "--format",
             "markdown",
             "--output",
             output_dir.path().to_str().unwrap(),
@@ -162,7 +162,7 @@ fn markdown_all_features_creates_files_per_feature() {
 
     piccali()
         .args([
-            "--formatter",
+            "--format",
             "markdown",
             "--output",
             output_dir.path().to_str().unwrap(),

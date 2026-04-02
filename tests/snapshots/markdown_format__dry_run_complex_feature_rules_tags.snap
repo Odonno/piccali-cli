@@ -1,6 +1,6 @@
 ---
-source: tests/markdown_output.rs
-expression: content
+source: tests/markdown_format.rs
+expression: stdout
 ---
 # Search by dealer name
 

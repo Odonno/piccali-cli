@@ -6,14 +6,14 @@ use std::path::PathBuf;
 use walkdir::WalkDir;
 
 mod assets;
-mod formatter;
+mod format;
 mod models;
 mod parser;
 mod server;
 
 /// Output format for generated documentation.
 #[derive(Debug, Clone, ValueEnum)]
-enum Formatter {
+enum Format {
     Json,
     Html,
     /// Markdown (also accepted as "md")
@@ -29,10 +29,10 @@ struct Cli {
     #[arg(short, long, default_value = "**/*.feature")]
     input: Glob,
 
-    /// Output formatter to use. If omitted (along with --output and --dry-run),
+    /// Output format to use. If omitted (along with --output and --dry-run),
     /// starts a local web server to browse the documentation interactively.
     #[arg(short, long)]
-    formatter: Option<Formatter>,
+    format: Option<Format>,
 
     /// Path to the output file/folder.
     #[arg(short, long, conflicts_with = "dry_run")]
@@ -74,10 +74,10 @@ fn main() {
 fn run() -> Result<()> {
     let cli = Cli::parse();
 
-    let serve_mode = cli.formatter.is_none() && cli.output.is_none() && !cli.dry_run;
+    let serve_mode = cli.format.is_none() && cli.output.is_none() && !cli.dry_run;
 
-    // When a formatter is explicitly given, require --output or --dry-run
-    if cli.formatter.is_some() && cli.output.is_none() && !cli.dry_run {
+    // When a format is explicitly given, require --output or --dry-run
+    if cli.format.is_some() && cli.output.is_none() && !cli.dry_run {
         bail!("either --output or --dry-run must be specified.");
     }
 
@@ -129,38 +129,38 @@ fn run() -> Result<()> {
     }
 
     // ── HTML formatter ──────────────────────────────────────────────────────────
-    if matches!(cli.formatter, Some(Formatter::Html)) {
+    if matches!(cli.format, Some(Format::Html)) {
         if cli.dry_run {
             bail!("--dry-run is not supported for the html formatter.");
         }
         let output_path = cli.output.as_deref().unwrap_or(".");
         let output_dir = std::path::Path::new(output_path);
         let title = cli.title.as_deref().unwrap_or("Cucumber docs");
-        formatter::format_html(&document, output_dir, title, &image_refs)?;
+        format::format_html(&document, output_dir, title, &image_refs)?;
         eprintln!("HTML site written to {output_path}");
         return Ok(());
     }
 
     // ── Markdown formatter ──────────────────────────────────────────────────────
-    if matches!(cli.formatter, Some(Formatter::Markdown)) {
+    if matches!(cli.format, Some(Format::Markdown)) {
         if cli.dry_run {
-            let output = formatter::format_markdown_dry_run(&document);
+            let output = format::format_markdown_dry_run(&document);
             println!("{output}");
             return Ok(());
         }
         let output_path = cli.output.as_deref().unwrap_or(".");
         let output_dir = std::path::Path::new(output_path);
-        formatter::format_markdown(&document, output_dir)?;
+        format::format_markdown(&document, output_dir)?;
         eprintln!("Markdown files written to {output_path}");
         return Ok(());
     }
 
     // ── String-based formatters (JSON) ──────────────────────────────────────────
-    let output = match cli.formatter {
-        Some(Formatter::Json) => formatter::format_json(&document)?,
-        Some(Formatter::Markdown) => unreachable!(),
-        Some(Formatter::Html) => unreachable!(),
-        None => return Err(eyre!("no formatter specified")),
+    let output = match cli.format {
+        Some(Format::Json) => format::format_json(&document)?,
+        Some(Format::Markdown) => unreachable!(),
+        Some(Format::Html) => unreachable!(),
+        None => return Err(eyre!("no format specified")),
     };
 
     // Output the result

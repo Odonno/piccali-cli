@@ -6,7 +6,7 @@ use common::piccali;
 fn json_simple_feature() {
     let output = piccali()
         .args([
-            "--formatter",
+            "--format",
             "json",
             "--dry-run",
             "--input",
@@ -27,7 +27,7 @@ fn json_simple_feature() {
 fn json_complex_feature_with_rules_and_tags() {
     let output = piccali()
         .args([
-            "--formatter",
+            "--format",
             "json",
             "--dry-run",
             "--input",
@@ -48,7 +48,7 @@ fn json_complex_feature_with_rules_and_tags() {
 fn json_complex_feature_with_multi_tags() {
     let output = piccali()
         .args([
-            "--formatter",
+            "--format",
             "json",
             "--dry-run",
             "--input",
@@ -69,7 +69,7 @@ fn json_complex_feature_with_multi_tags() {
 fn json_all_features_default_glob() {
     // Use the default glob which matches all .feature files
     let output = piccali()
-        .args(["--formatter", "json", "--dry-run"])
+        .args(["--format", "json", "--dry-run"])
         .output()
         .expect("failed to execute");
 
@@ -121,7 +121,7 @@ fn json_all_features_default_glob() {
 fn json_output_is_valid_and_pretty_printed() {
     let output = piccali()
         .args([
-            "--formatter",
+            "--format",
             "json",
             "--dry-run",
             "--input",
@@ -147,7 +147,7 @@ fn json_output_is_valid_and_pretty_printed() {
 fn json_feature_with_regex_patterns_in_table_cells() {
     let output = piccali()
         .args([
-            "--formatter",
+            "--format",
             "json",
             "--dry-run",
             "--input",

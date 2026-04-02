@@ -6,7 +6,7 @@ use predicates::prelude::*;
 #[test]
 fn missing_output_and_dry_run_fails_json() {
     piccali()
-        .args(["--formatter", "json"])
+        .args(["--format", "json"])
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -17,7 +17,7 @@ fn missing_output_and_dry_run_fails_json() {
 #[test]
 fn missing_output_and_dry_run_fails_markdown() {
     piccali()
-        .args(["--formatter", "markdown"])
+        .args(["--format", "markdown"])
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -28,7 +28,7 @@ fn missing_output_and_dry_run_fails_markdown() {
 #[test]
 fn missing_output_and_dry_run_fails() {
     piccali()
-        .args(["--formatter", "markdown"])
+        .args(["--format", "markdown"])
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -39,7 +39,7 @@ fn missing_output_and_dry_run_fails() {
 #[test]
 fn missing_output_and_dry_run_fails_alias() {
     piccali()
-        .args(["--formatter", "md"])
+        .args(["--format", "md"])
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -50,7 +50,7 @@ fn missing_output_and_dry_run_fails_alias() {
 #[test]
 fn output_and_dry_run_conflict() {
     piccali()
-        .args(["--formatter", "json", "--output", "out.json", "--dry-run"])
+        .args(["--format", "json", "--output", "out.json", "--dry-run"])
         .assert()
         .failure()
         .stderr(predicate::str::contains("cannot be used with"));
@@ -60,7 +60,7 @@ fn output_and_dry_run_conflict() {
 fn no_matching_files_fails() {
     piccali()
         .args([
-            "--formatter",
+            "--format",
             "json",
             "--dry-run",
             "--input",
