@@ -71,13 +71,17 @@ const StepsPage = () => {
 	const normalizedSearch = search.trim().toLowerCase();
 
 	const filteredSteps = allSteps
-		.filter((step) => {
-			if (!activeTypes.has(step.type)) return false;
-			if (
-				normalizedSearch &&
-				!step.text.toLowerCase().includes(normalizedSearch)
-			) {
-				return false;
+		.filter((group) => {
+			if (!activeTypes.has(group.type)) return false;
+			if (normalizedSearch) {
+				// Match against pattern or any of the original step texts
+				const inPattern = group.pattern
+					.toLowerCase()
+					.includes(normalizedSearch);
+				const inMatches = group.matches.some((s) =>
+					s.text.toLowerCase().includes(normalizedSearch),
+				);
+				if (!inPattern && !inMatches) return false;
 			}
 			return true;
 		})
@@ -159,11 +163,11 @@ const StepsPage = () => {
 				</p>
 			) : (
 				<ul className="flex flex-col gap-2">
-					{filteredSteps.map((step) => {
-						const colors = STEP_TYPE_COLORS[step.type];
+					{filteredSteps.map((group) => {
+						const colors = STEP_TYPE_COLORS[group.type];
 						return (
 							<li
-								key={`${step.type}:${step.text}`}
+								key={group.id}
 								className="flex items-baseline gap-3 rounded-md border px-4 py-2.5 text-sm bg-card"
 								style={{
 									borderLeftColor: colors.border,
@@ -177,11 +181,18 @@ const StepsPage = () => {
 										color: colors.text,
 									}}
 								>
-									{step.type}
+									{group.type}
 								</span>
-								<span className="font-mono text-sm text-foreground">
-									{step.text}
+								<span className="font-mono text-sm text-foreground flex-1">
+									{group.matches.length > 1
+										? group.pattern
+										: group.matches[0].text}
 								</span>
+								{group.matches.length > 1 && (
+									<span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+										{group.matches.length} variants
+									</span>
+								)}
 							</li>
 						);
 					})}

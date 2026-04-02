@@ -1,4 +1,4 @@
-import type { Feature, FolderNode, Step } from "@/types/data";
+import type { Feature, FolderNode, Step, StepGroup } from "@/types/data";
 
 /** Count all features (files) in a folder tree. */
 export const countFeatures = (folders: FolderNode[]): number =>
@@ -54,7 +54,8 @@ export const countScenarioOutlines = (folders: FolderNode[]): number =>
 	);
 
 /** Collect all unique steps across the entire folder tree, deduplicated by (text + type). */
-export const collectUniqueSteps = (folders: FolderNode[]): Step[] => {
+export const collectUniqueSteps = (folders: FolderNode[]): StepGroup[] => {
+	// --- Pass 1: collect all unique (type, text) pairs ---
 	const seen = new Set<string>();
 	const unique: Step[] = [];
 
@@ -85,5 +86,47 @@ export const collectUniqueSteps = (folders: FolderNode[]): Step[] => {
 	};
 
 	visitFolders(folders);
-	return unique;
+
+	// --- Pass 2: group by (type, pattern) ---
+	// Replace varying tokens with placeholders to produce a grouping pattern.
+	// Order matters: dates must be substituted before bare numbers so that
+	// digit sequences inside date literals are not consumed first.
+	const toPattern = (text: string): string =>
+		text
+			// Quoted strings: "foo" → "(.+)"
+			.replace(/"[^"]*"/g, '"(.+)"')
+			// ISO dates: 2020-03-10 → (\\d{4}-\\d{2}-\\d{2})
+			.replace(/\b\d{4}-\d{2}-\d{2}\b/g, "(\\d{4}-\\d{2}-\\d{2})")
+			// European dates: 10/03/2020 → (\\d{2}/\\d{2}/\\d{4})
+			.replace(/\b\d{2}\/\d{2}\/\d{4}\b/g, "(\\d{2}/\\d{2}/\\d{4})")
+			// Standalone integers/decimals not already inside a placeholder
+			.replace(/\b\d+(\.\d+)?\b/g, "(\\d+)");
+
+	// Build a slug id from type + pattern (deterministic, human-readable).
+	const toSlug = (type: string, pattern: string): string =>
+		`${type}-${pattern}`
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-+|-+$/g, "");
+
+	const groupMap = new Map<string, StepGroup>();
+
+	for (const step of unique) {
+		const pattern = toPattern(step.text);
+		const groupKey = `${step.type}:${pattern}`;
+
+		const existing = groupMap.get(groupKey);
+		if (existing) {
+			existing.matches.push(step);
+		} else {
+			groupMap.set(groupKey, {
+				id: toSlug(step.type, pattern),
+				type: step.type,
+				pattern,
+				matches: [step],
+			});
+		}
+	}
+
+	return Array.from(groupMap.values());
 };
