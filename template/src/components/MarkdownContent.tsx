@@ -1,5 +1,40 @@
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
+
+/**
+ * The Gherkin parser strips blank lines from description blocks, which causes
+ * remark-gfm to misparse markdown tables: a non-table line immediately after a
+ * table row (with no intervening blank line) is absorbed as a table cell.
+ *
+ * This function restores blank line boundaries around GFM tables by inserting
+ * an empty line whenever a table row (`|…|`) is immediately followed by a
+ * non-table line, or a non-table line is immediately followed by a table row.
+ */
+function normalizeGfmTableBoundaries(text: string): string {
+	const lines = text.split("\n");
+	const result: string[] = [];
+
+	for (let i = 0; i < lines.length; i++) {
+		result.push(lines[i]);
+
+		const current = lines[i].trim();
+		const next = i + 1 < lines.length ? lines[i + 1].trim() : null;
+
+		if (next === null || next === "") continue;
+
+		const currentIsTableRow = current.startsWith("|");
+		const nextIsTableRow = next.startsWith("|");
+
+		// Insert blank line when transitioning out of or into a table row.
+		if (currentIsTableRow !== nextIsTableRow) {
+			result.push("");
+		}
+	}
+
+	return result.join("\n");
+}
 
 /**
  * Renders a markdown string using react-markdown with GFM support.
@@ -8,6 +43,7 @@ import remarkGfm from "remark-gfm";
 export const MarkdownContent = ({ content }: { content: string }) => (
 	<ReactMarkdown
 		remarkPlugins={[remarkGfm]}
+		rehypePlugins={[rehypeRaw, rehypeSanitize]}
 		components={{
 			h1: ({ children }) => (
 				<h1 className="text-base font-bold mt-3 mb-1 first:mt-0">{children}</h1>
@@ -92,6 +128,6 @@ export const MarkdownContent = ({ content }: { content: string }) => (
 			),
 		}}
 	>
-		{content}
+		{normalizeGfmTableBoundaries(content)}
 	</ReactMarkdown>
 );

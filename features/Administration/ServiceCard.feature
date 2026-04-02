@@ -1,7 +1,18 @@
 Feature: Service card display
-
   A **service card** represents a subscription service attached to a contract.
   It shows the current state of the service and lets the user act on it.
+
+  The card records the following information:
+
+  | Field       | Value        |
+  |-------------|--------------|
+  | Action      | `added`      |
+  | Performed by | `Anonymous` |
+  | Date        | `24/10/2023` |
+
+  There can be any number of fields.
+
+  <br />
 
   Key business rules:
   - A *recently held* card shows a **remove** button
@@ -10,7 +21,6 @@ Feature: Service card display
 
   @feat:25309
   Scenario: Display recently held service card
-
     The card for a service that was **recently added** must clearly indicate
     who added it and when, together with the option to remove it.
 
@@ -22,15 +32,15 @@ Feature: Service card display
     And the card audit trail step is:
       """
       ## Audit trail
-
+      
       The card records the following information:
-
+      
       | Field       | Value        |
       |-------------|--------------|
       | Action      | `added`      |
       | Performed by | `Anonymous` |
       | Date        | `24/10/2023` |
-
+      
       > The date is always formatted as `DD/MM/YYYY`.
       """
 
