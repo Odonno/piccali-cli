@@ -17,7 +17,7 @@ declare module "@tanstack/react-router" {
 // biome-ignore lint/style/noNonNullAssertion: should exist
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
-		<ThemeProvider defaultTheme="system" storageKey="piccali-ui-theme">
+		<ThemeProvider>
 			<DataContextProvider>
 				<RouterProvider router={router} />
 			</DataContextProvider>
