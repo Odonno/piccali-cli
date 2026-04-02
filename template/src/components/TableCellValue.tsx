@@ -1,19 +1,20 @@
 import { classifyCell, type CellType } from "@/functions/cell";
 
 const CELL_STYLES: Record<CellType, string> = {
-	boolean: "text-blue-600 dark:text-blue-400",
-	number: "text-emerald-600 dark:text-emerald-400",
-	date: "text-amber-600 dark:text-amber-400",
-	string: "text-rose-600 dark:text-rose-400",
+	boolean: "text-[var(--type-boolean)]",
+	number: "text-[var(--type-number)]",
+	date: "text-[var(--type-date)]",
+	string: "text-[var(--type-string)]",
 };
 
 /**
  * Renders a single table cell value with colour coding based on its type.
  *
- * - boolean → blue
- * - number  → green
- * - date    → yellow/amber
- * - string  → red (non-trivial values stand out; empty stays neutral)
+ * Colors are driven by CSS custom properties set by the active theme:
+ * - boolean → --type-boolean
+ * - number  → --type-number
+ * - date    → --type-date
+ * - string  → --type-string
  */
 export const TableCellValue = ({ value }: { value: string }) => {
 	const type = classifyCell(value);

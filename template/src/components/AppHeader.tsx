@@ -5,12 +5,18 @@ import {
 	useCallback,
 	type KeyboardEvent,
 } from "react";
-import { CalendarClock, Sparkles, Search, X } from "lucide-react";
+import { CalendarClock, Sparkles, Search, X, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SearchDropdown } from "@/components/SearchDropdown";
-import { ModeToggle } from "@/components/ModeToggle";
+import { SettingsModal } from "@/components/SettingsModal";
 import { searchData } from "@/functions/search";
 import { formatDate } from "@/functions/date";
 import { cn } from "@/lib/utils";
@@ -32,6 +38,7 @@ export const AppHeader = ({
 	const [query, setQuery] = useState("");
 	const [isOpen, setIsOpen] = useState(false);
 	const [activeIndex, setActiveIndex] = useState(0);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 
 	const inputRef = useRef<HTMLInputElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -207,8 +214,23 @@ export const AppHeader = ({
 					<span>Generated {formatDate(metadata.createdAt)}</span>
 				</div>
 				<Separator orientation="vertical" className="h-5 mx-1" />
-				<ModeToggle />
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={() => setSettingsOpen(true)}
+							aria-label="Open settings"
+							className="text-muted-foreground hover:text-foreground"
+						>
+							<Settings />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Settings</TooltipContent>
+				</Tooltip>
 			</div>
+
+			<SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
 		</header>
 	);
 };
