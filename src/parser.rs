@@ -1,9 +1,11 @@
 use color_eyre::eyre::{Result, WrapErr};
 use gherkin::GherkinEnv;
+use globset::Glob;
 use regex::Regex;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
+use walkdir::WalkDir;
 
 use crate::models;
 
@@ -441,6 +443,172 @@ fn convert_table(table: &gherkin::Table) -> models::Table {
     let header = rows_iter.next().cloned().unwrap_or_default();
     let rows: Vec<Vec<String>> = rows_iter.cloned().collect();
     models::Table { header, rows }
+}
+
+// ---------------------------------------------------------------------------
+// File discovery
+// ---------------------------------------------------------------------------
+
+/// Walk the current directory and return all file paths matching the glob pattern.
+pub fn discover_files(glob: &Glob) -> Vec<PathBuf> {
+    let matcher = glob.compile_matcher();
+    let mut files = Vec::new();
+
+    let walker = WalkDir::new(".").into_iter().filter_entry(|entry| {
+        // Skip common directories that should never contain feature files
+        let name = entry.file_name().to_string_lossy();
+        !matches!(name.as_ref(), "target" | "node_modules" | ".git")
+    });
+
+    for entry in walker.filter_map(Result::ok) {
+        if entry.file_type().is_file() {
+            let path = entry.into_path();
+            // Strip the leading "./" or ".\" to get a clean relative path
+            let relative = path.strip_prefix(".").unwrap_or(&path);
+            // Normalize path separators to forward slashes for consistent glob matching
+            let normalized = relative.to_string_lossy().replace('\\', "/");
+            if matcher.is_match(&normalized) {
+                files.push(path);
+            }
+        }
+    }
+
+    files.sort();
+    files
+}
+
+// ---------------------------------------------------------------------------
+// Image collection and rewriting helpers
+// ---------------------------------------------------------------------------
+
+/// For every `(path, feature)` entry, scan all description fields for local
+/// image references, build a deduplicated list of [`ImageRef`]s, and
+/// rewrite the descriptions in-place to use `/images/{output_name}` URLs.
+///
+/// Returns the deduplicated list of image references (keyed on `output_name`).
+pub fn collect_and_rewrite_images(entries: &mut [(PathBuf, models::Feature)]) -> Vec<ImageRef> {
+    // Pass 1 — collect all image refs across every description field.
+    // We keep them in insertion order and deduplicate by `output_name`.
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut all_refs: Vec<ImageRef> = Vec::new();
+
+    for (path, feature) in entries.iter() {
+        let feature_dir = path.parent().unwrap_or(Path::new("."));
+
+        // Use the immediate parent folder name as the collision-avoidance prefix.
+        let folder_prefix = feature_dir
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+
+        // Collect from the feature description and all nested descriptions.
+        let descs = description_strings(feature);
+        for desc in descs {
+            let refs = extract_local_image_refs(Some(desc), feature_dir, &folder_prefix);
+            for r in refs {
+                if seen.insert(r.output_name.clone()) {
+                    all_refs.push(r);
+                }
+            }
+        }
+    }
+
+    // Pass 2 — rewrite description strings in-place.
+    // Build a per-feature lookup: raw relative path → output_name.
+    for (path, feature) in entries.iter_mut() {
+        let feature_dir = path.parent().unwrap_or(Path::new("."));
+
+        let folder_prefix = feature_dir
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+
+        // Build a map for this feature: raw_path → output_name.
+        let image_map: HashMap<String, String> = {
+            let mut m = HashMap::new();
+            // We re-extract so we get the raw_path strings for this feature.
+            let descs = description_strings_owned(feature);
+            for desc in &descs {
+                let refs = extract_local_image_refs(Some(desc), feature_dir, &folder_prefix);
+                for r in refs {
+                    // raw_path is the filename (or relative path) as it appears in the markdown.
+                    // We need to recover the original raw path from the description.
+                    // Since extract_local_image_refs resolved feature_dir.join(raw_path),
+                    // we can get the raw path by stripping the feature_dir prefix from src_path.
+                    if let Ok(rel) = r.src_path.strip_prefix(feature_dir) {
+                        let raw = rel.to_string_lossy().replace('\\', "/");
+                        m.insert(raw, r.output_name);
+                    }
+                }
+            }
+            m
+        };
+
+        if image_map.is_empty() {
+            continue;
+        }
+
+        rewrite_feature_descriptions(feature, &image_map);
+    }
+
+    all_refs
+}
+
+/// Collect all description string references from a feature (borrowed).
+fn description_strings(feature: &models::Feature) -> Vec<&str> {
+    let mut descs = Vec::new();
+    if let Some(d) = &feature.description {
+        descs.push(d.as_str());
+    }
+    for scenario in &feature.scenarios {
+        if let Some(d) = &scenario.description {
+            descs.push(d.as_str());
+        }
+    }
+    for rule in &feature.rules {
+        if let Some(d) = &rule.description {
+            descs.push(d.as_str());
+        }
+        for scenario in &rule.scenarios {
+            if let Some(d) = &scenario.description {
+                descs.push(d.as_str());
+            }
+        }
+    }
+    descs
+}
+
+/// Collect all description strings from a feature (owned clones).
+fn description_strings_owned(feature: &models::Feature) -> Vec<String> {
+    description_strings(feature)
+        .into_iter()
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Rewrite all description fields in a feature using the given raw→output_name map.
+fn rewrite_feature_descriptions(
+    feature: &mut models::Feature,
+    image_map: &HashMap<String, String>,
+) {
+    if let Some(d) = &feature.description {
+        feature.description = Some(rewrite_local_image_refs(d, image_map));
+    }
+    for scenario in &mut feature.scenarios {
+        if let Some(d) = &scenario.description {
+            scenario.description = Some(rewrite_local_image_refs(d, image_map));
+        }
+    }
+    for rule in &mut feature.rules {
+        if let Some(d) = &rule.description {
+            rule.description = Some(rewrite_local_image_refs(d, image_map));
+        }
+        for scenario in &mut rule.scenarios {
+            if let Some(d) = &scenario.description {
+                scenario.description = Some(rewrite_local_image_refs(d, image_map));
+            }
+        }
+    }
 }
 
 #[cfg(test)]
