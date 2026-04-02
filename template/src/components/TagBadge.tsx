@@ -10,27 +10,31 @@ export const TagBadge = ({
 	tag: Tag;
 	small?: boolean;
 }) => {
-	const badge = (
-		<Badge
-			variant="secondary"
-			className={
-				small
-					? "text-[10px] gap-0.5 font-mono h-4 px-1"
-					: "gap-1 text-xs font-mono"
-			}
-		>
-			<TagIcon className={small ? "size-2.5" : "size-3"} />
-			{tag.name}
-		</Badge>
-	);
+	const className = small
+		? "text-[10px] gap-0.5 font-mono h-4 px-1"
+		: "gap-1 text-xs font-mono";
+
+	const icon = <TagIcon className={small ? "size-2.5" : "size-3"} />;
 
 	if (tag.url) {
 		return (
-			<a href={tag.url} target="_blank" rel="noopener noreferrer">
-				{badge}
-			</a>
+			<Badge
+				variant="secondary"
+				className={`${className} cursor-pointer hover:bg-secondary/80 transition-colors`}
+				asChild
+			>
+				<a href={tag.url} target="_blank" rel="noopener noreferrer">
+					{icon}
+					{tag.name}
+				</a>
+			</Badge>
 		);
 	}
 
-	return badge;
+	return (
+		<Badge variant="secondary" className={className}>
+			{icon}
+			{tag.name}
+		</Badge>
+	);
 };
