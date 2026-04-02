@@ -10,19 +10,15 @@ mod models;
 mod parser;
 mod server;
 
-fn main() {
-    color_eyre::install().expect("failed to install color-eyre");
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    run()?;
 
-    if let Err(error) = run() {
-        eprintln!("{error:?}");
-        std::process::exit(1);
-    }
+    Ok(())
 }
 
 fn run() -> Result<()> {
     let cli = Cli::parse();
-
-    let serve_mode = cli.format.is_none() && cli.output.is_none() && !cli.dry_run;
 
     // When a format is explicitly given, require --output or --dry-run
     if cli.format.is_some() && cli.output.is_none() && !cli.dry_run {
@@ -69,55 +65,44 @@ fn run() -> Result<()> {
     let folders = parser::build_folder_tree(entries);
     let document = models::Document { folders };
 
-    // ── Serve mode ─────────────────────────────────────────────────────────────
-    if serve_mode {
-        let title = cli.title.unwrap_or_else(|| "Cucumber docs".to_string());
-        server::serve(cli.port, document, title, image_refs)?;
-        return Ok(());
-    }
+    let default_title = "Cucumber docs";
 
-    // ── HTML formatter ──────────────────────────────────────────────────────────
-    if matches!(cli.format, Some(Format::Html)) {
-        if cli.dry_run {
-            bail!("--dry-run is not supported for the html formatter.");
+    match cli.format {
+        None => {
+            let title = cli.title.unwrap_or_else(|| default_title.to_string());
+            server::serve(cli.port, document, title, image_refs)?;
         }
-        let output_path = cli.output.as_deref().unwrap_or(".");
-        let output_dir = std::path::Path::new(output_path);
-        let title = cli.title.as_deref().unwrap_or("Cucumber docs");
-        format::format_html(&document, output_dir, title, &image_refs)?;
-        eprintln!("HTML site written to {output_path}");
-        return Ok(());
-    }
-
-    // ── Markdown formatter ──────────────────────────────────────────────────────
-    if matches!(cli.format, Some(Format::Markdown)) {
-        if cli.dry_run {
-            let output = format::format_markdown_dry_run(&document);
-            println!("{output}");
-            return Ok(());
+        Some(Format::Html) => {
+            if cli.dry_run {
+                bail!("--dry-run is not supported for the html formatter.");
+            }
+            let output_path = cli.output.as_deref().unwrap_or(".");
+            let output_dir = std::path::Path::new(output_path);
+            let title = cli.title.as_deref().unwrap_or(default_title);
+            format::format_html(&document, output_dir, title, &image_refs)?;
+            eprintln!("HTML site written to {output_path}");
         }
-        let output_path = cli.output.as_deref().unwrap_or(".");
-        let output_dir = std::path::Path::new(output_path);
-        format::format_markdown(&document, output_dir)?;
-        eprintln!("Markdown files written to {output_path}");
-        return Ok(());
-    }
-
-    // ── String-based formatters (JSON) ──────────────────────────────────────────
-    let output = match cli.format {
-        Some(Format::Json) => format::format_json(&document)?,
-        Some(Format::Markdown) => unreachable!(),
-        Some(Format::Html) => unreachable!(),
-        None => return Err(eyre!("no format specified")),
-    };
-
-    // Output the result
-    if cli.dry_run {
-        println!("{output}");
-    } else if let Some(ref output_path) = cli.output {
-        std::fs::write(output_path, &output)
-            .map_err(|e| eyre!("Failed to write output to {output_path}: {e}"))?;
-        eprintln!("Written to {output_path}");
+        Some(Format::Markdown) => {
+            if cli.dry_run {
+                let output = format::format_markdown_dry_run(&document);
+                println!("{output}");
+            } else {
+                let output_path = cli.output.as_deref().unwrap_or(".");
+                let output_dir = std::path::Path::new(output_path);
+                format::format_markdown(&document, output_dir)?;
+                eprintln!("Markdown files written to {output_path}");
+            }
+        }
+        Some(Format::Json) => {
+            let output = format::format_json(&document)?;
+            if cli.dry_run {
+                println!("{output}");
+            } else if let Some(ref output_path) = cli.output {
+                std::fs::write(output_path, &output)
+                    .map_err(|e| eyre!("Failed to write output to {output_path}: {e}"))?;
+                eprintln!("Written to {output_path}");
+            }
+        }
     }
 
     Ok(())
