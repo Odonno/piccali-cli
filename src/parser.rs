@@ -111,11 +111,21 @@ pub fn extract_local_image_refs(
 }
 
 /// Rewrite local image paths inside a description string so that they point to
-/// `/images/{output_name}`.
+/// `/images/{output_name}` (for colocated images) or `/assets/{rel_path}`
+/// (for assets supplied via `--assets`).
 ///
 /// `image_map` maps the original relative path (as it appears in the markdown,
 /// e.g. `lego-car.jpg`) to the `output_name` (e.g. `SearchByVin_lego-car.jpg`).
-pub fn rewrite_local_image_refs(description: &str, image_map: &HashMap<String, String>) -> String {
+///
+/// `asset_refs` is the list of extra assets discovered via `--assets`.  If a
+/// path is not found in `image_map` (i.e. it is not a file colocated with the
+/// feature), it is matched by `rel_path` against every `AssetRef` and rewritten
+/// to `/assets/{rel_path}`.  Local colocated matches always take priority.
+pub fn rewrite_local_image_refs(
+    description: &str,
+    image_map: &HashMap<String, String>,
+    asset_refs: &[AssetRef],
+) -> String {
     let re = local_image_re();
     re.replace_all(description, |caps: &regex::Captures<'_>| {
         let full_match = caps.get(0).map_or("", |m| m.as_str());
@@ -126,14 +136,20 @@ pub fn rewrite_local_image_refs(description: &str, image_map: &HashMap<String, S
             return full_match.to_owned();
         }
 
-        // Look up the output name; leave unchanged if not in the map.
-        match image_map.get(raw_path) {
-            Some(output_name) => {
-                // Replace just the path portion inside `![alt](...)`.
-                full_match.replace(raw_path, &format!("/images/{output_name}"))
-            }
-            None => full_match.to_owned(),
+        // Priority 1: colocated image map.
+        if let Some(output_name) = image_map.get(raw_path) {
+            return full_match.replace(raw_path, &format!("/images/{output_name}"));
         }
+
+        // Priority 2: asset from --assets matched by rel_path.
+        if let Some(asset) = asset_refs.iter().find(|a| {
+            a.rel_path
+                .ends_with(raw_path.strip_prefix("./").unwrap_or(raw_path))
+        }) {
+            return full_match.replace(raw_path, &format!("/{}", asset.rel_path));
+        }
+
+        full_match.to_owned()
     })
     .into_owned()
 }
@@ -449,6 +465,92 @@ fn convert_table(table: &gherkin::Table) -> models::Table {
 // File discovery
 // ---------------------------------------------------------------------------
 
+/// A resolved reference to an additional asset file specified via `--assets`.
+///
+/// `src_path` is the source path on disk.
+/// `rel_path` is the path relative to the glob base directory, used as the
+/// output path (served URL or destination path in the output folder).
+#[derive(Debug, Clone)]
+pub struct AssetRef {
+    /// Source path on disk (may be absolute or CWD-relative).
+    pub src_path: PathBuf,
+    /// Path relative to the glob base directory (used as output/URL path).
+    pub rel_path: String,
+}
+
+/// Extract the literal (non-wildcard) base directory from a glob pattern string.
+///
+/// For example:
+/// - `"static/**/*"` → `"static"`
+/// - `"assets/images/*.png"` → `"assets/images"`
+/// - `"**/*.png"` → `"."` (no literal prefix)
+/// - `"fonts/foo.woff"` → `"fonts"`
+fn glob_base_dir(glob_str: &str) -> PathBuf {
+    // Split on '/' to find the longest prefix of components with no wildcards.
+    let parts: Vec<&str> = glob_str.split('/').collect();
+    let mut base_parts: Vec<&str> = Vec::new();
+    for part in &parts[..parts.len().saturating_sub(1)] {
+        // A component containing any special glob character ends the literal prefix.
+        if part.contains(['*', '?', '[', '{']) {
+            break;
+        }
+        base_parts.push(part);
+    }
+    if base_parts.is_empty() {
+        PathBuf::from(".")
+    } else {
+        PathBuf::from(base_parts.join("/"))
+    }
+}
+
+/// Walk the filesystem and return all [`AssetRef`]s matching `glob`.
+///
+/// Each entry has:
+/// - `src_path`: the actual file path
+/// - `rel_path`: path relative to the glob base directory (for output routing)
+pub fn discover_assets(glob: &Glob) -> Vec<AssetRef> {
+    let matcher = glob.compile_matcher();
+    let base = glob_base_dir(glob.glob());
+
+    let mut assets: Vec<AssetRef> = Vec::new();
+
+    let walker = WalkDir::new(".").into_iter().filter_entry(|entry| {
+        let name = entry.file_name().to_string_lossy();
+        !matches!(name.as_ref(), "target" | "node_modules" | ".git")
+    });
+
+    for entry in walker.filter_map(Result::ok) {
+        if entry.file_type().is_file() {
+            let path = entry.into_path();
+            let relative = path.strip_prefix(".").unwrap_or(&path);
+            let normalized = relative.to_string_lossy().replace('\\', "/");
+
+            if matcher.is_match(&normalized) {
+                // Strip the glob base to get the path used for output routing.
+                let rel_path = if base.as_os_str() == "." {
+                    normalized.clone()
+                } else {
+                    let base_str = base.to_string_lossy();
+                    let prefix = format!("{}/", base_str);
+                    normalized
+                        .strip_prefix(prefix.as_str())
+                        .unwrap_or(&normalized)
+                        .to_string()
+                };
+                let rel_path = format!("assets/{}", rel_path);
+
+                assets.push(AssetRef {
+                    src_path: path,
+                    rel_path,
+                });
+            }
+        }
+    }
+
+    assets.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
+    assets
+}
+
 /// Walk the current directory and return all file paths matching the glob pattern.
 pub fn discover_files(glob: &Glob) -> Vec<PathBuf> {
     let matcher = glob.compile_matcher();
@@ -485,8 +587,14 @@ pub fn discover_files(glob: &Glob) -> Vec<PathBuf> {
 /// image references, build a deduplicated list of [`ImageRef`]s, and
 /// rewrite the descriptions in-place to use `/images/{output_name}` URLs.
 ///
+/// Any image path that is not colocated on disk but matches an [`AssetRef`]'s
+/// `rel_path` (from `--assets`) is rewritten to `/assets/{rel_path}` instead.
+///
 /// Returns the deduplicated list of image references (keyed on `output_name`).
-pub fn collect_and_rewrite_images(entries: &mut [(PathBuf, models::Feature)]) -> Vec<ImageRef> {
+pub fn collect_and_rewrite_images(
+    entries: &mut [(PathBuf, models::Feature)],
+    asset_refs: &[AssetRef],
+) -> Vec<ImageRef> {
     // Pass 1 — collect all image refs across every description field.
     // We keep them in insertion order and deduplicate by `output_name`.
     let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -544,11 +652,11 @@ pub fn collect_and_rewrite_images(entries: &mut [(PathBuf, models::Feature)]) ->
             m
         };
 
-        if image_map.is_empty() {
+        if image_map.is_empty() && asset_refs.is_empty() {
             continue;
         }
 
-        rewrite_feature_descriptions(feature, &image_map);
+        rewrite_feature_descriptions(feature, &image_map, asset_refs);
     }
 
     all_refs
@@ -590,22 +698,23 @@ fn description_strings_owned(feature: &models::Feature) -> Vec<String> {
 fn rewrite_feature_descriptions(
     feature: &mut models::Feature,
     image_map: &HashMap<String, String>,
+    asset_refs: &[AssetRef],
 ) {
     if let Some(d) = &feature.description {
-        feature.description = Some(rewrite_local_image_refs(d, image_map));
+        feature.description = Some(rewrite_local_image_refs(d, image_map, asset_refs));
     }
     for scenario in &mut feature.scenarios {
         if let Some(d) = &scenario.description {
-            scenario.description = Some(rewrite_local_image_refs(d, image_map));
+            scenario.description = Some(rewrite_local_image_refs(d, image_map, asset_refs));
         }
     }
     for rule in &mut feature.rules {
         if let Some(d) = &rule.description {
-            rule.description = Some(rewrite_local_image_refs(d, image_map));
+            rule.description = Some(rewrite_local_image_refs(d, image_map, asset_refs));
         }
         for scenario in &mut rule.scenarios {
             if let Some(d) = &scenario.description {
-                scenario.description = Some(rewrite_local_image_refs(d, image_map));
+                scenario.description = Some(rewrite_local_image_refs(d, image_map, asset_refs));
             }
         }
     }

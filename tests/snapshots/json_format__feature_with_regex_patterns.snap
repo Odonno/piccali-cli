@@ -9,6 +9,7 @@ expression: json
         {
           "features": [
             {
+              "description": "Screenshot: ![Screenshot](./screenshots/feature-page.png)",
               "keyword": "Feature",
               "name": "Input validation with regex patterns",
               "scenarios": [

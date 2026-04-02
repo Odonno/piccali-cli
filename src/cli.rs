@@ -40,6 +40,13 @@ pub struct Cli {
     #[arg(short, long, default_value_t = 3000)]
     pub port: u16,
 
+    /// Glob pattern for additional asset files to include in the output.
+    /// Only supported with --format html or the built-in HTTP server.
+    /// Files are served/copied with the glob base directory stripped
+    /// (e.g. --assets "static/**/*" copies static/icons/logo.png as icons/logo.png).
+    #[arg(long)]
+    pub assets: Option<Glob>,
+
     /// Tag prefix to match (e.g. "feat:"). Repeat for multiple prefixes.
     /// Each --tag-prefix must be paired with a corresponding --tag-url-template.
     #[arg(long, value_name = "PREFIX")]

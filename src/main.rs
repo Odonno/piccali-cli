@@ -25,6 +25,17 @@ fn run() -> Result<()> {
         bail!("either --output or --dry-run must be specified.");
     }
 
+    // --assets is only supported for HTML output and the HTTP server
+    if cli.assets.is_some() {
+        match &cli.format {
+            Some(Format::Json) => bail!("--assets is not supported for the json formatter."),
+            Some(Format::Markdown) => {
+                bail!("--assets is not supported for the markdown formatter.")
+            }
+            Some(Format::Html) | None => {}
+        }
+    }
+
     // Validate that --tag-prefix and --tag-url-template are always paired
     if cli.tag_prefix.len() != cli.tag_url_template.len() {
         bail!(
@@ -58,9 +69,16 @@ fn run() -> Result<()> {
         entries.push((path, feature));
     }
 
+    // Discover additional asset files if --assets was provided.
+    let asset_refs = cli
+        .assets
+        .map(|g| parser::discover_assets(&g))
+        .unwrap_or_default();
+
     // Collect local image references from all feature descriptions, then
     // rewrite the description strings to use the canonical `/images/` URL.
-    let image_refs = parser::collect_and_rewrite_images(&mut entries);
+    // Image paths that match an asset from --assets are rewritten to `/assets/`.
+    let image_refs = parser::collect_and_rewrite_images(&mut entries, &asset_refs);
 
     let folders = parser::build_folder_tree(entries);
     let document = models::Document { folders };
@@ -70,7 +88,7 @@ fn run() -> Result<()> {
     match cli.format {
         None => {
             let title = cli.title.unwrap_or_else(|| default_title.to_string());
-            server::serve(cli.port, document, title, image_refs)?;
+            server::serve(cli.port, document, title, image_refs, asset_refs)?;
         }
         Some(Format::Html) => {
             if cli.dry_run {
@@ -79,7 +97,7 @@ fn run() -> Result<()> {
             let output_path = cli.output.as_deref().unwrap_or(".");
             let output_dir = std::path::Path::new(output_path);
             let title = cli.title.as_deref().unwrap_or(default_title);
-            format::format_html(&document, output_dir, title, &image_refs)?;
+            format::format_html(&document, output_dir, title, &image_refs, &asset_refs)?;
             eprintln!("HTML site written to {output_path}");
         }
         Some(Format::Markdown) => {

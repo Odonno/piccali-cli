@@ -2,7 +2,7 @@ use crate::assets::FrontendAssets;
 use crate::models::{
     Background, Document, Examples, Feature, FolderNode, Rule, Scenario, Step, Table, Tag,
 };
-use crate::parser::ImageRef;
+use crate::parser::{AssetRef, ImageRef};
 use chrono::Utc;
 use color_eyre::eyre::{Result, WrapErr, eyre};
 use serde::Serialize;
@@ -35,11 +35,14 @@ pub fn format_metadata(title: &str) -> Result<String> {
 /// 3. Writing `metadata.json`
 /// 4. Copying any local images referenced in feature descriptions into
 ///    `output_dir/images/`
+/// 5. Copying any additional asset files from `asset_refs` into `output_dir`,
+///    preserving their paths relative to the glob base directory.
 pub fn format_html(
     document: &Document,
     output_dir: &Path,
     title: &str,
     image_refs: &[ImageRef],
+    asset_refs: &[AssetRef],
 ) -> Result<()> {
     // Create output directory
     std::fs::create_dir_all(output_dir)
@@ -89,6 +92,22 @@ pub fn format_html(
                 )
             })?;
         }
+    }
+
+    // Copy additional assets into output_dir, preserving paths relative to glob base.
+    for asset in asset_refs {
+        let dest = output_dir.join(&asset.rel_path);
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent)
+                .wrap_err_with(|| format!("Failed to create directory {}", parent.display()))?;
+        }
+        std::fs::copy(&asset.src_path, &dest).wrap_err_with(|| {
+            format!(
+                "Failed to copy asset {} to {}",
+                asset.src_path.display(),
+                dest.display()
+            )
+        })?;
     }
 
     Ok(())

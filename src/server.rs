@@ -1,7 +1,7 @@
 use crate::assets::FrontendAssets;
 use crate::format;
 use crate::models::Document;
-use crate::parser::ImageRef;
+use crate::parser::{AssetRef, ImageRef};
 use color_eyre::eyre::{Result, eyre};
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -23,6 +23,9 @@ struct ServerState {
     /// Map from `/images/{output_name}` → absolute source path on disk.
     /// Used to serve local images referenced in feature descriptions.
     images: HashMap<String, PathBuf>,
+    /// Map from URL path (e.g. `icons/logo.png`) → absolute source path on disk.
+    /// Used to serve additional asset files specified via `--assets`.
+    assets: HashMap<String, PathBuf>,
 }
 
 impl ServerState {
@@ -47,6 +50,9 @@ impl ServerState {
 /// `image_refs` is the list of local images referenced in feature descriptions.
 /// They are served at `/images/{output_name}` directly from disk.
 ///
+/// `asset_refs` is the optional list of additional asset files specified via
+/// `--assets`. They are served at `/{rel_path}` before the SPA fallback.
+///
 /// Requests are handled concurrently — each incoming request is dispatched to a
 /// new thread so that parallel browser requests (assets + data) never block each
 /// other.
@@ -58,6 +64,7 @@ pub fn serve(
     document: Document,
     title: String,
     image_refs: Vec<ImageRef>,
+    asset_refs: Vec<AssetRef>,
 ) -> Result<()> {
     let addr = format!("127.0.0.1:{port}");
     let server =
@@ -73,12 +80,19 @@ pub fn serve(
         .map(|r| (r.output_name, r.src_path))
         .collect();
 
+    // Build the assets lookup map (rel_path → src_path).
+    let assets: HashMap<String, PathBuf> = asset_refs
+        .into_iter()
+        .map(|r| (r.rel_path, r.src_path))
+        .collect();
+
     let state = Arc::new(ServerState {
         data_json: OnceLock::new(),
         metadata_json: OnceLock::new(),
         document,
         title,
         images,
+        assets,
     });
 
     for request in server.incoming_requests() {
@@ -137,11 +151,26 @@ fn handle_request(request: tiny_http::Request, state: &ServerState) {
                 (file.data.into_owned(), mime, 200)
             }
             None => {
-                // SPA fallback: serve index.html for any unrecognised path so
-                // that client-side routing works correctly.
-                match FrontendAssets::get("index.html") {
-                    Some(file) => (file.data.into_owned(), "text/html; charset=utf-8", 200),
-                    None => (b"Not Found".to_vec(), "text/plain", 404),
+                // Check user-provided assets before falling back to SPA index.html.
+                if let Some(src_path) = state.assets.get(asset_path) {
+                    match std::fs::read(src_path) {
+                        Ok(bytes) => {
+                            let mime = mime_for(asset_path);
+                            (bytes, mime, 200)
+                        }
+                        Err(e) => (
+                            format!("Failed to read asset: {e}").into_bytes(),
+                            "text/plain",
+                            500,
+                        ),
+                    }
+                } else {
+                    // SPA fallback: serve index.html for any unrecognised path so
+                    // that client-side routing works correctly.
+                    match FrontendAssets::get("index.html") {
+                        Some(file) => (file.data.into_owned(), "text/html; charset=utf-8", 200),
+                        None => (b"Not Found".to_vec(), "text/plain", 404),
+                    }
                 }
             }
         }
