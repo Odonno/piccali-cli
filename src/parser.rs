@@ -57,6 +57,28 @@ fn is_remote_or_absolute(path: &str) -> bool {
     false
 }
 
+/// Normalize a markdown image link target into a path suitable for local lookup.
+///
+/// Handles:
+/// - optional markdown image size suffixes like `=500x450`
+/// - optional leading `./`
+/// - URL percent-encoding (`%20`, `%C3%A9`, ...)
+fn normalize_markdown_image_path(raw_path: &str) -> String {
+    // Some markdown flavors append attributes after whitespace, e.g.
+    // `![alt](./img.png =500x450)`. Keep only the target itself.
+    let path_only = raw_path
+        .trim()
+        .split_ascii_whitespace()
+        .next()
+        .unwrap_or("");
+
+    let decoded = url_escape::decode(path_only);
+    decoded
+        .strip_prefix("./")
+        .unwrap_or(decoded.as_ref())
+        .to_string()
+}
+
 /// Extract every local image reference from an optional description string.
 ///
 /// `feature_dir` is the directory that contains the `.feature` file; relative
@@ -79,12 +101,13 @@ pub fn extract_local_image_refs(
 
     for cap in re.captures_iter(desc) {
         let raw_path = &cap["path"];
+        let normalized_path = normalize_markdown_image_path(raw_path);
         // Skip remote URLs and absolute paths.
-        if is_remote_or_absolute(raw_path) {
+        if is_remote_or_absolute(&normalized_path) {
             continue;
         }
 
-        let src_path = feature_dir.join(raw_path);
+        let src_path = feature_dir.join(&normalized_path);
         if !src_path.exists() {
             continue;
         }
@@ -130,22 +153,23 @@ pub fn rewrite_local_image_refs(
     re.replace_all(description, |caps: &regex::Captures<'_>| {
         let full_match = caps.get(0).map_or("", |m| m.as_str());
         let raw_path = &caps["path"];
+        let normalized_path = normalize_markdown_image_path(raw_path);
 
         // Leave remote URLs and absolute paths unchanged.
-        if is_remote_or_absolute(raw_path) {
+        if is_remote_or_absolute(&normalized_path) {
             return full_match.to_owned();
         }
 
         // Priority 1: colocated image map.
-        if let Some(output_name) = image_map.get(raw_path) {
+        if let Some(output_name) = image_map.get(&normalized_path) {
             return full_match.replace(raw_path, &format!("/images/{output_name}"));
         }
 
         // Priority 2: asset from --assets matched by rel_path.
-        if let Some(asset) = asset_refs.iter().find(|a| {
-            a.rel_path
-                .ends_with(raw_path.strip_prefix("./").unwrap_or(raw_path))
-        }) {
+        if let Some(asset) = asset_refs
+            .iter()
+            .find(|a| a.rel_path.ends_with(normalized_path.as_str()))
+        {
             return full_match.replace(raw_path, &format!("/{}", asset.rel_path));
         }
 
@@ -724,7 +748,7 @@ fn rewrite_feature_descriptions(
 mod tests {
     use super::*;
     use std::io::Write;
-    use tempfile::NamedTempFile;
+    use tempfile::{NamedTempFile, tempdir};
 
     // --- helpers ---
 
@@ -925,6 +949,44 @@ mod tests {
           ]
         }
         "#);
+    }
+
+    // --- local image references ---
+
+    #[test]
+    fn extract_local_image_refs_decodes_percent_encoding_and_trims_size_suffix() {
+        let dir = tempdir().unwrap();
+        let image_dir = dir.path().join("selection du_titre");
+        std::fs::create_dir_all(&image_dir).unwrap();
+        let image_path = image_dir.join("screen.png");
+        std::fs::write(&image_path, b"png").unwrap();
+
+        let refs = extract_local_image_refs(
+            Some("![test](./selection%20du_titre/screen.png =500x450)"),
+            dir.path(),
+            "SearchByVin",
+        );
+
+        assert_eq!(refs.len(), 1);
+        assert_eq!(refs[0].src_path, image_path);
+        assert_eq!(refs[0].output_name, "SearchByVin_screen.png");
+    }
+
+    #[test]
+    fn rewrite_local_image_refs_decodes_percent_encoding_and_trims_size_suffix() {
+        let mut image_map = HashMap::new();
+        image_map.insert(
+            "selection du_titre/screen.png".to_string(),
+            "SearchByVin_screen.png".to_string(),
+        );
+
+        let rewritten = rewrite_local_image_refs(
+            "![test](./selection%20du_titre/screen.png =500x450)",
+            &image_map,
+            &[],
+        );
+
+        assert_eq!(rewritten, "![test](/images/SearchByVin_screen.png)");
     }
 
     // --- parse_feature_file: error cases ---
