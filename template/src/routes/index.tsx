@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, ListChecks, BookOpen } from "lucide-react";
+import { FileText, ListChecks, BookOpen, TriangleAlert } from "lucide-react";
 import { useDataContext } from "@/hooks/useDataContext";
 import {
 	countFeatures,
@@ -7,6 +7,7 @@ import {
 	countScenarioOutlines,
 	collectUniqueSteps,
 } from "@/functions/stats";
+import { collectScenarioOutlineImprovementSummary } from "@/functions/scenarioImprovements";
 import { StatCard } from "@/components/StatCard";
 
 const IndexPage = () => {
@@ -17,6 +18,16 @@ const IndexPage = () => {
 	const scenarios = countScenarios(folders);
 	const outlines = countScenarioOutlines(folders);
 	const steps = collectUniqueSteps(folders);
+	const scenarioOutlineImprovements =
+		collectScenarioOutlineImprovementSummary(folders);
+	const {
+		scenariosMatchingOutline,
+		scenariosGroupableIntoOutline,
+		outlineGroupCandidates,
+	} = scenarioOutlineImprovements;
+	const totalWarnings =
+		scenariosMatchingOutline + scenariosGroupableIntoOutline;
+	const hasWarnings = totalWarnings > 0;
 
 	return (
 		<div className="max-w-4xl mx-auto px-6 py-10">
@@ -65,6 +76,28 @@ const IndexPage = () => {
 					</Link>
 				</StatCard>
 			</div>
+
+			{hasWarnings ? (
+				<div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-900/70 dark:bg-amber-950/20">
+					<div className="flex items-start gap-2">
+						<TriangleAlert className="mt-0.5 size-4 text-amber-700 dark:text-amber-400 shrink-0" />
+						<div className="min-w-0 space-y-1">
+							<p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+								Scenario outline improvements detected
+							</p>
+							<p className="text-xs text-amber-800/90 dark:text-amber-300/90">
+								{scenariosMatchingOutline} scenario
+								{scenariosMatchingOutline !== 1 ? "s" : ""} can join an existing
+								outline, {scenariosGroupableIntoOutline} scenario
+								{scenariosGroupableIntoOutline !== 1 ? "s" : ""} can be grouped
+								into new outlines ({outlineGroupCandidates} candidate
+								{outlineGroupCandidates !== 1 ? "s" : ""}
+								).
+							</p>
+						</div>
+					</div>
+				</div>
+			) : null}
 		</div>
 	);
 };

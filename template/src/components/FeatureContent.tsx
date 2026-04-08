@@ -5,6 +5,7 @@ import {
 	Layers,
 	ListChecks,
 	AlertCircle,
+	TriangleAlert,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import { TagBadge } from "@/components/TagBadge";
 import { StepList } from "@/components/StepList";
 import { TableCellValue } from "@/components/TableCellValue";
 import { resolveExampleVars, type ExampleRowKey } from "@/functions/examples";
+import { analyzeScenarioOutlineImprovements } from "@/functions/scenarioImprovements";
 import type { Feature, Rule } from "@/types/data";
 
 type FeatureContentProps = {
@@ -41,6 +43,7 @@ export const FeatureContent = ({
 	const scenarios = subject.scenarios ?? [];
 	const background = subject.background;
 	const tags = subject.tags ?? [];
+	const scenarioImprovements = analyzeScenarioOutlineImprovements(scenarios);
 
 	// Feature with rules and no rule selected: show rules list
 	const hasRules = !rule && (feature.rules?.length ?? 0) > 0;
@@ -171,6 +174,11 @@ export const FeatureContent = ({
 							{scenarios.map((scenario, scenarioIndex) => {
 								const isOutline = scenario.keyword === "Scenario Outline";
 								const selectedKey = selectedExampleRows[scenarioIndex] ?? null;
+								const improvement = scenarioImprovements[scenarioIndex];
+								const canJoinOutline =
+									!isOutline && improvement.matchingOutlineIndices.length > 0;
+								const canCreateOutline =
+									!isOutline && improvement.groupableScenarioIndices.length > 0;
 								const exampleVars =
 									isOutline && scenario.examples
 										? resolveExampleVars(scenario.examples, selectedKey)
@@ -198,6 +206,38 @@ export const FeatureContent = ({
 												</div>
 											)}
 										</div>
+
+										{/* Scenario description */}
+										{(canJoinOutline || canCreateOutline) && (
+											<div className="rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs dark:border-amber-900/70 dark:bg-amber-950/20">
+												<div className="flex items-start gap-2">
+													<TriangleAlert className="mt-0.5 size-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+													<div className="space-y-1 min-w-0">
+														<p className="font-semibold text-amber-900 dark:text-amber-200">
+															Scenario outline improvement
+														</p>
+														{canJoinOutline && (
+															<p className="text-amber-800/90 dark:text-amber-300/90">
+																Can be merged into an existing Scenario Outline
+																in this section.
+															</p>
+														)}
+														{canCreateOutline && (
+															<p className="text-amber-800/90 dark:text-amber-300/90">
+																Can be grouped with{" "}
+																{improvement.groupableScenarioIndices.length}{" "}
+																similar scenario
+																{improvement.groupableScenarioIndices.length !==
+																1
+																	? "s"
+																	: ""}{" "}
+																into a Scenario Outline.
+															</p>
+														)}
+													</div>
+												</div>
+											</div>
+										)}
 
 										{/* Scenario description */}
 										{scenario.description && (
