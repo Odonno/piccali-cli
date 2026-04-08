@@ -22,14 +22,13 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	useTheme,
-	type AppTheme,
-	type ThemeColorKey,
 	THEME_LABELS,
 	COLOR_KEY_LABELS,
 	COLOR_KEYS_ORDER,
 	THEME_COLORS_MAP,
 } from "@/context/ThemeProvider";
 import { cn } from "@/lib/utils";
+import type { AppTheme, ThemeColorKey } from "@/types/themes";
 
 type SettingsModalProps = {
 	open: boolean;
