@@ -79,6 +79,17 @@ fn normalize_markdown_image_path(raw_path: &str) -> String {
         .to_string()
 }
 
+/// Encode a local URL path (or path segment) for use inside markdown links.
+///
+/// Every segment is encoded independently so `/` separators are preserved while
+/// spaces, unicode, and reserved characters inside segment names are escaped.
+fn encode_url_path(path: &str) -> String {
+    path.split('/')
+        .map(|segment| url_escape::encode_component(segment).into_owned())
+        .collect::<Vec<String>>()
+        .join("/")
+}
+
 /// Extract every local image reference from an optional description string.
 ///
 /// `feature_dir` is the directory that contains the `.feature` file; relative
@@ -162,7 +173,8 @@ pub fn rewrite_local_image_refs(
 
         // Priority 1: colocated image map.
         if let Some(output_name) = image_map.get(&normalized_path) {
-            return full_match.replace(raw_path, &format!("/images/{output_name}"));
+            let encoded_output_name = encode_url_path(output_name);
+            return full_match.replace(raw_path, &format!("/images/{encoded_output_name}"));
         }
 
         // Priority 2: asset from --assets matched by rel_path.
@@ -170,7 +182,8 @@ pub fn rewrite_local_image_refs(
             .iter()
             .find(|a| a.rel_path.ends_with(normalized_path.as_str()))
         {
-            return full_match.replace(raw_path, &format!("/{}", asset.rel_path));
+            let encoded_rel_path = encode_url_path(&asset.rel_path);
+            return full_match.replace(raw_path, &format!("/{encoded_rel_path}"));
         }
 
         full_match.to_owned()
@@ -748,7 +761,7 @@ fn rewrite_feature_descriptions(
 mod tests {
     use super::*;
     use std::io::Write;
-    use tempfile::{NamedTempFile, tempdir};
+    use tempfile::{tempdir, NamedTempFile};
 
     // --- helpers ---
 
@@ -987,6 +1000,45 @@ mod tests {
         );
 
         assert_eq!(rewritten, "![test](/images/SearchByVin_screen.png)");
+    }
+
+    #[test]
+    fn rewrite_local_image_refs_encodes_mapped_image_output_path() {
+        let mut image_map = HashMap::new();
+        image_map.insert(
+            "selection du_titre/screen.png".to_string(),
+            "Search By Vin_écran final.png".to_string(),
+        );
+
+        let rewritten = rewrite_local_image_refs(
+            "![test](./selection%20du_titre/screen.png =500x450)",
+            &image_map,
+            &[],
+        );
+
+        assert_eq!(
+            rewritten,
+            "![test](/images/Search%20By%20Vin_%C3%A9cran%20final.png)"
+        );
+    }
+
+    #[test]
+    fn rewrite_local_image_refs_encodes_mapped_asset_output_path() {
+        let asset_refs = vec![AssetRef {
+            src_path: PathBuf::from("assets/screenshots/écran final.png"),
+            rel_path: "assets/screenshots/écran final.png".to_string(),
+        }];
+
+        let rewritten = rewrite_local_image_refs(
+            "![test](./screenshots/%C3%A9cran%20final.png)",
+            &HashMap::new(),
+            &asset_refs,
+        );
+
+        assert_eq!(
+            rewritten,
+            "![test](/assets/screenshots/%C3%A9cran%20final.png)"
+        );
     }
 
     // --- parse_feature_file: error cases ---

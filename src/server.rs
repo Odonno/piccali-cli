@@ -2,7 +2,7 @@ use crate::assets::FrontendAssets;
 use crate::format;
 use crate::models::Document;
 use crate::parser::{AssetRef, ImageRef};
-use color_eyre::eyre::{Result, eyre};
+use color_eyre::eyre::{eyre, Result};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::PathBuf;
@@ -123,7 +123,8 @@ fn handle_request(request: tiny_http::Request, state: &ServerState) {
         }
     } else if let Some(image_name) = path.strip_prefix("/images/") {
         // Serve a local image from disk.
-        match state.images.get(image_name) {
+        let decoded_image_name = decode_url_path(image_name);
+        match state.images.get(decoded_image_name.as_ref()) {
             Some(src_path) => match std::fs::read(src_path) {
                 Ok(bytes) => {
                     let mime = mime_for(image_name);
@@ -152,7 +153,8 @@ fn handle_request(request: tiny_http::Request, state: &ServerState) {
             }
             None => {
                 // Check user-provided assets before falling back to SPA index.html.
-                if let Some(src_path) = state.assets.get(asset_path) {
+                let decoded_asset_path = decode_url_path(asset_path);
+                if let Some(src_path) = state.assets.get(decoded_asset_path.as_ref()) {
                     match std::fs::read(src_path) {
                         Ok(bytes) => {
                             let mime = mime_for(asset_path);
@@ -197,6 +199,10 @@ fn handle_request(request: tiny_http::Request, state: &ServerState) {
     }
 }
 
+fn decode_url_path(path: &str) -> std::borrow::Cow<'_, str> {
+    url_escape::decode(path)
+}
+
 /// Map a file extension to the appropriate MIME type.
 fn mime_for(path: &str) -> &'static str {
     let ext = path.rsplit('.').next().unwrap_or("").to_lowercase();
@@ -215,5 +221,16 @@ fn mime_for(path: &str) -> &'static str {
         "eot" => "application/vnd.ms-fontobject",
         "txt" => "text/plain; charset=utf-8",
         _ => "application/octet-stream",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decode_url_path_decodes_percent_encoded_segments() {
+        let decoded = decode_url_path("assets/screenshots/%C3%A9cran%20final.png");
+        assert_eq!(decoded, "assets/screenshots/écran final.png");
     }
 }
