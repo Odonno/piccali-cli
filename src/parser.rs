@@ -761,7 +761,7 @@ fn rewrite_feature_descriptions(
 mod tests {
     use super::*;
     use std::io::Write;
-    use tempfile::{tempdir, NamedTempFile};
+    use tempfile::{NamedTempFile, tempdir};
 
     // --- helpers ---
 
