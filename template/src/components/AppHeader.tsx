@@ -32,15 +32,12 @@ export const AppHeader = ({
 		<header className="flex items-center gap-2 px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 z-100">
 			<SidebarTrigger className="-ml-1" />
 
-			<Separator orientation="vertical" className="h-5 mx-1" />
+			<Separator orientation="vertical" className="mx-1" />
 
 			<Link
 				to="/"
 				className="flex items-center gap-2.5 min-w-0 flex-none group"
 			>
-				<div className="flex items-center gap-1.5 shrink-0">
-					<Sparkles className="size-4 text-primary" />
-				</div>
 				<h1 className="text-base font-semibold tracking-tight truncate group-hover:opacity-75 transition-opacity">
 					{metadata.title}
 				</h1>
