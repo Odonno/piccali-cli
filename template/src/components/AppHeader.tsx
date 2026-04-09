@@ -5,6 +5,7 @@ import {
 	useCallback,
 	type KeyboardEvent,
 } from "react";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { CalendarClock, Sparkles, Search, X, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -59,19 +60,15 @@ export const AppHeader = ({
 		return () => document.removeEventListener("pointerdown", handlePointerDown);
 	}, []);
 
-	// Global keyboard shortcut: Ctrl+K / Cmd+K
-	useEffect(() => {
-		const handleGlobalKey = (e: globalThis.KeyboardEvent) => {
-			if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-				e.preventDefault();
-				inputRef.current?.focus();
-				inputRef.current?.select();
-				setIsOpen(true);
-			}
-		};
-		document.addEventListener("keydown", handleGlobalKey);
-		return () => document.removeEventListener("keydown", handleGlobalKey);
-	}, []);
+	useHotkey(
+		"Mod+K",
+		() => {
+			inputRef.current?.focus();
+			inputRef.current?.select();
+			setIsOpen(true);
+		},
+		{ preventDefault: true },
+	);
 
 	const handleSelect = useCallback(
 		(result: SearchResult) => {

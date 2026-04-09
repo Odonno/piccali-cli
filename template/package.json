@@ -20,6 +20,7 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/ibm-plex-sans": "^5.2.8",
+		"@tanstack/react-hotkeys": "^0.9.1",
 		"@tanstack/react-router": "^1.166.7",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
