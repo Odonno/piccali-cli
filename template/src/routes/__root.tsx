@@ -7,7 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingState } from "@/components/LoadingState";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
-import { useDataContext } from "@/hooks/useDataContext";
+import { useAtomValue } from "jotai";
+import { dataAtom, metadataAtom } from "@/atoms/state";
 import {
 	buildFeatureUrl,
 	buildRuleUrl,
@@ -16,7 +17,13 @@ import {
 import type { SelectedFeature } from "@/types/navigation";
 
 const RootComponent = () => {
-	const { data, metadata, isLoading } = useDataContext();
+	const dataLoadable = useAtomValue(dataAtom);
+	const metadataLoadable = useAtomValue(metadataAtom);
+	const isLoading =
+		dataLoadable.state === "loading" || metadataLoadable.state === "loading";
+	const data = dataLoadable.state === "hasData" ? dataLoadable.data : null;
+	const metadata =
+		metadataLoadable.state === "hasData" ? metadataLoadable.data : null;
 	const navigate = useNavigate();
 
 	useEffect(() => {

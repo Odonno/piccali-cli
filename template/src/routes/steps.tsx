@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BookOpen, Search } from "lucide-react";
-import { useDataContext } from "@/hooks/useDataContext";
+import { useAtomValue } from "jotai";
+import { dataAtom } from "@/atoms/state";
 import { collectUniqueSteps } from "@/functions/stats";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +48,8 @@ const STEP_TYPE_ORDER: Record<StepType, number> = {
 };
 
 const StepsPage = () => {
-	const { data } = useDataContext();
+	const dataLoadable = useAtomValue(dataAtom);
+	const data = dataLoadable.state === "hasData" ? dataLoadable.data : null;
 	const folders = data?.folders ?? [];
 	const allSteps = collectUniqueSteps(folders);
 

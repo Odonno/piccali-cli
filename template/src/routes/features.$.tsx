@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { FeatureContent } from "@/components/FeatureContent";
-import { useDataContext } from "@/hooks/useDataContext";
+import { useAtomValue } from "jotai";
+import { dataAtom } from "@/atoms/state";
 import {
 	resolveFeatureBySlug,
 	resolveRuleBySlug,
@@ -9,7 +10,8 @@ import {
 
 const FeatureOrRulePage = () => {
 	const { _splat } = Route.useParams();
-	const { data } = useDataContext();
+	const dataLoadable = useAtomValue(dataAtom);
+	const data = dataLoadable.state === "hasData" ? dataLoadable.data : null;
 	const navigate = useNavigate();
 
 	const folders = data?.folders ?? [];

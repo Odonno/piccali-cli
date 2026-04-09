@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, ListChecks, BookOpen, TriangleAlert } from "lucide-react";
-import { useDataContext } from "@/hooks/useDataContext";
+import { useAtomValue } from "jotai";
+import { dataAtom } from "@/atoms/state";
 import {
 	countFeatures,
 	countScenarios,
@@ -11,7 +12,8 @@ import { collectScenarioOutlineImprovementSummary } from "@/functions/scenarioIm
 import { StatCard } from "@/components/StatCard";
 
 const IndexPage = () => {
-	const { data } = useDataContext();
+	const dataLoadable = useAtomValue(dataAtom);
+	const data = dataLoadable.state === "hasData" ? dataLoadable.data : null;
 	const folders = data?.folders ?? [];
 
 	const features = countFeatures(folders);
