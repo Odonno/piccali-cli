@@ -16,6 +16,7 @@
 		"start": "vite",
 		"test": "vitest run",
 		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
 		"turbo": "turbo"
 	},
 	"dependencies": {
@@ -54,7 +55,8 @@
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.1",
-		"@vitest/browser-playwright": "^4.1.2",
+		"@vitest/browser-playwright": "^4.1.4",
+		"@vitest/coverage-v8": "^4.1.4",
 		"babel-plugin-react-compiler": "^1.0.0",
 		"globals": "^17.4.0",
 		"jsdom": "^29.0.2",
@@ -62,6 +64,6 @@
 		"turbo": "^2.8.21",
 		"typescript": "~5.9.3",
 		"vite": "^8.0.1",
-		"vitest": "^4.1.2"
+		"vitest": "^4.1.4"
 	}
 }

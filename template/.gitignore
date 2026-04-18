@@ -32,3 +32,6 @@ routeTree.gen.ts
 
 # Turbo
 .turbo
+
+# code coverage generated folder
+coverage

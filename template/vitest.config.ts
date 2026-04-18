@@ -23,5 +23,9 @@ export default defineConfig({
 			headless: true,
 			instances: [{ browser: "chromium" }],
 		},
+		coverage: {
+			include: ["src/**/*.{ts,tsx}"],
+			exclude: ["src/routeTree.gen.ts", "src/components/ui", "src/types"],
+		},
 	},
 });
