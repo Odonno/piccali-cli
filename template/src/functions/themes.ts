@@ -5,9 +5,3 @@ export const applyColors = (colors: ThemeColors) => {
 		document.documentElement.style.setProperty(`--theme-${key}`, value);
 	}
 };
-
-export const getSystemTheme = (): "light" | "dark" => {
-	return window.matchMedia("(prefers-color-scheme: dark)").matches
-		? "dark"
-		: "light";
-};

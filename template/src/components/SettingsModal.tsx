@@ -29,46 +29,14 @@ import {
 } from "@/context/ThemeProvider";
 import { cn } from "@/lib/utils";
 import type { AppTheme, ThemeColorKey } from "@/types/themes";
+import { getSystemLabel } from "@/functions/colors";
+import { THEME_ICONS } from "./Icons";
+import { ColorSwatch } from "./ColorSwatch";
 
 type SettingsModalProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
-
-const THEME_ICONS: Record<string, React.ReactNode> = {
-	system: <Monitor className="size-3.5" />,
-	light: <Sun className="size-3.5" />,
-	dark: <Moon className="size-3.5" />,
-};
-
-function getSystemLabel(): string {
-	const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-	return `System (${isDark ? "dark" : "light"})`;
-}
-
-function isHexColor(value: string): boolean {
-	return /^#[0-9a-fA-F]{3,8}$/.test(value.trim());
-}
-
-function ColorSwatch({ color }: { color: string }) {
-	// If it's a readable hex or named color, show it; otherwise show a pattern for complex values
-	const isReadable =
-		isHexColor(color) || /^rgb/.test(color) || /^oklch/.test(color);
-	return (
-		<div
-			className="size-4 rounded border border-border/50 shrink-0"
-			style={
-				isReadable
-					? { backgroundColor: color }
-					: {
-							background:
-								"repeating-linear-gradient(45deg, #ccc 0, #ccc 2px, transparent 0, transparent 50%) 0 / 4px 4px",
-						}
-			}
-			title={color}
-		/>
-	);
-}
 
 type CopiedKey = ThemeColorKey | null;
 

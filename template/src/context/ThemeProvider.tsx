@@ -11,7 +11,8 @@ import {
 	LIGHT_COLORS,
 } from "@/constants/themes/palettes";
 import { DEFAULT_CUSTOM_THEME, initialState } from "@/constants/themes/state";
-import { applyColors, getSystemTheme } from "@/functions/themes";
+import { getSystemTheme } from "@/functions/colors";
+import { applyColors } from "@/functions/themes";
 import type {
 	AppTheme,
 	CustomThemeOptions,
