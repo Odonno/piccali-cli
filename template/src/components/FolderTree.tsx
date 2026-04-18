@@ -36,6 +36,8 @@ import {
 	buildFeatureUrl,
 	buildRuleUrl,
 } from "@/functions/feature";
+import { useAtom } from "jotai";
+import { sidebarOpenKeysAtom } from "@/atoms/sidebar";
 
 type FolderTreeProps = {
 	/** The current level's folders to render. */
@@ -43,8 +45,6 @@ type FolderTreeProps = {
 	/** Root-level folders — used for URL building (paths are absolute from root). */
 	rootFolders: FolderNode[];
 	folderPath: number[];
-	openKeys: Record<string, boolean>;
-	toggleKey: (key: string) => void;
 	depth?: number;
 };
 
@@ -52,11 +52,14 @@ export const FolderTree = ({
 	folders,
 	rootFolders,
 	folderPath,
-	openKeys,
-	toggleKey,
 	depth = 0,
 }: FolderTreeProps) => {
+	const [openKeys, setOpenKeys] = useAtom(sidebarOpenKeysAtom);
 	const location = useRouterState({ select: (s) => s.location.pathname });
+
+	const toggleKey = (key: string) => {
+		setOpenKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+	};
 
 	return (
 		<>
@@ -121,8 +124,6 @@ export const FolderTree = ({
 											folders={folder.folders ?? []}
 											rootFolders={rootFolders}
 											folderPath={currentPath}
-											openKeys={openKeys}
-											toggleKey={toggleKey}
 											depth={depth + 1}
 										/>
 									)}

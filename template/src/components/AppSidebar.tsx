@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from "react";
 import { Layers, BookOpen } from "lucide-react";
 import {
 	Sidebar,
@@ -18,19 +17,9 @@ import { FolderTree } from "@/components/FolderTree";
 
 type AppSidebarProps = {
 	folders: FolderNode[];
-	openKeys: Record<string, boolean>;
-	setOpenKeys: Dispatch<SetStateAction<Record<string, boolean>>>;
 };
 
-export const AppSidebar = ({
-	folders,
-	openKeys,
-	setOpenKeys,
-}: AppSidebarProps) => {
-	const toggleKey = (key: string) => {
-		setOpenKeys((prev) => ({ ...prev, [key]: !prev[key] }));
-	};
-
+export const AppSidebar = ({ folders }: AppSidebarProps) => {
 	const totalFeatures = countFeaturesInFolders(folders);
 
 	return (
@@ -69,8 +58,6 @@ export const AppSidebar = ({
 								folders={folders}
 								rootFolders={folders}
 								folderPath={[]}
-								openKeys={openKeys}
-								toggleKey={toggleKey}
 							/>
 						</SidebarMenu>
 					</SidebarGroupContent>

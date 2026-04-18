@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarClock, Sparkles, Settings } from "lucide-react";
+import { CalendarClock, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";

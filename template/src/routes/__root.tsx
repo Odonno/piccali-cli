@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createRootRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -32,13 +32,6 @@ const RootComponent = () => {
 		}
 	}, [metadata]);
 
-	// Track sidebar open state for folders
-	const [openKeys, setOpenKeys] = useState<Record<string, boolean>>(() => {
-		const init: Record<string, boolean> = {};
-		init["0"] = true;
-		return init;
-	});
-
 	if (isLoading) {
 		return <LoadingState />;
 	}
@@ -51,27 +44,25 @@ const RootComponent = () => {
 			selection.path.folderPath,
 			selection.path.featureIndex,
 		);
-		if (!feature) return;
+		if (!feature) {
+			return;
+		}
 
 		if (selection.type === "rule") {
 			const rule = feature.rules?.[selection.ruleIndex];
 			if (rule) {
-				void navigate({ to: buildRuleUrl(folders, selection.path, rule) });
+				navigate({ to: buildRuleUrl(folders, selection.path, rule) });
 				return;
 			}
 		}
 
-		void navigate({ to: buildFeatureUrl(folders, selection.path) });
+		navigate({ to: buildFeatureUrl(folders, selection.path) });
 	};
 
 	return (
 		<TooltipProvider>
 			<SidebarProvider>
-				<AppSidebar
-					folders={folders}
-					openKeys={openKeys}
-					setOpenKeys={setOpenKeys}
-				/>
+				<AppSidebar folders={folders} />
 				<SidebarInset>
 					<div className="flex flex-col h-svh">
 						{metadata && (
