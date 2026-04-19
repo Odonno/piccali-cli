@@ -12,8 +12,9 @@ import {
 import { SearchBar } from "@/components/SearchBar";
 import { SettingsModal } from "@/components/SettingsModal";
 import { formatDate } from "@/functions/date";
-import type { PiccaliMetadata, FolderNode } from "@/types/data";
+import type { FolderNode } from "@/types/data";
 import type { SelectedFeature } from "@/types/navigation";
+import type { PiccaliMetadata } from "@/schemas/metadata";
 
 type AppHeaderProps = {
 	metadata: PiccaliMetadata;

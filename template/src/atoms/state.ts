@@ -1,6 +1,8 @@
 import { atom } from "jotai";
 import { loadable } from "jotai/utils";
-import type { PiccaliData, PiccaliMetadata } from "@/types/data";
+import type { PiccaliData } from "@/types/data";
+import { MetadataSchema, type PiccaliMetadata } from "@/schemas/metadata";
+import * as v from "valibot";
 
 const dataAsyncAtom = atom(async () => {
 	const res = await fetch("/data.json");
@@ -9,7 +11,9 @@ const dataAsyncAtom = atom(async () => {
 
 const metadataAsyncAtom = atom(async () => {
 	const res = await fetch("/metadata.json");
-	return res.json() as Promise<PiccaliMetadata>;
+	const data = await res.json();
+
+	return v.parse(MetadataSchema, data) as PiccaliMetadata;
 });
 
 export const dataAtom = loadable(dataAsyncAtom);

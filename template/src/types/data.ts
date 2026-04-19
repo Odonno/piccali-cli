@@ -83,8 +83,3 @@ export type StepGroup = {
 export type PiccaliData = {
 	folders: FolderNode[];
 };
-
-export type PiccaliMetadata = {
-	title: string;
-	createdAt: string;
-};

@@ -13,6 +13,8 @@ use std::path::Path;
 struct Metadata<'a> {
     title: &'a str,
     created_at: String,
+    scripts: Vec<String>,
+    styles: Vec<String>,
 }
 
 /// Format a document as a pretty-printed JSON string.
@@ -21,10 +23,26 @@ pub fn format_json(document: &Document) -> Result<String> {
 }
 
 /// Produce the `metadata.json` payload as a pretty-printed JSON string.
-pub fn format_metadata(title: &str) -> Result<String> {
+///
+/// `scripts` and `styles` are derived from `asset_refs` (filtered by `.js` / `.css` extension).
+pub fn format_metadata(title: &str, asset_refs: &[AssetRef]) -> Result<String> {
+    let mut scripts = Vec::<String>::new();
+    let mut styles = Vec::<String>::new();
+
+    for asset in asset_refs {
+        let path = &asset.rel_path;
+        if path.ends_with(".js") {
+            scripts.push(format!("/{path}"));
+        } else if path.ends_with(".css") {
+            styles.push(format!("/{path}"));
+        }
+    }
+
     let metadata = Metadata {
         title,
         created_at: Utc::now().to_rfc3339(),
+        scripts,
+        styles,
     };
     serde_json::to_string_pretty(&metadata).wrap_err("Metadata JSON serialization failed")
 }
@@ -71,7 +89,7 @@ pub fn format_html(
         .wrap_err_with(|| format!("Failed to write {}", data_path.display()))?;
 
     // Write metadata.json
-    let metadata_json = format_metadata(title)?;
+    let metadata_json = format_metadata(title, asset_refs)?;
     let metadata_path = output_dir.join("metadata.json");
     std::fs::write(&metadata_path, metadata_json)
         .wrap_err_with(|| format!("Failed to write {}", metadata_path.display()))?;
@@ -384,4 +402,94 @@ fn slugify(name: &str) -> String {
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
         .join("-")
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn make_asset(rel_path: &str) -> AssetRef {
+        AssetRef {
+            src_path: PathBuf::from(rel_path),
+            rel_path: rel_path.to_string(),
+        }
+    }
+
+    fn parse_metadata(json: &str) -> serde_json::Value {
+        serde_json::from_str(json).expect("valid JSON")
+    }
+
+    #[test]
+    fn metadata_contains_title_and_created_at() {
+        let json = format_metadata("My Docs", &[]).unwrap();
+        let v = parse_metadata(&json);
+        assert_eq!(v["title"], "My Docs");
+        assert!(v["createdAt"].as_str().is_some());
+    }
+
+    #[test]
+    fn metadata_user_js_asset_added_to_scripts() {
+        let asset = make_asset("custom/extra.js");
+        let json = format_metadata("test", &[asset]).unwrap();
+        let v = parse_metadata(&json);
+        let scripts: Vec<&str> = v["scripts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s.as_str().unwrap())
+            .collect();
+        assert!(
+            scripts.contains(&"/custom/extra.js"),
+            "expected /custom/extra.js in scripts: {scripts:?}"
+        );
+    }
+
+    #[test]
+    fn metadata_user_css_asset_added_to_styles() {
+        let asset = make_asset("custom/theme.css");
+        let json = format_metadata("test", &[asset]).unwrap();
+        let v = parse_metadata(&json);
+        let styles: Vec<&str> = v["styles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s.as_str().unwrap())
+            .collect();
+        assert!(
+            styles.contains(&"/custom/theme.css"),
+            "expected /custom/theme.css in styles: {styles:?}"
+        );
+    }
+
+    #[test]
+    fn metadata_non_js_css_asset_not_added() {
+        let asset = make_asset("images/logo.png");
+        let json = format_metadata("test", &[asset]).unwrap();
+        let v = parse_metadata(&json);
+        let scripts: Vec<&str> = v["scripts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s.as_str().unwrap())
+            .collect();
+        let styles: Vec<&str> = v["styles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s.as_str().unwrap())
+            .collect();
+        assert!(
+            !scripts.contains(&"/images/logo.png"),
+            "png should not be in scripts"
+        );
+        assert!(
+            !styles.contains(&"/images/logo.png"),
+            "png should not be in styles"
+        );
+    }
 }

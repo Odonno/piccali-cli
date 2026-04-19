@@ -26,6 +26,8 @@ struct ServerState {
     /// Map from URL path (e.g. `icons/logo.png`) → absolute source path on disk.
     /// Used to serve additional asset files specified via `--assets`.
     assets: HashMap<String, PathBuf>,
+    /// Original asset refs, kept for metadata generation.
+    asset_refs: Vec<AssetRef>,
 }
 
 impl ServerState {
@@ -38,7 +40,9 @@ impl ServerState {
 
     fn get_metadata_json(&self) -> std::result::Result<&str, &str> {
         self.metadata_json
-            .get_or_init(|| format::format_metadata(&self.title).map_err(|e| e.to_string()))
+            .get_or_init(|| {
+                format::format_metadata(&self.title, &self.asset_refs).map_err(|e| e.to_string())
+            })
             .as_deref()
             .map_err(|e| e.as_str())
     }
@@ -82,8 +86,8 @@ pub fn serve(
 
     // Build the assets lookup map (rel_path → src_path).
     let assets: HashMap<String, PathBuf> = asset_refs
-        .into_iter()
-        .map(|r| (r.rel_path, r.src_path))
+        .iter()
+        .map(|r| (r.rel_path.clone(), r.src_path.clone()))
         .collect();
 
     let state = Arc::new(ServerState {
@@ -93,6 +97,7 @@ pub fn serve(
         title,
         images,
         assets,
+        asset_refs,
     });
 
     for request in server.incoming_requests() {
