@@ -26,7 +26,7 @@ fn run() -> Result<()> {
     }
 
     // --assets is only supported for HTML output and the HTTP server
-    if cli.assets.is_some() {
+    if !cli.assets.is_empty() {
         match &cli.format {
             Some(Format::Json) => bail!("--assets is not supported for the json formatter."),
             Some(Format::Markdown) => {
@@ -70,10 +70,11 @@ fn run() -> Result<()> {
     }
 
     // Discover additional asset files if --assets was provided.
-    let asset_refs = cli
+    let asset_refs: Vec<parser::AssetRef> = cli
         .assets
-        .map(|g| parser::discover_assets(&g))
-        .unwrap_or_default();
+        .iter()
+        .flat_map(parser::discover_assets)
+        .collect();
 
     // Collect local image references from all feature descriptions, then
     // rewrite the description strings to use the canonical `/images/` URL.
