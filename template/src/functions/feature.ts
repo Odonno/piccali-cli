@@ -2,6 +2,37 @@ import { slugify } from "@/lib/utils";
 import type { Feature, FolderNode, Rule } from "@/schemas/data";
 import type { FeaturePath, SelectedFeature } from "@/types/navigation";
 
+export const ruleHasWarnings = (
+	rule: Rule,
+	warningScenarioIds: Set<string>,
+): boolean =>
+	rule.scenarios?.some((s) => warningScenarioIds.has(s.id)) ?? false;
+
+export const featureHasWarnings = (
+	feature: Feature,
+	warningScenarioIds: Set<string>,
+): boolean => {
+	if (feature.scenarios?.some((s) => warningScenarioIds.has(s.id))) {
+		return true;
+	}
+	return (
+		feature.rules?.some((r) => ruleHasWarnings(r, warningScenarioIds)) ?? false
+	);
+};
+
+export const folderHasWarnings = (
+	folder: FolderNode,
+	warningScenarioIds: Set<string>,
+): boolean => {
+	if (folder.features?.some((f) => featureHasWarnings(f, warningScenarioIds))) {
+		return true;
+	}
+	return (
+		folder.folders?.some((f) => folderHasWarnings(f, warningScenarioIds)) ??
+		false
+	);
+};
+
 export const featureScenarioCount = (feature: Feature): number => {
 	const direct = feature.scenarios?.length ?? 0;
 	const fromRules =

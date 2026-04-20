@@ -5,6 +5,7 @@ import {
 	Tag as TagIcon,
 	Folder,
 	FolderOpen,
+	TriangleAlert,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
@@ -35,9 +36,14 @@ import {
 	folderKey,
 	buildFeatureUrl,
 	buildRuleUrl,
+	folderHasWarnings,
+	featureHasWarnings,
+	ruleHasWarnings,
 } from "@/functions/feature";
 import { useAtom } from "jotai";
 import { sidebarOpenKeysAtom } from "@/atoms/sidebar";
+import { useAtomValue } from "jotai";
+import { warningScenariosAtom } from "@/atoms/scenarioImprovements";
 
 type FolderTreeProps = {
 	/** The current level's folders to render. */
@@ -55,6 +61,8 @@ export const FolderTree = ({
 	depth = 0,
 }: FolderTreeProps) => {
 	const [openKeys, setOpenKeys] = useAtom(sidebarOpenKeysAtom);
+	const warningScenarioIds = useAtomValue(warningScenariosAtom);
+
 	const location = useRouterState({ select: (s) => s.location.pathname });
 
 	const toggleKey = (key: string) => {
@@ -71,6 +79,7 @@ export const FolderTree = ({
 				const hasChildren =
 					(folder.folders?.length ?? 0) > 0 ||
 					(folder.features?.length ?? 0) > 0;
+				const hasWarning = folderHasWarnings(folder, warningScenarioIds);
 
 				return (
 					<Collapsible
@@ -102,6 +111,9 @@ export const FolderTree = ({
 										>
 											{count}
 										</Badge>
+									)}
+									{!isOpen && hasWarning && (
+										<TriangleAlert className="size-3.5 shrink-0 text-yellow-500" />
 									)}
 									{hasChildren && (
 										<ChevronRight
@@ -145,6 +157,10 @@ export const FolderTree = ({
 											location.startsWith(`${featureUrl}/`);
 										const featureItemKey = `${key}.f${featureIdx}`;
 										const isFeatureOpen = openKeys[featureItemKey] ?? false;
+										const featureWarning = featureHasWarnings(
+											feature,
+											warningScenarioIds,
+										);
 
 										if (!hasRules) {
 											return (
@@ -167,6 +183,9 @@ export const FolderTree = ({
 																		>
 																			{featureCount}
 																		</Badge>
+																	)}
+																	{featureWarning && (
+																		<TriangleAlert className="size-3.5 shrink-0 text-yellow-500" />
 																	)}
 																</Link>
 															</SidebarMenuSubButton>
@@ -239,6 +258,9 @@ export const FolderTree = ({
 																		{featureCount}
 																	</Badge>
 																)}
+																{!isFeatureOpen && featureWarning && (
+																	<TriangleAlert className="size-3.5 shrink-0 text-yellow-500" />
+																)}
 																<ChevronRight
 																	className={cn(
 																		"size-3.5 shrink-0 transition-transform duration-200",
@@ -259,6 +281,11 @@ export const FolderTree = ({
 																	rule,
 																);
 																const ruleIsActive = location === ruleUrl;
+																const hasWarnings = ruleHasWarnings(
+																	rule,
+																	warningScenarioIds,
+																);
+
 																return (
 																	<SidebarMenuSubItem key={ruleUrl}>
 																		<SidebarMenuSubButton
@@ -278,6 +305,9 @@ export const FolderTree = ({
 																						{rule.scenarios?.length}
 																					</Badge>
 																				)}
+																				{hasWarnings ? (
+																					<TriangleAlert className="size-3.5 shrink-0 text-yellow-500" />
+																				) : null}
 																			</Link>
 																		</SidebarMenuSubButton>
 																	</SidebarMenuSubItem>
