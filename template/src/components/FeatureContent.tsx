@@ -161,8 +161,8 @@ export const FeatureContent = ({
 				</div>
 			)}
 
-			{/* Scenarios (only shown when not a rules-only feature, or when a rule is selected) */}
-			{!hasRules && (
+			{/* Scenarios (shown when rule selected, or when feature has root-level scenarios) */}
+			{(!hasRules || scenarios.length > 0) && (
 				<>
 					{/* Scenarios count */}
 					<div className="flex items-center gap-2 text-muted-foreground">
