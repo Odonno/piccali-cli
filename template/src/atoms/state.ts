@@ -3,7 +3,7 @@ import { loadable } from "jotai/utils";
 import { DataSchema, type PiccaliData } from "@/schemas/data";
 import { MetadataSchema, type PiccaliMetadata } from "@/schemas/metadata";
 import * as v from "valibot";
-import { collectUniqueSteps } from "@/functions/stats";
+import { collectUniqueSteps } from "@/functions/steps";
 
 const dataAsyncAtom = atom(async () => {
 	const res = await fetch("/data.json");
@@ -45,7 +45,7 @@ export const foldersAtom = atom((get) => {
 	return data?.folders ?? [];
 });
 
-export const allStepsAtom = atom((get) => {
+export const uniqueStepsAtom = atom((get) => {
 	const folders = get(foldersAtom);
 	return collectUniqueSteps(folders);
 });

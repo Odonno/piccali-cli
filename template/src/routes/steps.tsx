@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BookOpen, Search } from "lucide-react";
 import { useAtomValue } from "jotai";
-import { allStepsAtom } from "@/atoms/state";
+import { uniqueStepsAtom } from "@/atoms/state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ import {
 import type { StepType } from "@/schemas/data";
 
 const StepsPage = () => {
-	const allSteps = useAtomValue(allStepsAtom);
+	const uniqueSteps = useAtomValue(uniqueStepsAtom);
 
 	const [activeTypes, setActiveTypes] = useState<Set<StepType>>(
 		new Set(ALL_STEP_TYPES),
@@ -35,7 +35,7 @@ const StepsPage = () => {
 
 	const normalizedSearch = search.trim().toLowerCase();
 
-	const filteredSteps = allSteps
+	const filteredSteps = uniqueSteps
 		.filter((group) => {
 			if (!activeTypes.has(group.type)) {
 				return false;
@@ -59,7 +59,7 @@ const StepsPage = () => {
 		.toSorted((a, b) => STEP_TYPE_ORDER[a.type] - STEP_TYPE_ORDER[b.type]);
 
 	const isFiltered =
-		filteredSteps.length !== allSteps.length ||
+		filteredSteps.length !== uniqueSteps.length ||
 		activeTypes.size !== ALL_STEP_TYPES.length ||
 		normalizedSearch !== "";
 
@@ -74,8 +74,8 @@ const StepsPage = () => {
 					<h1 className="text-xl font-semibold">Step Definitions</h1>
 					<p className="text-sm text-muted-foreground">
 						{isFiltered
-							? `${filteredSteps.length} of ${allSteps.length} step${allSteps.length !== 1 ? "s" : ""} shown`
-							: `${allSteps.length} unique step${allSteps.length !== 1 ? "s" : ""} across all features`}
+							? `${filteredSteps.length} of ${uniqueSteps.length} step${uniqueSteps.length !== 1 ? "s" : ""} shown`
+							: `${uniqueSteps.length} unique step${uniqueSteps.length !== 1 ? "s" : ""} across all features`}
 					</p>
 				</div>
 			</div>
@@ -126,7 +126,7 @@ const StepsPage = () => {
 			</div>
 
 			{/* Step list */}
-			{allSteps.length === 0 ? (
+			{uniqueSteps.length === 0 ? (
 				<p className="text-muted-foreground text-sm">No steps found.</p>
 			) : filteredSteps.length === 0 ? (
 				<p className="text-muted-foreground text-sm">

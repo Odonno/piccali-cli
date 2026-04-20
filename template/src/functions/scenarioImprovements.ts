@@ -5,7 +5,7 @@ import type {
 	Step,
 	StepInput,
 } from "@/schemas/data";
-import type { StepGroup } from "@/types/step";
+import type { StepGroup } from "@/types/steps";
 
 type AnyScenario = Scenario | ScenarioInput;
 type AnyStep = Step | StepInput;

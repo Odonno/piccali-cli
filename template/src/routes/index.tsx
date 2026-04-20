@@ -1,23 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, ListChecks, BookOpen, TriangleAlert } from "lucide-react";
 import { useAtomValue } from "jotai";
-import { foldersAtom } from "@/atoms/state";
+import { uniqueStepsAtom, foldersAtom } from "@/atoms/state";
 import {
 	countFeatures,
 	countScenarios,
 	countScenarioOutlines,
-	collectUniqueSteps,
 } from "@/functions/stats";
 import { collectScenarioOutlineImprovementSummary } from "@/functions/scenarioImprovements";
 import { StatCard } from "@/components/StatCard";
 
 const IndexPage = () => {
 	const folders = useAtomValue(foldersAtom);
+	const uniqueSteps = useAtomValue(uniqueStepsAtom);
 
 	const features = countFeatures(folders);
 	const scenarios = countScenarios(folders);
 	const outlines = countScenarioOutlines(folders);
-	const steps = collectUniqueSteps(folders);
 	const {
 		scenariosMatchingOutline,
 		scenariosGroupableIntoOutline,
@@ -63,14 +62,14 @@ const IndexPage = () => {
 
 				<StatCard
 					icon={<BookOpen className="size-4 text-muted-foreground" />}
-					value={steps.length}
+					value={uniqueSteps.length}
 					label=""
 				>
 					<Link
 						to="/steps"
 						className="text-sm text-primary underline-offset-4 hover:underline"
 					>
-						{steps.length <= 1 ? "step" : "steps"} — view definitions
+						{uniqueSteps.length <= 1 ? "step" : "steps"} — view definitions
 					</Link>
 				</StatCard>
 			</div>
