@@ -1,6 +1,16 @@
-import type { FolderNode, Scenario, Step, StepGroup } from "@/types/data";
+import type {
+	FolderNode,
+	Scenario,
+	ScenarioInput,
+	Step,
+	StepInput,
+} from "@/schemas/data";
+import type { StepGroup } from "@/types/step";
 
-const isScenarioOutline = (scenario: Scenario): boolean =>
+type AnyScenario = Scenario | ScenarioInput;
+type AnyStep = Step | StepInput;
+
+const isScenarioOutline = (scenario: AnyScenario): boolean =>
 	scenario.keyword.includes("Outline");
 
 const toPattern = (text: string): string =>
@@ -17,14 +27,14 @@ const toSlug = (type: string, pattern: string): string =>
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-+|-+$/g, "");
 
-const stepSignaturePart = (step: Step): string =>
+const stepSignaturePart = (step: AnyStep): string =>
 	`${step.type}:${toPattern(step.text)}`;
 
-const scenarioSignature = (scenario: Scenario): string =>
+const scenarioSignature = (scenario: AnyScenario): string =>
 	scenario.steps.map(stepSignaturePart).join("||");
 
 const hasTextVariations = (
-	scenarios: Scenario[],
+	scenarios: AnyScenario[],
 	indices: number[],
 ): boolean => {
 	if (indices.length < 2) return false;
@@ -41,7 +51,9 @@ const hasTextVariations = (
 };
 
 /** Build StepGroup[] for one scenario (outline or regular scenario). */
-export const computeScenarioStepGroups = (scenario: Scenario): StepGroup[] => {
+export const computeScenarioStepGroups = (
+	scenario: AnyScenario,
+): StepGroup[] => {
 	const groupMap = new Map<string, StepGroup>();
 
 	for (const step of scenario.steps) {
@@ -50,7 +62,7 @@ export const computeScenarioStepGroups = (scenario: Scenario): StepGroup[] => {
 
 		const existing = groupMap.get(groupKey);
 		if (existing) {
-			existing.matches.push(step);
+			existing.matches.push(step as Step);
 			continue;
 		}
 
@@ -58,7 +70,7 @@ export const computeScenarioStepGroups = (scenario: Scenario): StepGroup[] => {
 			id: toSlug(step.type, pattern),
 			type: step.type,
 			pattern,
-			matches: [step],
+			matches: [step as Step],
 		});
 	}
 
@@ -78,7 +90,7 @@ export type ScenarioOutlineImprovement = {
  * - regular scenarios that can be grouped together into a new Scenario Outline
  */
 export const analyzeScenarioOutlineImprovements = (
-	scenarios: Scenario[],
+	scenarios: AnyScenario[],
 ): ScenarioOutlineImprovement[] => {
 	const profiles = scenarios.map((scenario) => ({
 		isOutline: isScenarioOutline(scenario),
@@ -145,8 +157,8 @@ export type ScenarioOutlineImprovementSummary = {
 	outlineGroupCandidates: number;
 };
 
-const analyzeSections = (folders: FolderNode[]): Scenario[][] => {
-	const sections: Scenario[][] = [];
+const analyzeSections = (folders: FolderNode[]): AnyScenario[][] => {
+	const sections: AnyScenario[][] = [];
 
 	const walkFolders = (nodes: FolderNode[]) => {
 		for (const folder of nodes) {

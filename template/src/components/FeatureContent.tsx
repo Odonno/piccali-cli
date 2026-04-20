@@ -25,20 +25,25 @@ import { StepList } from "@/components/StepList";
 import { TableCellValue } from "@/components/TableCellValue";
 import { resolveExampleVars, type ExampleRowKey } from "@/functions/examples";
 import { analyzeScenarioOutlineImprovements } from "@/functions/scenarioImprovements";
-import type { Feature, Rule } from "@/types/data";
+import type { Feature, Rule } from "@/schemas/data";
+import { buildRuleUrl } from "@/functions/feature";
+import type { FeaturePath } from "@/types/navigation";
+import { useAtomValue } from "jotai";
+import { foldersAtom } from "@/atoms/state";
 
 type FeatureContentProps = {
 	feature: Feature;
+	path: FeaturePath;
 	rule?: Rule;
-	/** Return the URL for a given rule index; used to generate Link hrefs. */
-	getRuleUrl?: (ruleIndex: number) => string;
 };
 
 export const FeatureContent = ({
 	feature,
+	path,
 	rule,
-	getRuleUrl,
 }: FeatureContentProps) => {
+	const folders = useAtomValue(foldersAtom);
+
 	const subject = rule ?? feature;
 	const scenarios = subject.scenarios ?? [];
 	const background = subject.background;
@@ -69,6 +74,11 @@ export const FeatureContent = ({
 				[scenarioIndex]: current === key ? null : key,
 			};
 		});
+	};
+
+	const getRuleUrl = (ruleIndex: number): string => {
+		const rule = feature.rules?.[ruleIndex];
+		return rule ? buildRuleUrl(folders, path, rule) : "/";
 	};
 
 	return (
@@ -127,7 +137,7 @@ export const FeatureContent = ({
 					<div className="flex flex-col gap-2">
 						{feature.rules?.map((r, ruleIdx) => {
 							const ruleScenarioCount = r.scenarios?.length ?? 0;
-							const ruleUrl = getRuleUrl?.(ruleIdx);
+							const ruleUrl = getRuleUrl(ruleIdx);
 							return (
 								<Link
 									key={r.name || r.keyword}

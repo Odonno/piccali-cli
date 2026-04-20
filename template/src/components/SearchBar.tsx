@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, type KeyboardEvent } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { Search, X } from "lucide-react";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { SearchDropdown } from "@/components/SearchDropdown";
 import { searchData } from "@/functions/search";
 import { cn } from "@/lib/utils";
@@ -10,19 +10,24 @@ import {
 	searchIsOpenAtom,
 	searchActiveIndexAtom,
 } from "@/atoms/search";
-import type { FolderNode } from "@/types/data";
 import type { SelectedFeature } from "@/types/navigation";
 import type { SearchResult } from "@/types/search";
+import { foldersAtom } from "@/atoms/state";
+import {
+	buildFeatureUrl,
+	buildRuleUrl,
+	resolveFeature,
+} from "@/functions/feature";
+import { useNavigate } from "@tanstack/react-router";
 
-type SearchBarProps = {
-	folders: FolderNode[];
-	onSelectResult: (selection: SelectedFeature) => void;
-};
-
-export const SearchBar = ({ folders, onSelectResult }: SearchBarProps) => {
+export const SearchBar = () => {
 	const [query, setQuery] = useAtom(searchQueryAtom);
 	const [isOpen, setIsOpen] = useAtom(searchIsOpenAtom);
 	const [activeIndex, setActiveIndex] = useAtom(searchActiveIndexAtom);
+
+	const folders = useAtomValue(foldersAtom);
+
+	const navigate = useNavigate();
 
 	const inputRef = useRef<HTMLInputElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -53,14 +58,38 @@ export const SearchBar = ({ folders, onSelectResult }: SearchBarProps) => {
 		{ preventDefault: true },
 	);
 
+	const handleSelectResult = useCallback(
+		(selection: SelectedFeature) => {
+			const feature = resolveFeature(
+				folders,
+				selection.path.folderPath,
+				selection.path.featureIndex,
+			);
+			if (!feature) {
+				return;
+			}
+
+			if (selection.type === "rule") {
+				const rule = feature.rules?.[selection.ruleIndex];
+				if (rule) {
+					navigate({ to: buildRuleUrl(folders, selection.path, rule) });
+					return;
+				}
+			}
+
+			navigate({ to: buildFeatureUrl(folders, selection.path) });
+		},
+		[folders, navigate],
+	);
+
 	const handleSelect = useCallback(
 		(result: SearchResult) => {
-			onSelectResult(result.selection);
+			handleSelectResult(result.selection);
 			setIsOpen(false);
 			setQuery("");
 			inputRef.current?.blur();
 		},
-		[onSelectResult, setIsOpen, setQuery],
+		[handleSelectResult, setIsOpen, setQuery],
 	);
 
 	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {

@@ -1,5 +1,5 @@
 import { slugify } from "@/lib/utils";
-import type { Feature, FolderNode, Rule } from "@/types/data";
+import type { Feature, FolderNode, Rule } from "@/schemas/data";
 import type { FeaturePath, SelectedFeature } from "@/types/navigation";
 
 export const featureScenarioCount = (feature: Feature): number => {

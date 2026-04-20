@@ -1,20 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { FeatureContent } from "@/components/FeatureContent";
 import { useAtomValue } from "jotai";
-import { dataAtom } from "@/atoms/state";
-import {
-	resolveFeatureBySlug,
-	resolveRuleBySlug,
-	buildRuleUrl,
-} from "@/functions/feature";
+import { foldersAtom } from "@/atoms/state";
+import { resolveFeatureBySlug, resolveRuleBySlug } from "@/functions/feature";
 
 const FeatureOrRulePage = () => {
 	const { _splat } = Route.useParams();
-	const dataLoadable = useAtomValue(dataAtom);
-	const data = dataLoadable.state === "hasData" ? dataLoadable.data : null;
 	const navigate = useNavigate();
 
-	const folders = data?.folders ?? [];
+	const folders = useAtomValue(foldersAtom);
+
 	const segments = (_splat ?? "").split("/").filter(Boolean);
 
 	// Detect rule URL: contains "/rules/" segment
@@ -48,25 +43,15 @@ const FeatureOrRulePage = () => {
 		);
 	}
 
-	const getRuleUrl = (ruleIndex: number): string => {
-		const rule = feature.rules?.[ruleIndex];
-		if (!rule) return "/";
-		return buildRuleUrl(folders, path, rule);
-	};
-
 	// If this is a rule page but the URL has no /rules/ — redirect to feature
 	// (defensive: shouldn't happen but handle gracefully)
 	if (ruleSlug && !resolvedRule) {
-		void navigate({ to: `/features/${featureSegments.join("/")}` });
+		navigate({ to: `/features/${featureSegments.join("/")}` });
 		return null;
 	}
 
 	return (
-		<FeatureContent
-			feature={feature}
-			rule={resolvedRule?.rule}
-			getRuleUrl={getRuleUrl}
-		/>
+		<FeatureContent feature={feature} path={path} rule={resolvedRule?.rule} />
 	);
 };
 

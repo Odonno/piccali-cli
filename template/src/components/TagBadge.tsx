@@ -1,6 +1,6 @@
 import { Tag as TagIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { Tag } from "@/types/data";
+import type { Tag } from "@/schemas/data";
 
 /** Renders a single tag as a Badge, optionally wrapped in an <a> link. */
 export const TagBadge = ({

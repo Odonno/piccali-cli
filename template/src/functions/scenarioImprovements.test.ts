@@ -3,12 +3,14 @@ import {
 	analyzeScenarioOutlineImprovements,
 	collectScenarioOutlineImprovementSummary,
 } from "./scenarioImprovements";
-import type { FolderNode, Scenario, Step } from "@/types/data";
+import type { Feature, Step, Scenario, Rule, FolderNode } from "@/schemas/data";
+import { v4 as uuidv4 } from "uuid";
 
 const buildSteps = (action: string, message: string): Step[] => [
-	{ keyword: "Given", type: "Given", text: "I start the app" },
-	{ keyword: "When", type: "When", text: `I do "${action}"` },
+	{ id: uuidv4(), keyword: "Given", type: "Given", text: "I start the app" },
+	{ id: uuidv4(), keyword: "When", type: "When", text: `I do "${action}"` },
 	{
+		id: uuidv4(),
 		keyword: "Then",
 		type: "Then",
 		text: `I see an error message "${message}"`,
@@ -20,6 +22,7 @@ const buildScenario = (
 	action: string,
 	message: string,
 ): Scenario => ({
+	id: uuidv4(),
 	keyword: "Scenario",
 	name,
 	steps: buildSteps(action, message),
@@ -42,12 +45,24 @@ describe("analyzeScenarioOutlineImprovements", () => {
 
 	test("flags regular scenario that matches existing scenario outline", () => {
 		const outline: Scenario = {
+			id: uuidv4(),
 			keyword: "Scenario Outline",
 			name: "Errors by action",
 			steps: [
-				{ keyword: "Given", type: "Given", text: "I start the app" },
-				{ keyword: "When", type: "When", text: 'I do "<action>"' },
 				{
+					id: uuidv4(),
+					keyword: "Given",
+					type: "Given",
+					text: "I start the app",
+				},
+				{
+					id: uuidv4(),
+					keyword: "When",
+					type: "When",
+					text: 'I do "<action>"',
+				},
+				{
+					id: uuidv4(),
 					keyword: "Then",
 					type: "Then",
 					text: 'I see an error message "<message>"',
@@ -77,57 +92,62 @@ describe("analyzeScenarioOutlineImprovements", () => {
 
 describe("collectScenarioOutlineImprovementSummary", () => {
 	test("aggregates improvement totals across folders", () => {
+		const feature: Feature = {
+			id: uuidv4(),
+			keyword: "Feature",
+			name: "Errors",
+			scenarios: [buildScenario("A", "X", "M"), buildScenario("B", "Y", "W")],
+			rules: [
+				{
+					id: uuidv4(),
+					keyword: "Rule",
+					name: "Validation",
+					scenarios: [
+						{
+							id: uuidv4(),
+							keyword: "Scenario Outline",
+							name: "Errors by action",
+							steps: [
+								{
+									id: uuidv4(),
+									keyword: "Given",
+									type: "Given",
+									text: "I start the app",
+								},
+								{
+									id: uuidv4(),
+									keyword: "When",
+									type: "When",
+									text: 'I do "<action>"',
+								},
+								{
+									id: uuidv4(),
+									keyword: "Then",
+									type: "Then",
+									text: 'I see an error message "<message>"',
+								},
+							],
+							examples: [
+								{
+									keyword: "Examples",
+									table: {
+										header: ["action", "message"],
+										rows: [["X", "M"]],
+									},
+								},
+							],
+						},
+						buildScenario("C", "Z", "Q"),
+					],
+				} satisfies Rule,
+			],
+		};
+
 		const folders: FolderNode[] = [
 			{
 				name: "features",
 				features: [
-					{
-						keyword: "Feature",
-						name: "Errors",
-						scenarios: [
-							buildScenario("A", "X", "M"),
-							buildScenario("B", "Y", "W"),
-						],
-						rules: [
-							{
-								keyword: "Rule",
-								name: "Validation",
-								scenarios: [
-									{
-										keyword: "Scenario Outline",
-										name: "Errors by action",
-										steps: [
-											{
-												keyword: "Given",
-												type: "Given",
-												text: "I start the app",
-											},
-											{
-												keyword: "When",
-												type: "When",
-												text: 'I do "<action>"',
-											},
-											{
-												keyword: "Then",
-												type: "Then",
-												text: 'I see an error message "<message>"',
-											},
-										],
-										examples: [
-											{
-												keyword: "Examples",
-												table: {
-													header: ["action", "message"],
-													rows: [["X", "M"]],
-												},
-											},
-										],
-									},
-									buildScenario("C", "Z", "Q"),
-								],
-							},
-						],
-					},
+					feature as unknown as NonNullable<FolderNode["features"]>[number],
 				],
 			},
 		];

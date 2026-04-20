@@ -1,4 +1,4 @@
-import type { Tag } from "@/types/data";
+import type { Tag } from "@/schemas/data";
 import type { SelectedFeature } from "@/types/navigation";
 
 export type SearchResultKind = "feature" | "scenario" | "step" | "tag";

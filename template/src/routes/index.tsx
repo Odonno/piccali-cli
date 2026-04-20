@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, ListChecks, BookOpen, TriangleAlert } from "lucide-react";
 import { useAtomValue } from "jotai";
-import { dataAtom } from "@/atoms/state";
+import { foldersAtom } from "@/atoms/state";
 import {
 	countFeatures,
 	countScenarios,
@@ -12,21 +12,17 @@ import { collectScenarioOutlineImprovementSummary } from "@/functions/scenarioIm
 import { StatCard } from "@/components/StatCard";
 
 const IndexPage = () => {
-	const dataLoadable = useAtomValue(dataAtom);
-	const data = dataLoadable.state === "hasData" ? dataLoadable.data : null;
-	const folders = data?.folders ?? [];
+	const folders = useAtomValue(foldersAtom);
 
 	const features = countFeatures(folders);
 	const scenarios = countScenarios(folders);
 	const outlines = countScenarioOutlines(folders);
 	const steps = collectUniqueSteps(folders);
-	const scenarioOutlineImprovements =
-		collectScenarioOutlineImprovementSummary(folders);
 	const {
 		scenariosMatchingOutline,
 		scenariosGroupableIntoOutline,
 		outlineGroupCandidates,
-	} = scenarioOutlineImprovements;
+	} = collectScenarioOutlineImprovementSummary(folders);
 	const totalWarnings =
 		scenariosMatchingOutline + scenariosGroupableIntoOutline;
 	const hasWarnings = totalWarnings > 0;
@@ -44,7 +40,7 @@ const IndexPage = () => {
 				<StatCard
 					icon={<FileText className="size-4 text-muted-foreground" />}
 					value={features}
-					label={features === 1 ? "feature file" : "feature files"}
+					label={features <= 1 ? "feature file" : "feature files"}
 				/>
 
 				<StatCard
@@ -53,12 +49,12 @@ const IndexPage = () => {
 					label=""
 				>
 					<p className="text-sm text-muted-foreground">
-						{scenarios === 1 ? "scenario" : "scenarios"}
+						{scenarios <= 1 ? "scenario" : "scenarios"}
 						{outlines > 0 && (
 							<>
 								{" "}
 								<span className="text-foreground/50 text-xs">
-									({outlines} outline{outlines !== 1 ? "s" : ""})
+									({outlines} outline{outlines > 1 ? "s" : ""})
 								</span>
 							</>
 						)}
@@ -74,7 +70,7 @@ const IndexPage = () => {
 						to="/steps"
 						className="text-sm text-primary underline-offset-4 hover:underline"
 					>
-						{steps.length === 1 ? "step" : "steps"} — view definitions
+						{steps.length <= 1 ? "step" : "steps"} — view definitions
 					</Link>
 				</StatCard>
 			</div>

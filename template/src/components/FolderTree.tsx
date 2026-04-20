@@ -26,7 +26,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { FolderNode } from "@/types/data";
+import type { FolderNode } from "@/schemas/data";
 import type { FeaturePath } from "@/types/navigation";
 import {
 	featureScenarioCount,

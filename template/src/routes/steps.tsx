@@ -2,56 +2,19 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BookOpen, Search } from "lucide-react";
 import { useAtomValue } from "jotai";
-import { dataAtom } from "@/atoms/state";
-import { collectUniqueSteps } from "@/functions/stats";
+import { allStepsAtom } from "@/atoms/state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { StepType } from "@/types/data";
-
-const ALL_STEP_TYPES: StepType[] = ["Given", "When", "Then"];
-
-/**
- * Distinctive OKLCH colors per variant — scoped to this page only.
- * bg/text are used on the badge; border is used on the row left accent.
- * All values chosen to be perceptually distinct and readable in both
- * light and dark mode.
- */
-const STEP_TYPE_COLORS: Record<
-	StepType,
-	{ bg: string; text: string; border: string; dimBg: string }
-> = {
-	Given: {
-		bg: "oklch(0.65 0.17 155)", // emerald green
-		text: "oklch(0.97 0.02 155)",
-		border: "oklch(0.65 0.17 155)",
-		dimBg: "oklch(0.65 0.17 155 / 8%)",
-	},
-	When: {
-		bg: "oklch(0.72 0.17 55)", // amber
-		text: "oklch(0.18 0.04 55)",
-		border: "oklch(0.72 0.17 55)",
-		dimBg: "oklch(0.72 0.17 55 / 8%)",
-	},
-	Then: {
-		bg: "oklch(0.58 0.22 280)", // violet
-		text: "oklch(0.97 0.02 280)",
-		border: "oklch(0.58 0.22 280)",
-		dimBg: "oklch(0.58 0.22 280 / 8%)",
-	},
-};
-
-const STEP_TYPE_ORDER: Record<StepType, number> = {
-	Given: 0,
-	When: 1,
-	Then: 2,
-};
+import {
+	ALL_STEP_TYPES,
+	STEP_TYPE_COLORS,
+	STEP_TYPE_ORDER,
+} from "@/constants/steps";
+import type { StepType } from "@/schemas/data";
 
 const StepsPage = () => {
-	const dataLoadable = useAtomValue(dataAtom);
-	const data = dataLoadable.state === "hasData" ? dataLoadable.data : null;
-	const folders = data?.folders ?? [];
-	const allSteps = collectUniqueSteps(folders);
+	const allSteps = useAtomValue(allStepsAtom);
 
 	const [activeTypes, setActiveTypes] = useState<Set<StepType>>(
 		new Set(ALL_STEP_TYPES),
@@ -74,7 +37,10 @@ const StepsPage = () => {
 
 	const filteredSteps = allSteps
 		.filter((group) => {
-			if (!activeTypes.has(group.type)) return false;
+			if (!activeTypes.has(group.type)) {
+				return false;
+			}
+
 			if (normalizedSearch) {
 				// Match against pattern or any of the original step texts
 				const inPattern = group.pattern
@@ -83,11 +49,14 @@ const StepsPage = () => {
 				const inMatches = group.matches.some((s) =>
 					s.text.toLowerCase().includes(normalizedSearch),
 				);
-				if (!inPattern && !inMatches) return false;
+				if (!inPattern && !inMatches) {
+					return false;
+				}
 			}
+
 			return true;
 		})
-		.sort((a, b) => STEP_TYPE_ORDER[a.type] - STEP_TYPE_ORDER[b.type]);
+		.toSorted((a, b) => STEP_TYPE_ORDER[a.type] - STEP_TYPE_ORDER[b.type]);
 
 	const isFiltered =
 		filteredSteps.length !== allSteps.length ||

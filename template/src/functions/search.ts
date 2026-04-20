@@ -1,4 +1,4 @@
-import type { FolderNode, Tag } from "@/types/data";
+import type { FolderNode, Tag } from "@/schemas/data";
 import type { FeaturePath, SelectedFeature } from "@/types/navigation";
 import type { SearchResult, SearchResultKind } from "@/types/search";
 

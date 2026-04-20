@@ -1,4 +1,4 @@
-import type { Step } from "@/types/data";
+import type { Step } from "@/schemas/data";
 import {
 	Table,
 	TableBody,

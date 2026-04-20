@@ -1,4 +1,5 @@
-import type { Feature, FolderNode, Step, StepGroup } from "@/types/data";
+import type { Feature, FolderNode, Step } from "@/schemas/data";
+import type { StepGroup } from "@/types/step";
 
 /** Count all features (files) in a folder tree. */
 export const countFeatures = (folders: FolderNode[]): number =>

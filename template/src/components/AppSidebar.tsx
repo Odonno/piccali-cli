@@ -11,15 +11,13 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
-import type { FolderNode } from "@/types/data";
 import { countFeaturesInFolders } from "@/functions/feature";
 import { FolderTree } from "@/components/FolderTree";
+import { foldersAtom } from "@/atoms/state";
+import { useAtomValue } from "jotai";
 
-type AppSidebarProps = {
-	folders: FolderNode[];
-};
-
-export const AppSidebar = ({ folders }: AppSidebarProps) => {
+export const AppSidebar = () => {
+	const folders = useAtomValue(foldersAtom);
 	const totalFeatures = countFeaturesInFolders(folders);
 
 	return (

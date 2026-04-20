@@ -12,21 +12,12 @@ import {
 import { SearchBar } from "@/components/SearchBar";
 import { SettingsModal } from "@/components/SettingsModal";
 import { formatDate } from "@/functions/date";
-import type { FolderNode } from "@/types/data";
-import type { SelectedFeature } from "@/types/navigation";
-import type { PiccaliMetadata } from "@/schemas/metadata";
+import { metadataAtom } from "@/atoms/state";
+import { useAtomValue } from "jotai";
 
-type AppHeaderProps = {
-	metadata: PiccaliMetadata;
-	folders: FolderNode[];
-	onSelectResult: (selection: SelectedFeature) => void;
-};
+export const AppHeader = () => {
+	const metadata = useAtomValue(metadataAtom);
 
-export const AppHeader = ({
-	metadata,
-	folders,
-	onSelectResult,
-}: AppHeaderProps) => {
 	const [settingsOpen, setSettingsOpen] = useState(false);
 
 	return (
@@ -40,16 +31,18 @@ export const AppHeader = ({
 				className="flex items-center gap-2.5 min-w-0 flex-none group"
 			>
 				<h1 className="text-base font-semibold tracking-tight truncate group-hover:opacity-75 transition-opacity">
-					{metadata.title}
+					{metadata?.title ?? "Cucumber docs"}
 				</h1>
 			</Link>
 
-			<SearchBar folders={folders} onSelectResult={onSelectResult} />
+			<SearchBar />
 
 			<div className="ml-auto flex items-center gap-2 shrink-0">
 				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 					<CalendarClock className="size-3.5" />
-					<span>Generated {formatDate(metadata.createdAt)}</span>
+					{metadata ? (
+						<span>Generated {formatDate(metadata.createdAt)}</span>
+					) : null}
 				</div>
 				<Separator orientation="vertical" className="h-5 mx-1" />
 				<Tooltip>

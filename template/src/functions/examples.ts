@@ -1,4 +1,4 @@
-import type { Examples } from "@/types/data";
+import type { Examples } from "@/schemas/data";
 
 /**
  * Key for a selected example row: "examplesIndex-rowIndex".
