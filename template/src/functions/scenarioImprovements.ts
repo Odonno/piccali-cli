@@ -1,17 +1,6 @@
-import type {
-	FolderNode,
-	Scenario,
-	ScenarioInput,
-	Step,
-	StepInput,
-} from "@/schemas/data";
+import type { Scenario, Step } from "@/schemas/data";
 import type { StepGroup } from "@/types/steps";
-
-type AnyScenario = Scenario | ScenarioInput;
-type AnyStep = Step | StepInput;
-
-const isScenarioOutline = (scenario: AnyScenario): boolean =>
-	scenario.keyword.includes("Outline");
+import { isScenarioOutline } from "./scenario";
 
 const toPattern = (text: string): string =>
 	text
@@ -27,22 +16,24 @@ const toSlug = (type: string, pattern: string): string =>
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-+|-+$/g, "");
 
-const stepSignaturePart = (step: AnyStep): string =>
+const stepSignaturePart = (step: Step): string =>
 	`${step.type}:${toPattern(step.text)}`;
 
-const scenarioSignature = (scenario: AnyScenario): string =>
+const scenarioSignature = (scenario: Scenario): string =>
 	scenario.steps.map(stepSignaturePart).join("||");
 
-const hasTextVariations = (
-	scenarios: AnyScenario[],
-	indices: number[],
-): boolean => {
-	if (indices.length < 2) return false;
+const hasTextVariations = (scenarios: Scenario[], ids: string[]): boolean => {
+	if (ids.length < 2) {
+		return false;
+	}
 
-	const reference = scenarios[indices[0]];
+	const scenarioById = new Map(scenarios.map((s) => [s.id, s]));
+	const reference = scenarioById.get(ids[0]);
+	if (!reference) return false;
+
 	for (let stepIndex = 0; stepIndex < reference.steps.length; stepIndex++) {
 		const values = new Set(
-			indices.map((index) => scenarios[index].steps[stepIndex]?.text ?? ""),
+			ids.map((id) => scenarioById.get(id)?.steps[stepIndex]?.text ?? ""),
 		);
 		if (values.size > 1) return true;
 	}
@@ -51,9 +42,7 @@ const hasTextVariations = (
 };
 
 /** Build StepGroup[] for one scenario (outline or regular scenario). */
-export const computeScenarioStepGroups = (
-	scenario: AnyScenario,
-): StepGroup[] => {
+export const computeScenarioStepGroups = (scenario: Scenario): StepGroup[] => {
 	const groupMap = new Map<string, StepGroup>();
 
 	for (const step of scenario.steps) {
@@ -62,7 +51,7 @@ export const computeScenarioStepGroups = (
 
 		const existing = groupMap.get(groupKey);
 		if (existing) {
-			existing.matches.push(step as Step);
+			existing.matches.push(step);
 			continue;
 		}
 
@@ -78,146 +67,61 @@ export const computeScenarioStepGroups = (
 };
 
 export type ScenarioOutlineImprovement = {
-	stepGroups: StepGroup[];
-	matchingOutlineIndices: number[];
-	groupableScenarioIndices: number[];
-	signature: string;
+	scenarioId: string;
+	outlineId: string | undefined;
 };
 
 /**
  * For one scenario list (feature-level or rule-level), detect outline improvements:
- * - regular scenarios that fit existing Scenario Outlines
- * - regular scenarios that can be grouped together into a new Scenario Outline
+ * - regular scenarios that fit an existing Scenario Outline → outlineId set
+ * - regular scenarios that can be grouped together into a new Scenario Outline → outlineId undefined
+ *
+ * If a scenario matches an existing outline, that takes priority over groupable candidates.
  */
 export const analyzeScenarioOutlineImprovements = (
-	scenarios: AnyScenario[],
+	scenarios: Scenario[],
 ): ScenarioOutlineImprovement[] => {
-	const profiles = scenarios.map((scenario) => ({
-		isOutline: isScenarioOutline(scenario),
-		signature: scenarioSignature(scenario),
-		stepGroups: computeScenarioStepGroups(scenario),
-	}));
+	const outlineBySignature = new Map<string, string>(); // signature → first outline id
+	const regularBySignature = new Map<string, string[]>(); // signature → regular scenario ids
 
-	const outlineBySignature = new Map<string, number[]>();
-	const regularBySignature = new Map<string, number[]>();
-
-	for (
-		let scenarioIndex = 0;
-		scenarioIndex < profiles.length;
-		scenarioIndex++
-	) {
-		const profile = profiles[scenarioIndex];
-		const target = profile.isOutline ? outlineBySignature : regularBySignature;
-		const existing = target.get(profile.signature) ?? [];
-		existing.push(scenarioIndex);
-		target.set(profile.signature, existing);
+	for (const scenario of scenarios) {
+		const sig = scenarioSignature(scenario);
+		if (isScenarioOutline(scenario)) {
+			if (!outlineBySignature.has(sig)) {
+				outlineBySignature.set(sig, scenario.id);
+			}
+		} else {
+			const existing = regularBySignature.get(sig) ?? [];
+			existing.push(scenario.id);
+			regularBySignature.set(sig, existing);
+		}
 	}
 
+	// Signatures where 2+ regular scenarios can form a new outline
 	const groupableSignatures = new Set<string>();
-	for (const [signature, indices] of regularBySignature.entries()) {
-		if (indices.length < 2) continue;
-		if (hasTextVariations(scenarios, indices)) {
-			groupableSignatures.add(signature);
+	for (const [sig, ids] of regularBySignature.entries()) {
+		if (ids.length >= 2 && hasTextVariations(scenarios, ids)) {
+			groupableSignatures.add(sig);
 		}
 	}
 
-	return profiles.map((profile, scenarioIndex) => {
-		if (profile.isOutline) {
-			return {
-				stepGroups: profile.stepGroups,
-				matchingOutlineIndices: [],
-				groupableScenarioIndices: [],
-				signature: profile.signature,
-			};
+	const improvements: ScenarioOutlineImprovement[] = [];
+
+	for (const scenario of scenarios) {
+		if (isScenarioOutline(scenario)) continue;
+
+		const sig = scenarioSignature(scenario);
+		const matchingOutlineId = outlineBySignature.get(sig);
+
+		if (matchingOutlineId !== undefined) {
+			improvements.push({
+				scenarioId: scenario.id,
+				outlineId: matchingOutlineId,
+			});
+		} else if (groupableSignatures.has(sig)) {
+			improvements.push({ scenarioId: scenario.id, outlineId: undefined });
 		}
-
-		const matchingOutlineIndices =
-			outlineBySignature
-				.get(profile.signature)
-				?.filter((index) => index !== scenarioIndex) ?? [];
-
-		const groupableScenarioIndices = groupableSignatures.has(profile.signature)
-			? (regularBySignature.get(profile.signature) ?? []).filter(
-					(index) => index !== scenarioIndex,
-				)
-			: [];
-
-		return {
-			stepGroups: profile.stepGroups,
-			matchingOutlineIndices,
-			groupableScenarioIndices,
-			signature: profile.signature,
-		};
-	});
-};
-
-export type ScenarioOutlineImprovementSummary = {
-	scenariosMatchingOutline: number;
-	scenariosGroupableIntoOutline: number;
-	outlineGroupCandidates: number;
-};
-
-const analyzeSections = (folders: FolderNode[]): AnyScenario[][] => {
-	const sections: AnyScenario[][] = [];
-
-	const walkFolders = (nodes: FolderNode[]) => {
-		for (const folder of nodes) {
-			for (const feature of folder.features ?? []) {
-				if ((feature.scenarios?.length ?? 0) > 0) {
-					sections.push(feature.scenarios ?? []);
-				}
-				for (const rule of feature.rules ?? []) {
-					if ((rule.scenarios?.length ?? 0) > 0) {
-						sections.push(rule.scenarios ?? []);
-					}
-				}
-			}
-
-			walkFolders(folder.folders ?? []);
-		}
-	};
-
-	walkFolders(folders);
-
-	return sections;
-};
-
-/** Aggregate overview metrics for scenario-outline improvement warnings. */
-export const collectScenarioOutlineImprovementSummary = (
-	folders: FolderNode[],
-): ScenarioOutlineImprovementSummary => {
-	let scenariosMatchingOutline = 0;
-	let scenariosGroupableIntoOutline = 0;
-	let outlineGroupCandidates = 0;
-
-	for (const scenarios of analyzeSections(folders)) {
-		const improvements = analyzeScenarioOutlineImprovements(scenarios);
-		const candidateSignatures = new Set<string>();
-
-		for (
-			let scenarioIndex = 0;
-			scenarioIndex < scenarios.length;
-			scenarioIndex++
-		) {
-			const scenario = scenarios[scenarioIndex];
-			if (isScenarioOutline(scenario)) continue;
-
-			const improvement = improvements[scenarioIndex];
-			if (improvement.matchingOutlineIndices.length > 0) {
-				scenariosMatchingOutline += 1;
-			}
-			if (improvement.groupableScenarioIndices.length > 0) {
-				scenariosGroupableIntoOutline += 1;
-				candidateSignatures.add(improvement.signature);
-			}
-		}
-
-		outlineGroupCandidates += candidateSignatures.size;
 	}
 
-	return {
-		scenariosMatchingOutline,
-		scenariosGroupableIntoOutline,
-		outlineGroupCandidates,
-	};
+	return improvements;
 };

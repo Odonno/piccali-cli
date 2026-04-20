@@ -1,9 +1,6 @@
 import { describe, expect, test } from "vitest";
-import {
-	analyzeScenarioOutlineImprovements,
-	collectScenarioOutlineImprovementSummary,
-} from "./scenarioImprovements";
-import type { Feature, Step, Scenario, Rule, FolderNode } from "@/schemas/data";
+import { analyzeScenarioOutlineImprovements } from "./scenarioImprovements";
+import type { Scenario, Step } from "@/schemas/data";
 import { v4 as uuidv4 } from "uuid";
 
 const buildSteps = (action: string, message: string): Step[] => [
@@ -30,17 +27,21 @@ const buildScenario = (
 
 describe("analyzeScenarioOutlineImprovements", () => {
 	test("flags regular scenarios that can be grouped into outline", () => {
-		const scenarios: Scenario[] = [
-			buildScenario("A", "X", "M"),
-			buildScenario("B", "Y", "W"),
-		];
+		const scenarioA = buildScenario("A", "X", "M");
+		const scenarioB = buildScenario("B", "Y", "W");
+		const scenarios: Scenario[] = [scenarioA, scenarioB];
 
 		const improvements = analyzeScenarioOutlineImprovements(scenarios);
 
-		expect(improvements[0].groupableScenarioIndices).toEqual([1]);
-		expect(improvements[1].groupableScenarioIndices).toEqual([0]);
-		expect(improvements[0].matchingOutlineIndices).toEqual([]);
-		expect(improvements[0].stepGroups.length).toBe(3);
+		expect(improvements).toHaveLength(2);
+		expect(improvements[0]).toEqual({
+			scenarioId: scenarioA.id,
+			outlineId: undefined,
+		});
+		expect(improvements[1]).toEqual({
+			scenarioId: scenarioB.id,
+			outlineId: undefined,
+		});
 	});
 
 	test("flags regular scenario that matches existing scenario outline", () => {
@@ -85,79 +86,66 @@ describe("analyzeScenarioOutlineImprovements", () => {
 			scenario,
 		]);
 
-		expect(improvements[1].matchingOutlineIndices).toEqual([0]);
-		expect(improvements[1].groupableScenarioIndices).toEqual([]);
+		expect(improvements).toHaveLength(1);
+		expect(improvements[0]).toEqual({
+			scenarioId: scenario.id,
+			outlineId: outline.id,
+		});
 	});
-});
 
-describe("collectScenarioOutlineImprovementSummary", () => {
-	test("aggregates improvement totals across folders", () => {
-		const feature: Feature = {
+	test("prefers joining existing outline over grouping when both apply", () => {
+		const outline: Scenario = {
 			id: uuidv4(),
-			keyword: "Feature",
-			name: "Errors",
-			scenarios: [buildScenario("A", "X", "M"), buildScenario("B", "Y", "W")],
-			rules: [
+			keyword: "Scenario Outline",
+			name: "Errors by action",
+			steps: [
 				{
 					id: uuidv4(),
-					keyword: "Rule",
-					name: "Validation",
-					scenarios: [
-						{
-							id: uuidv4(),
-							keyword: "Scenario Outline",
-							name: "Errors by action",
-							steps: [
-								{
-									id: uuidv4(),
-									keyword: "Given",
-									type: "Given",
-									text: "I start the app",
-								},
-								{
-									id: uuidv4(),
-									keyword: "When",
-									type: "When",
-									text: 'I do "<action>"',
-								},
-								{
-									id: uuidv4(),
-									keyword: "Then",
-									type: "Then",
-									text: 'I see an error message "<message>"',
-								},
-							],
-							examples: [
-								{
-									keyword: "Examples",
-									table: {
-										header: ["action", "message"],
-										rows: [["X", "M"]],
-									},
-								},
-							],
-						},
-						buildScenario("C", "Z", "Q"),
-					],
-				} satisfies Rule,
+					keyword: "Given",
+					type: "Given",
+					text: "I start the app",
+				},
+				{
+					id: uuidv4(),
+					keyword: "When",
+					type: "When",
+					text: 'I do "<action>"',
+				},
+				{
+					id: uuidv4(),
+					keyword: "Then",
+					type: "Then",
+					text: 'I see an error message "<message>"',
+				},
+			],
+			examples: [
+				{
+					keyword: "Examples",
+					table: { header: ["action", "message"], rows: [["X", "M"]] },
+				},
 			],
 		};
 
-		const folders: FolderNode[] = [
-			{
-				name: "features",
-				features: [
-					feature as unknown as NonNullable<FolderNode["features"]>[number],
-				],
-			},
-		];
+		const scenarioA = buildScenario("A", "Y", "W");
+		const scenarioB = buildScenario("B", "Z", "Q");
 
-		const summary = collectScenarioOutlineImprovementSummary(folders);
+		// Both A and B match the outline signature AND could group together
+		const improvements = analyzeScenarioOutlineImprovements([
+			outline,
+			scenarioA,
+			scenarioB,
+		]);
 
-		expect(summary).toEqual({
-			scenariosMatchingOutline: 1,
-			scenariosGroupableIntoOutline: 2,
-			outlineGroupCandidates: 1,
-		});
+		// Each should join the outline, not create a new one
+		expect(improvements).toHaveLength(2);
+		for (const imp of improvements) {
+			expect(imp.outlineId).toBe(outline.id);
+		}
+	});
+
+	test("returns empty when no improvements detected", () => {
+		const scenarioA = buildScenario("A", "X", "M");
+		const improvements = analyzeScenarioOutlineImprovements([scenarioA]);
+		expect(improvements).toHaveLength(0);
 	});
 });

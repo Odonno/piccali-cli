@@ -5,6 +5,7 @@ import { MetadataSchema, type PiccaliMetadata } from "@/schemas/metadata";
 import * as v from "valibot";
 import { collectUniqueSteps } from "@/functions/steps";
 import { collectFeatures, collectScenarios } from "@/functions/state";
+import { isScenarioOutline } from "@/functions/scenario";
 
 const dataAsyncAtom = atom(async () => {
 	const res = await fetch("/data.json");
@@ -63,5 +64,5 @@ export const scenariosAtom = atom((get) => {
 
 export const scenarioOutlinesAtom = atom((get) => {
 	const scenarios = get(scenariosAtom);
-	return scenarios.filter((s) => s.keyword.includes("Outline"));
+	return scenarios.filter(isScenarioOutline);
 });

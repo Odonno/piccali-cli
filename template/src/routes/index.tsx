@@ -3,28 +3,27 @@ import { FileText, ListChecks, BookOpen, TriangleAlert } from "lucide-react";
 import { useAtomValue } from "jotai";
 import {
 	uniqueStepsAtom,
-	foldersAtom,
 	featuresAtom,
 	scenariosAtom,
 	scenarioOutlinesAtom,
 } from "@/atoms/state";
-import { collectScenarioOutlineImprovementSummary } from "@/functions/scenarioImprovements";
+import { scenarioImprovementsAtom } from "@/atoms/scenarioImprovements";
 import { StatCard } from "@/components/StatCard";
 
 const IndexPage = () => {
-	const folders = useAtomValue(foldersAtom);
 	const uniqueSteps = useAtomValue(uniqueStepsAtom);
 	const features = useAtomValue(featuresAtom);
 	const scenarios = useAtomValue(scenariosAtom);
 	const outlines = useAtomValue(scenarioOutlinesAtom);
+	const improvements = useAtomValue(scenarioImprovementsAtom);
 
-	const {
-		scenariosMatchingOutline,
-		scenariosGroupableIntoOutline,
-		outlineGroupCandidates,
-	} = collectScenarioOutlineImprovementSummary(folders);
-	const totalWarnings =
-		scenariosMatchingOutline + scenariosGroupableIntoOutline;
+	const scenariosMatchingOutline = improvements.filter(
+		(i) => i.outlineId !== undefined,
+	).length;
+	const scenariosGroupableIntoOutline = improvements.filter(
+		(i) => i.outlineId === undefined,
+	).length;
+	const totalWarnings = improvements.length;
 	const hasWarnings = totalWarnings > 0;
 
 	return (
@@ -88,9 +87,7 @@ const IndexPage = () => {
 								{scenariosMatchingOutline !== 1 ? "s" : ""} can join an existing
 								outline, {scenariosGroupableIntoOutline} scenario
 								{scenariosGroupableIntoOutline !== 1 ? "s" : ""} can be grouped
-								into new outlines ({outlineGroupCandidates} candidate
-								{outlineGroupCandidates !== 1 ? "s" : ""}
-								).
+								into new outlines.
 							</p>
 						</div>
 					</div>
