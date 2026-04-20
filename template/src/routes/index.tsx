@@ -1,22 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, ListChecks, BookOpen, TriangleAlert } from "lucide-react";
 import { useAtomValue } from "jotai";
-import { uniqueStepsAtom, foldersAtom } from "@/atoms/state";
 import {
-	countFeatures,
-	countScenarios,
-	countScenarioOutlines,
-} from "@/functions/stats";
+	uniqueStepsAtom,
+	foldersAtom,
+	featuresAtom,
+	scenariosAtom,
+	scenarioOutlinesAtom,
+} from "@/atoms/state";
 import { collectScenarioOutlineImprovementSummary } from "@/functions/scenarioImprovements";
 import { StatCard } from "@/components/StatCard";
 
 const IndexPage = () => {
 	const folders = useAtomValue(foldersAtom);
 	const uniqueSteps = useAtomValue(uniqueStepsAtom);
+	const features = useAtomValue(featuresAtom);
+	const scenarios = useAtomValue(scenariosAtom);
+	const outlines = useAtomValue(scenarioOutlinesAtom);
 
-	const features = countFeatures(folders);
-	const scenarios = countScenarios(folders);
-	const outlines = countScenarioOutlines(folders);
 	const {
 		scenariosMatchingOutline,
 		scenariosGroupableIntoOutline,
@@ -38,22 +39,22 @@ const IndexPage = () => {
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<StatCard
 					icon={<FileText className="size-4 text-muted-foreground" />}
-					value={features}
-					label={features <= 1 ? "feature file" : "feature files"}
+					value={features.length}
+					label={features.length <= 1 ? "feature file" : "feature files"}
 				/>
 
 				<StatCard
 					icon={<ListChecks className="size-4 text-muted-foreground" />}
-					value={scenarios}
+					value={scenarios.length}
 					label=""
 				>
 					<p className="text-sm text-muted-foreground">
-						{scenarios <= 1 ? "scenario" : "scenarios"}
-						{outlines > 0 && (
+						{scenarios.length <= 1 ? "scenario" : "scenarios"}
+						{outlines.length > 0 && (
 							<>
 								{" "}
 								<span className="text-foreground/50 text-xs">
-									({outlines} outline{outlines > 1 ? "s" : ""})
+									({outlines.length} outline{outlines.length > 1 ? "s" : ""})
 								</span>
 							</>
 						)}

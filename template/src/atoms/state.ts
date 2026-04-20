@@ -4,6 +4,7 @@ import { DataSchema, type PiccaliData } from "@/schemas/data";
 import { MetadataSchema, type PiccaliMetadata } from "@/schemas/metadata";
 import * as v from "valibot";
 import { collectUniqueSteps } from "@/functions/steps";
+import { collectFeatures, collectScenarios } from "@/functions/state";
 
 const dataAsyncAtom = atom(async () => {
 	const res = await fetch("/data.json");
@@ -48,4 +49,19 @@ export const foldersAtom = atom((get) => {
 export const uniqueStepsAtom = atom((get) => {
 	const folders = get(foldersAtom);
 	return collectUniqueSteps(folders);
+});
+
+export const featuresAtom = atom((get) => {
+	const folders = get(foldersAtom);
+	return collectFeatures(folders);
+});
+
+export const scenariosAtom = atom((get) => {
+	const features = get(featuresAtom);
+	return collectScenarios(features);
+});
+
+export const scenarioOutlinesAtom = atom((get) => {
+	const scenarios = get(scenariosAtom);
+	return scenarios.filter((s) => s.keyword.includes("Outline"));
 });
