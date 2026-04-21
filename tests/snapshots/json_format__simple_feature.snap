@@ -118,6 +118,11 @@ expression: json
                       "keyword": "Then ",
                       "text": "an error message is displayed with the text \"Unable to download the warranty alert file\"",
                       "type": "Then"
+                    },
+                    {
+                      "keyword": "But ",
+                      "text": "the file is not downloaded",
+                      "type": "Then"
                     }
                   ]
                 }

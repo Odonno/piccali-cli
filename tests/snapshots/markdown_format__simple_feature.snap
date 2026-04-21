@@ -32,3 +32,4 @@ expression: content
 - **When** I am on the main page
 - **And** I click the download link
 - **Then** an error message is displayed with the text "Unable to download the warranty alert file"
+- **But** the file is not downloaded
