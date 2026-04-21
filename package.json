@@ -1,6 +1,8 @@
 {
   "name": "piccali-cli",
   "scripts": {
-    "start": "bun run scripts/generate-data.ts"
+    "build": "bun run scripts/demo.ts",
+    "build:template": "cd template && bun run build",
+    "generate:data": "bun run scripts/generate-data.ts"
   }
 }

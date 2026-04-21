@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
-const OUTPUT_DIR = "template/public";
+const OUTPUT_DIR = process.argv[2] ?? "template/public";
 const DATA_JSON_PATH = join(OUTPUT_DIR, "data.json");
 const METADATA_JSON_PATH = join(OUTPUT_DIR, "metadata.json");
 
