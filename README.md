@@ -1,4 +1,9 @@
+<div align="center">
+  <img src="images/logo.png" alt="piccali-cli logo" width="160" />
+
 # piccali-cli
+
+</div>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/Odonno/piccali-cli/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/Odonno/piccali-cli/actions)
 [![crates.io](https://img.shields.io/crates/v/piccali-cli?style=flat-square)](https://crates.io/crates/piccali-cli)

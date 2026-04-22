@@ -1,4 +1,4 @@
-import { Layers, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import {
 	Sidebar,
 	SidebarContent,
@@ -30,8 +30,8 @@ export const AppSidebar = () => {
 							className="pointer-events-none"
 							tooltip="Features"
 						>
-							<div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0">
-								<Layers className="size-4" />
+							<div className="flex size-8 items-center justify-center rounded-lg bg-yellow-50/60 shrink-0">
+								<img src="/logo.png" alt="" className="size-7" />
 							</div>
 							<div className="flex flex-col gap-0.5 leading-none">
 								<span className="font-semibold text-sm">Features</span>
@@ -46,10 +46,6 @@ export const AppSidebar = () => {
 
 			<SidebarContent>
 				<SidebarGroup>
-					<SidebarGroupLabel className="flex items-center gap-1.5">
-						<BookOpen className="size-3.5" />
-						Feature Files
-					</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<FolderTree
