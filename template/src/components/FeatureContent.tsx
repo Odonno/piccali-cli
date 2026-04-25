@@ -220,7 +220,7 @@ export const FeatureContent = ({
 										</div>
 
 										{/* Scenario description */}
-										{!!improvement ? (
+										{improvement ? (
 											<div className="rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs dark:border-amber-900/70 dark:bg-amber-950/20">
 												<div className="flex items-start gap-2">
 													<TriangleAlert className="mt-0.5 size-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
