@@ -43,14 +43,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
+          - target: x86_64-unknown-linux-musl
             runner: ubuntu-latest
             use_cross: false
             archive_ext: tar.gz
             npm_dir: linux-x64
             bin_name: piccali-cli
 
-          - target: aarch64-unknown-linux-gnu
+          - target: aarch64-unknown-linux-musl
             runner: ubuntu-latest
             use_cross: true
             archive_ext: tar.gz
@@ -93,6 +93,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
+
+      - name: Install musl tools
+        if: contains(matrix.target, 'musl') && !matrix.use_cross
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Install cross
         if: matrix.use_cross
