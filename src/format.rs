@@ -141,16 +141,16 @@ pub fn format_html(
 /// Used for `--dry-run` output to stdout.
 pub fn format_markdown_dry_run(document: &Document) -> String {
     let mut parts: Vec<String> = Vec::new();
-    collect_folder_markdown(&document.folders, &mut parts);
+    collect_folder_markdown(&document.folders, &mut parts, 1);
     parts.join("\n---\n\n")
 }
 
-fn collect_folder_markdown(folders: &[FolderNode], parts: &mut Vec<String>) {
+fn collect_folder_markdown(folders: &[FolderNode], parts: &mut Vec<String>, base_level: usize) {
     for folder in folders {
         for feature in &folder.features {
-            parts.push(format_feature_markdown(feature));
+            parts.push(format_feature_markdown_at(feature, base_level));
         }
-        collect_folder_markdown(&folder.folders, parts);
+        collect_folder_markdown(&folder.folders, parts, base_level);
     }
 }
 
@@ -187,7 +187,7 @@ fn write_folder_markdown(folders: &[FolderNode], base: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Format a single `Feature` as a Markdown string.
+/// Format a single `Feature` as a Markdown string, with feature at H1.
 ///
 /// Structure:
 /// - `# Feature name`  (H1)
@@ -197,50 +197,56 @@ fn write_folder_markdown(folders: &[FolderNode], base: &Path) -> Result<()> {
 /// - Top-level Scenarios at H3
 /// - Rules at H2, with their scenarios at H3
 pub fn format_feature_markdown(feature: &Feature) -> String {
+    format_feature_markdown_at(feature, 1)
+}
+
+/// Format a single `Feature` as a Markdown string, with headings starting at `base_level`.
+///
+/// Used by single-file output (`base_level = 2`) so that the document title H1 sits
+/// above all feature headings (H2), rules (H3), and scenarios (H4).
+fn format_feature_markdown_at(feature: &Feature, base_level: usize) -> String {
+    let h_feature = "#".repeat(base_level);
+    let h_rule = "#".repeat(base_level + 1);
+    let h_scenario = "#".repeat(base_level + 2);
+
     let mut out = String::new();
 
-    // H1 — feature name
-    out.push_str(&format!("# {}\n", feature.name));
+    out.push_str(&format!("{h_feature} {}\n", feature.name));
 
-    // Tags
     if !feature.tags.is_empty() {
         out.push('\n');
         out.push_str(&render_tags(&feature.tags));
         out.push('\n');
     }
 
-    // Description
     if let Some(desc) = &feature.description {
         out.push('\n');
         out.push_str(desc.trim());
         out.push('\n');
     }
 
-    // Background
     if let Some(bg) = &feature.background {
         out.push('\n');
         out.push_str(&render_background(bg));
     }
 
-    // Top-level scenarios
     for scenario in &feature.scenarios {
         out.push('\n');
-        out.push_str(&render_scenario(scenario, "###"));
+        out.push_str(&render_scenario(scenario, &h_scenario));
     }
 
-    // Rules
     for rule in &feature.rules {
         out.push('\n');
-        out.push_str(&render_rule(rule));
+        out.push_str(&render_rule(rule, &h_rule, &h_scenario));
     }
 
     out
 }
 
-fn render_rule(rule: &Rule) -> String {
+fn render_rule(rule: &Rule, heading: &str, scenario_heading: &str) -> String {
     let mut out = String::new();
 
-    out.push_str(&format!("## {}\n", rule.name));
+    out.push_str(&format!("{heading} {}\n", rule.name));
 
     if !rule.tags.is_empty() {
         out.push('\n');
@@ -261,10 +267,36 @@ fn render_rule(rule: &Rule) -> String {
 
     for scenario in &rule.scenarios {
         out.push('\n');
-        out.push_str(&render_scenario(scenario, "###"));
+        out.push_str(&render_scenario(scenario, scenario_heading));
     }
 
     out
+}
+
+/// Write all features into a single Markdown file, prefixed with a document title heading.
+///
+/// The file starts with `# {title}` and features are separated by `---` dividers.
+/// Used when `--output` points to a file path (has a file extension).
+pub fn format_markdown_single_file(document: &Document, title: &str, output_path: &Path) -> Result<()> {
+    // Create parent directories if needed
+    if let Some(parent) = output_path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent).wrap_err_with(|| {
+                format!("Failed to create parent directory {}", parent.display())
+            })?;
+        }
+    }
+
+    let mut parts: Vec<String> = Vec::new();
+    collect_folder_markdown(&document.folders, &mut parts, 2);
+
+    let body = parts.join("\n---\n\n");
+    let content = format!("# {title}\n\n{body}");
+
+    std::fs::write(output_path, content)
+        .wrap_err_with(|| format!("Failed to write {}", output_path.display()))?;
+
+    Ok(())
 }
 
 fn render_background(bg: &Background) -> String {

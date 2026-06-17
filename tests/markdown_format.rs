@@ -190,6 +190,146 @@ fn markdown_all_features_creates_files_per_feature() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Markdown single-file output tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn markdown_single_file_txt_extension() {
+    let output_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let output_file = output_dir.path().join("llms.txt");
+
+    piccali()
+        .args([
+            "--format",
+            "markdown",
+            "--output",
+            output_file.to_str().unwrap(),
+            "--input",
+            "features/WarrantyAlert/*.feature",
+        ])
+        .assert()
+        .success();
+
+    assert!(
+        output_file.exists(),
+        "expected single file at {output_file:?}"
+    );
+    assert!(
+        output_file.is_file(),
+        "output should be a file, not a directory"
+    );
+
+    let content = std::fs::read_to_string(&output_file).expect("failed to read file");
+    assert!(
+        content.trim_start().starts_with("# "),
+        "expected H1 at top of single-file output"
+    );
+}
+
+#[test]
+fn markdown_single_file_with_title() {
+    let output_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let output_file = output_dir.path().join("llms.txt");
+
+    piccali()
+        .args([
+            "--format",
+            "markdown",
+            "--output",
+            output_file.to_str().unwrap(),
+            "--input",
+            "features/WarrantyAlert/*.feature",
+            "--title",
+            "My App",
+        ])
+        .assert()
+        .success();
+
+    assert!(
+        output_file.exists(),
+        "expected single file at {output_file:?}"
+    );
+
+    let content = std::fs::read_to_string(&output_file).expect("failed to read file");
+    assert!(
+        content.starts_with("# My App\n"),
+        "expected file to start with '# My App\\n', got: {:?}",
+        &content[..content.len().min(50)]
+    );
+}
+
+#[test]
+fn markdown_single_file_default_title_when_not_specified() {
+    let output_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let output_file = output_dir.path().join("output.md");
+
+    piccali()
+        .args([
+            "--format",
+            "markdown",
+            "--output",
+            output_file.to_str().unwrap(),
+            "--input",
+            "features/WarrantyAlert/*.feature",
+        ])
+        .assert()
+        .success();
+
+    let content = std::fs::read_to_string(&output_file).expect("failed to read file");
+    assert!(
+        content.starts_with("# Cucumber docs\n"),
+        "expected default title 'Cucumber docs', got: {:?}",
+        &content[..content.len().min(50)]
+    );
+}
+
+#[test]
+fn markdown_single_file_snapshot() {
+    let output_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let output_file = output_dir.path().join("output.md");
+
+    piccali()
+        .args([
+            "--format",
+            "markdown",
+            "--output",
+            output_file.to_str().unwrap(),
+            "--input",
+            "features/WarrantyAlert/*.feature",
+            "--title",
+            "Warranty Alert Docs",
+        ])
+        .assert()
+        .success();
+
+    let content = std::fs::read_to_string(&output_file).expect("failed to read file");
+    insta::assert_snapshot!("single_file_simple_feature", content);
+}
+
+#[test]
+fn markdown_single_file_all_features_concatenated() {
+    let output_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let output_file = output_dir.path().join("llms.txt");
+
+    piccali()
+        .args([
+            "--format",
+            "markdown",
+            "--output",
+            output_file.to_str().unwrap(),
+            "--title",
+            "All Features",
+        ])
+        .assert()
+        .success();
+
+    assert!(output_file.is_file(), "output should be a single file");
+
+    let content = std::fs::read_to_string(&output_file).expect("failed to read file");
+    insta::assert_snapshot!("single_file_all_features_concatenated", content);
+}
+
 fn collect_md_files(dir: &std::path::Path, acc: &mut Vec<std::path::PathBuf>) {
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.filter_map(Result::ok) {

@@ -1,0 +1,1599 @@
+---
+source: tests/markdown_format.rs
+expression: content
+---
+# All Features
+
+## Agreement selection on a service to add
+
+@feat:30103
+
+#### Cannot select an agreement on a service with no agreement
+
+- **When** I have a non-held service card with no agreement
+- **Then** the "select" button does not appear
+
+#### Cannot select an agreement on a service with a single agreement
+
+- **When** I have a non-held service card with a single agreement
+- **Then** the "select" button does not appear
+
+#### Loading agreements when selecting an agreement
+
+- **Given** the contract "22815092700" is selected
+- **When** I have a non-held service card with multiple associated agreements
+- **And** I click the "select" button
+- **Then** the agreements have finished loading
+
+#### Select an agreement on a service with multiple associated agreements
+
+- **Given** the contract "22815092700" is selected
+- **When** I have a non-held service card with multiple associated agreements
+- **And** I click the "select" button
+- **And** I click on the agreement "NATIONAL FLEET WARRANTY"
+- **And** I click the "confirm" button
+- **Then** the agreement "7203821" is selected
+
+#### Cancel agreement selection
+
+- **When** I have a non-held service card with multiple associated agreements
+- **And** I click the "select" button
+- **And** I click the "cancel" button
+- **Then** no agreement is selected
+
+#### Modify an agreement after selection
+
+- **Given** the contract "22815092700" is selected
+- **When** I have a non-held service card with multiple associated agreements
+- **And** I click the "select" button
+- **And** I click on the agreement "NATIONAL FLEET WARRANTY"
+- **And** I click the "confirm" button
+- **And** I click the "modify" button
+- **And** I click on the agreement "GLOBAL ROADSIDE SECURE"
+- **And** I click the "confirm" button
+- **Then** the agreement "0803471" is selected
+
+---
+
+## Service card display
+
+A **service card** represents a subscription service attached to a contract.
+It shows the current state of the service and lets the user act on it.
+The card records the following information:
+| Field       | Value        |
+|-------------|--------------|
+| Action      | `added`      |
+| Performed by | `Anonymous` |
+| Date        | `24/10/2023` |
+There can be any number of fields.
+<br />
+Key business rules:
+- A *recently held* card shows a **remove** button
+- A *recently removed* card shows an **add** button
+- Both cards always display the acting user's name and the action date
+
+#### Display recently held service card
+
+@feat:25309
+
+The card for a service that was **recently added** must clearly indicate
+who added it and when, together with the option to remove it.
+
+- **When** I have a recently held service card
+- **Then** the service card should contain the service name "DRIVER PROTECTION"
+- **And** the service card should contain the button to "remove the service"
+- **And** the service card should contain the name of the person who added the service, namely "Anonymous"
+- **And** the service card should contain the date the service was added, namely "24/10/2023"
+- **And** the card audit trail step is:
+
+  ```
+  
+  ## Audit trail
+  
+  The card records the following information:
+  
+  | Field       | Value        |
+  |-------------|--------------|
+  | Action      | `added`      |
+  | Performed by | `Anonymous` |
+  | Date        | `24/10/2023` |
+  
+  > The date is always formatted as `DD/MM/YYYY`.
+  ```
+
+#### Display recently removed service card
+
+@feat:25309
+
+- **When** I have a recently removed service card
+- **Then** the service card should contain the service name "DRIVER PROTECTION"
+- **And** the service card should contain the button to "add the service"
+- **And** the service card should contain the name of the person who removed the service, namely "Anonymous"
+- **And** the service card should contain the date the service was removed, namely "24/10/2023"
+
+---
+
+## Services display
+
+### Glocal contracts
+
+**Background**
+
+- **Given** I am a platform administrator on the application
+- ***** I am on the application
+- ***** I switch to "Administration" mode
+- ***** a parent company "RAINBOW MOTORS INC" with a legal contract "22815092700"
+- ***** the legal contract "22815092700" has the following services:
+
+  | id | name |
+  | --- | --- |
+  | 1 | ROADASSIST PRO |
+  | 2 | CRASH COVER |
+  | 3 | THEFT GUARD |
+  | 4 | GLASS SHIELD |
+  | 5 | TIRE PROTECT |
+
+- ***** I am on the search page
+- ***** I search by contract number "22815092700"
+
+#### Display the service removal modal
+
+@feat:25166
+
+- **When** I click the button to remove the service "THEFT GUARD"
+- **Then** I should see the removal confirmation message for service "THEFT GUARD"
+
+#### Remove a service
+
+@feat:25166
+
+- **When** I click the button to remove the service "THEFT GUARD"
+- **And** I click the confirm button in the removal modal for service "THEFT GUARD"
+- **Then** the service "THEFT GUARD" is no longer present in the displayed service list
+- **And** the removal modal for service "THEFT GUARD" should disappear
+
+#### Display the service addition modal
+
+@feat:25167
+
+- **When** I click the "Other services" tab
+- **And** I click the button to add the service "THEFT GUARD"
+- **Then** I should see the addition confirmation message for service "THEFT GUARD"
+
+#### Add a service
+
+@feat:25167
+
+- **When** I click the "Other services" tab
+- **And** I click the button to add the service "THEFT GUARD"
+- **And** I click the confirm button in the addition modal for service "THEFT GUARD"
+- **Then** the service "THEFT GUARD" is no longer present in the displayed service list
+- **And** the addition modal for service "THEFT GUARD" should disappear
+
+### Individual contracts
+
+**Background**
+
+- **Given** I am a platform administrator on the application
+- ***** I am on the application
+- ***** I switch to "Administration" mode
+- ***** the individual contract "0000000000492904"
+- ***** the individual contract "0000000000492904" has the following services:
+
+  | name |
+  | --- |
+  | ROADASSIST PRO |
+  | CRASH COVER |
+  | THEFT GUARD |
+  | GLASS SHIELD |
+  | TIRE PROTECT |
+
+- ***** I am on the search page
+- ***** I search by contract number "0000000000492904"
+
+---
+
+## Agreement display on each contract
+
+**Background**
+
+- **Given** the company "AutoNation" has the following contracts
+
+  | contractNumber | category |
+  | --- | --- |
+  | contract-extended1 | Extended Warranty |
+  | contract-extended2 | Extended Warranty |
+  | contract-extended3 | Extended Warranty |
+  | contract-extended4 | Extended Warranty |
+
+- ***** the contract "contract-extended1" has the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract11 | 01/01/2000 |  |
+  | AutoNation West | sub-contract12 | 01/01/2005 | 01/01/2022 |
+  | AutoNation Corp | sub-contract13 | 01/01/2010 | 01/05/2022 |
+
+
+#### Display a contract with no agreement
+
+- **Given** the contract "contract-extended1" has the following agreements
+
+  | agreementNumber | exists |
+  | --- | --- |
+
+- **And** I display the search results for the company "AutoNation"
+- **When** I select the contract "contract-extended1"
+- **Then** the contract "contract-extended1" displays the following agreements
+
+  | agreementNumber |
+  | --- |
+  | - |
+
+
+#### Display a contract with multiple agreements
+
+- **Given** the contract "contract-extended1" has the following agreements
+
+  | agreementNumber | exists |
+  | --- | --- |
+  | 123456 | true |
+  | 456123 | false |
+
+- **And** I display the search results for the company "AutoNation"
+- **When** I select the contract "contract-extended1"
+- **Then** the contract "contract-extended1" displays the following agreements
+
+  | agreementNumber |
+  | --- |
+  | 123456 |
+  | 456123 |
+
+
+#### Display a contract with an agreement to configure
+
+- **Given** the contract "contract-extended1" has the following agreements
+
+  | agreementNumber | exists |
+  | --- | --- |
+  | 456123 | false |
+
+- **And** I display the search results for the company "AutoNation"
+- **And** I select the contract "contract-extended1"
+- **When** I click the agreement number button
+- **Then** I see the message "The agreement needs to be configured"
+
+---
+
+## Contract filtering by category
+
+In the results display block I can filter the
+results by category (extended warranty, roadside assistance, etc).
+
+**Background**
+
+- **Given** the company "AutoNation" has the following contracts
+
+  | contractNumber | category | endDate | status |
+  | --- | --- | --- | --- |
+  | contract-extended1 | Extended Warranty | 2022-12-01T00:00:00 | Active |
+  | contract-roadside1 | Roadside Assist |  | Suspended |
+  | contract-extended2 | Extended Warranty |  | Terminated |
+  | contract-roadside2 | Roadside Assist |  | Expired |
+  | contract-extended3 | Extended Warranty | 2022-12-01T00:00:00 |  |
+
+- ***** the contract "contract-extended1" has the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract11 | 01/01/2000 |  |
+  | AutoNation West | sub-contract12 | 01/01/2005 | 01/01/2022 |
+  | AutoNation Corp | sub-contract13 | 01/01/2010 | 01/05/2022 |
+
+- ***** the contract "contract-extended2" has the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract31 | 01/01/2000 |  |
+
+
+#### Filter on extended warranty
+
+- **When** I display the search results for the company "AutoNation"
+- **And** I filter only on "Extended Warranty" contracts
+- **Then** the following contracts are displayed in the results
+
+  | contractNumber |
+  | --- |
+  | contract-extended1 |
+  | contract-extended2 |
+  | contract-extended3 |
+
+- ***** the contract "contract-extended1" is selected
+
+#### Filter on roadside assistance
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I filter only on "Roadside Assist" contracts
+- **Then** the following contracts are displayed in the results
+
+  | contractNumber |
+  | --- |
+  | contract-roadside1 |
+  | contract-roadside2 |
+
+- ***** the contract "contract-roadside1" is selected
+- ***** the status "Suspended" is displayed
+
+#### Return to All contracts
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I filter only on "Extended Warranty" contracts
+- ***** I remove the contract filter
+- **Then** the following contracts are displayed in the results
+
+  | contractNumber |
+  | --- |
+  | contract-extended1 |
+  | contract-roadside1 |
+  | contract-extended2 |
+  | contract-roadside2 |
+  | contract-extended3 |
+
+- ***** the contract "contract-extended1" is selected
+- ***** the category "Extended Warranty" is displayed
+- ***** the status "Active" is displayed
+
+#### Display the end date alert
+
+- **When** I display the search results for the company "AutoNation"
+- **Then** the contract "contract-extended1" is selected
+
+#### No end date alert displayed
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I filter only on "Roadside Assist" contracts
+- **Then** the contract "contract-roadside1" is selected
+
+#### Display contract contract-extended2
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I filter only on "Extended Warranty" contracts
+- ***** I select the contract "contract-extended2"
+- **Then** the status "Terminated" is displayed
+
+#### Display contract contract-roadside2
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I filter only on "Roadside Assist" contracts
+- ***** I select the contract "contract-roadside2"
+- **Then** the status "Terminated" is displayed
+
+#### Display contract contract-extended3
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I filter only on "Extended Warranty" contracts
+- ***** I select the contract "contract-extended3"
+- **Then** the status "Unknown" is displayed
+
+### Display the end date alert based on whether an end date exists on sub-contracts
+
+#### Display the alert
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extended1"
+- **Then** the end date alert is displayed
+
+#### No alert displayed
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extended2"
+- **Then** the end date alert is not displayed
+
+---
+
+## Services display
+
+**Background**
+
+- **Given** the company "AutoNation" has the following contracts
+
+  | contractNumber | category |
+  | --- | --- |
+  | contract-extended1 | Extended Warranty |
+  | contract-roadside1 | Roadside Assist |
+  | contract-extended2 | Extended Warranty |
+  | contract-roadside2 | Roadside Assist |
+
+- ***** the legal contract "contract-extended1" has the following services:
+
+  | name | agreement | destination |
+  | --- | --- | --- |
+  | Regulatory obligations: RoadAssist Pro | 123456 | Dealer |
+  | Crash Coverage |  | Drivers |
+  | Theft Guard |  | Dealer |
+  | Glass Shield |  | Dealer |
+  | Tire Protect |  | Drivers |
+
+- ***** the legal contract "contract-extended2" has the following services:
+
+  | name | agreement | destination |
+  | --- | --- | --- |
+  | Tire Protect |  | Drivers |
+  | Total Assist + Roadside | 65431 | Dealer |
+
+
+#### By default the first contract is selected and its services are displayed
+
+- **When** I display the search results for the company "AutoNation"
+- **Then** the contract "contract-extended1" is selected
+- ***** the following services are available
+
+  | name | agreement | destination |
+  | --- | --- | --- |
+  | Regulatory obligations: RoadAssist Pro | 123456 | Dealer Service |
+  | Crash Coverage |  | Driver Service |
+  | Theft Guard |  | Dealer Service |
+  | Glass Shield |  | Dealer Service |
+  | Tire Protect |  | Driver Service |
+
+
+#### I select a different contract and its services are displayed
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extended2"
+- **Then** the following services are available
+
+  | name | agreement | destination |
+  | --- | --- | --- |
+  | Tire Protect |  | Driver Service |
+  | Total Assist + Roadside | 65431 | Dealer Service |
+
+
+---
+
+## Sub-contracts display
+
+**Background**
+
+- **Given** the company "AutoNation" has the following contracts
+
+  | contractNumber | category |
+  | --- | --- |
+  | contract-extend1 | Extended |
+  | contract-extend2 | Extended |
+  | contract-extend3 | Extended |
+  | contract-extend4 | Extended |
+
+- ***** the contract "contract-extend1" has the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract11 | 01/01/2000 |  |
+  | AutoNation West | sub-contract12 | 01/01/2005 | 01/01/2022 |
+  | AutoNation Corp | sub-contract13 | 01/01/2010 | 01/05/2022 |
+
+- ***** the contract "contract-extend2" has the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract21 | 01/01/2000 | 01/01/2022 |
+
+- ***** the contract "contract-extend3" has the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract31 | 01/01/2000 |  |
+
+- ***** the contract "contract-extend4" has the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract41 | 04/08/1980 |  |
+  | AutoNation West | sub-contract42 | 15/03/2015 | 17/08/2022 |
+
+
+### When a selected contract has only one sub-contract, it is displayed below the contract
+
+#### Single sub-contract with end date
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extend2"
+- ***** the contract "contract-extend2" displays the following sub-contract
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract21 | 01/01/2000 | 01/01/2022 |
+
+
+#### Single sub-contract without end date
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extend3"
+- ***** the contract "contract-extend3" displays the following sub-contract
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract31 | 01/01/2000 | - |
+
+
+### When a selected contract has multiple sub-contracts, they can be displayed in a side panel
+
+#### I expand the sub-contracts panel and can view the sub-contract details
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extend1"
+- ***** I display the sub-contracts
+- **Then** the side panel displays the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract11 | 01/01/2000 | - |
+  | AutoNation West | sub-contract12 | 01/01/2005 | 01/01/2022 |
+  | AutoNation Corp | sub-contract13 | 01/01/2010 | 01/05/2022 |
+
+
+#### I collapse the sub-contracts panel and it is no longer shown
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extend1"
+- ***** I display the sub-contracts
+- ***** I hide the sub-contracts
+- **Then** the side panel is not displayed
+
+#### I close the sub-contracts panel by clicking the cross and it is no longer shown
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extend1"
+- ***** I display the sub-contracts
+- ***** I close the sub-contracts by clicking the cross
+- **Then** the side panel is not displayed
+
+### When the selected contract changes, I update the sub-contracts panel content
+
+#### I switch to a contract with multiple sub-contracts
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extend1"
+- ***** I display the sub-contracts
+- ***** I select the contract "contract-extend4"
+- **Then** the side panel displays the following sub-contracts:
+
+  | companyName | contractNumber | startDate | endDate |
+  | --- | --- | --- | --- |
+  | FleetCo | sub-contract41 | 04/08/1980 | - |
+  | AutoNation West | sub-contract42 | 15/03/2015 | 17/08/2022 |
+
+
+#### I switch to a contract with a single sub-contract
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extend1"
+- ***** I display the sub-contracts
+- ***** I select the contract "contract-extend3"
+- **Then** the side panel is not displayed
+
+### Sub-contracts are sorted by end date
+
+Sub-contracts with an end date are shown first.
+If there are multiple, they are sorted by nearest end date first.
+
+#### Sub-contracts are sorted by end date
+
+- **When** I display the search results for the company "AutoNation"
+- ***** I select the contract "contract-extend1"
+- ***** I display the sub-contracts
+- **Then** the sub-contracts are displayed in this order:
+
+  | contractNumber |
+  | --- |
+  | sub-contract12 |
+  | sub-contract13 |
+  | sub-contract11 |
+
+
+---
+
+## Input validation with regex patterns
+
+Screenshot: ![Screenshot](./screenshots/feature-page.png)
+
+#### Validate a field using a regex pattern in step text
+
+- **Given** a field matching pattern "\(\d+\)"
+- **When** I validate input "(123)"
+- **Then** the validation succeeds
+
+#### Validate patterns stored in a table
+
+- **Given** the following validation rules:
+
+  | pattern | description |
+  | --- | --- |
+  | \(\d+\) | parenthesised digits |
+  | ^\d{3}$ | exactly three digits |
+  | \w+@\w+\.\w | simple email-like format |
+
+- **When** I apply the validation rules
+- **Then** all rules are applied correctly
+
+---
+
+## Search by contract number
+
+### The search should display results in the results table
+
+**Background**
+
+- **Given** a parent company "RAINBOW MOTORS INC" with a legal contract "22815092700"
+- **And** a parent company "AUTOVISION SA" with a legal contract "22815092701"
+- **And** a parent company "DRIVENOW SAS" with a legal contract "22815092702"
+- **And** the individual contract "0000000000492904"
+- **And** the legal contract "22815092700" has the following services:
+
+  | name |
+  | --- |
+  | ROADASSIST PRO |
+  | CRASH COVER |
+  | THEFT GUARD |
+  | GLASS SHIELD |
+  | TIRE PROTECT |
+
+- **And** the individual contract "0000000000492904" has the following services:
+
+  | name |
+  | --- |
+  | ROADASSIST PRO |
+  | CRASH COVER |
+  | THEFT GUARD |
+  | GLASS SHIELD |
+  | TIRE PROTECT |
+
+- **And** a branch "RAINBOW MOTORS INC" with a sub-contract "2281804540020" active linked to legal contract "22815092700":
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | Rainbow Midwest Hub | LLC | 22 Industrial Boulevard | PO Box 12 | SUITE | 60601 | Chicago |
+  | Rainbow South Hub | 8 Commerce Street |  |  |  | 30301 | Atlanta |
+
+
+#### Search by collective contract number
+
+- **When** I am on the search page
+- **And** I search by contract number "22815092700"
+- **Then** the results table displays "1 contracts found"
+- **And** the title "Service list for contract No. 22815092700 : RAINBOW MOTORS INC - VIN 54209753000092 - 26 MARKET STREET, 10001 NEW YORK" should be displayed
+- **And** in the "Services" table I have the following services
+
+  | name |
+  | --- |
+  | CRASH COVER |
+  | GLASS SHIELD |
+  | ROADASSIST PRO |
+  | THEFT GUARD |
+  | TIRE PROTECT |
+
+- **And** the title "Contract details" should be displayed
+- **And** the contract selection input should not be displayed
+
+#### Search by individual contract number
+
+- **When** I am on the search page
+- **And** I search by contract number "0000000000492904"
+- **Then** the results table displays "1 contracts found"
+- **And** the title "Service list for contract No. 0000000000492904" should be displayed
+- **And** in the "Services" table I have the following services
+
+  | name |
+  | --- |
+  | CRASH COVER |
+  | GLASS SHIELD |
+  | ROADASSIST PRO |
+  | THEFT GUARD |
+  | TIRE PROTECT |
+
+- **And** the contract selection input should not be displayed
+
+#### The contract number is not found
+
+- **When** I am on the search page
+- **And** I search by contract number "nonexistentnumber"
+- **Then** a message indicates "results — 0 contracts found"
+- **And** the results table is not displayed
+
+#### Search on a fleet contract returning 3 legal contracts
+
+@feat:32954
+
+- **Given** the fleet contract "FLEET-112" is associated with the following legal contracts:
+
+  | contractNumber |
+  | --- |
+  | 22815092700 |
+  | 22815092701 |
+  | 22815092702 |
+
+- **When** I am on the search page
+- **And** I search by contract number "FLEET-112"
+- **Then** an alert indicates "results — 3 contracts found"
+
+#### Search on a fleet contract returning no legal contracts
+
+@feat:32954
+
+- **Given** the fleet contract "FLEET-112" is associated with the following legal contracts:
+
+  | contractNumber |
+  | --- |
+
+- **When** I am on the search page
+- **And** I search by contract number "FLEET-112"
+- **Then** an alert indicates "results — 0 contracts found"
+- **And** the results table is not displayed
+
+#### Select a legal contract from a fleet contract search
+
+@feat:32954
+
+- **Given** the fleet contract "FLEET-112" is associated with the following legal contracts:
+
+  | contractNumber |
+  | --- |
+  | 22815092700 |
+  | 22815092701 |
+  | 22815092702 |
+
+- **When** I am on the search page
+- **And** I search by contract number "FLEET-112"
+- **And** I select the contract "22815092700"
+- **Then** an alert indicates "results — 3 contracts found"
+- **And** the title "Service list for contract No. 22815092700 : RAINBOW MOTORS INC - VIN 54209753000092 - 26 MARKET STREET, 10001 NEW YORK" should be displayed
+- **And** in the "Services" table I have the following services
+
+  | name |
+  | --- |
+  | CRASH COVER |
+  | GLASS SHIELD |
+  | ROADASSIST PRO |
+  | THEFT GUARD |
+  | TIRE PROTECT |
+
+- **And** the title "Contract details" should be displayed
+- **And** the contract selection input should not be displayed
+
+#### Search on a fleet contract, display an error message if the lookup service times out
+
+@fix:33019
+
+- **Given** the fleet contract lookup service is in timeout
+- **When** I am on the search page
+- **And** I search by contract number "FLEET-112"
+- **Then** a message indicates "The fleet contract lookup database did not respond within the expected time."
+
+---
+
+## Search results filtering
+
+#### 5 rows in the table
+
+@feat:22192
+
+- **Given** a parent company "Apex Motors" with a legal contract "Contract 1"
+- **Given** a parent company "AutoPeak" with a legal contract "Contract 2"
+- **Given** a parent company "Apextra Cars" with a legal contract "Contract 3"
+- **Given** a parent company "APEX Drive" with a legal contract "Contract 4"
+- **And** a branch "APEX CONSULTING HUB" with a sub-contract "2281804540001" active linked to legal contract "Contract 1"
+- **And** a branch "APEX SOUTH BRANCH" with a sub-contract "2281804540020" terminated linked to legal contract "Contract 1"
+- **And** a branch "APEX NORTH BRANCH" with a sub-contract "2281804540001" active linked to legal contract "Contract 1"
+- **When** I am on the search page
+- **And** I search "Apex"
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | AutoPeak |  | Parent |  |  |  |
+  | Apextra Cars |  | Parent |  |  |  |
+  | APEX Drive |  | Parent |  |  |  |
+  | Apex Motors |  | Parent |  |  |  |
+  | APEX NORTH BRANCH |  | Branch |  |  |  |
+
+
+---
+
+## Search results pagination
+
+**Background**
+
+- **Given** the following dealer contracts:
+
+  | vin | company name |
+  | --- | --- |
+  | 2T1BURHE0JC043821 | CENTRAL AUTO GROUP |
+
+- **And** the company "CENTRAL AUTO GROUP" has "233" branches
+- **And** I am a user on the home page
+
+#### 10 items per page by default
+
+@fix:33070
+
+- **When** I search "central"
+- **Then** the results are displayed with "10" items per page
+- **And** I see "10" rows in the results table
+
+#### I change the number of results to see <itemsPerPage> items per page
+
+@fix:33070
+
+- **When** I search "central"
+- **And** I want to display "<itemsPerPage>" items per page
+- **And** I see "<itemsPerPage>" rows in the results table
+
+**Examples**
+
+| itemsPerPage |
+| --- |
+| 5 |
+| 25 |
+| 50 |
+| 100 |
+
+#### Go to the next page
+
+@fix:33070
+
+- **When** I search "central"
+- **And** I want to display "5" items per page
+- **And** I go to the next page
+- **Then** the results are displayed with "5" items per page
+- **And** I see "5" rows in the results table
+
+---
+
+## Search reset
+
+**Background**
+
+- **Given** the following dealer contracts:
+
+  | vin | company name |
+  | --- | --- |
+  | 1HGCM82633A004352 | RAINBOW MOTORS INC |
+  | 2T1BURHE0JC043821 | CENTRAL AUTO GROUP |
+
+- **And** the company "CENTRAL AUTO GROUP" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | Central Auto Midwest | LLC | 22 Industrial Boulevard | PO Box 12 | SUITE | 60601 | Chicago |
+  | Central Auto South | 8 Commerce Street |  |  |  | 30301 | Atlanta |
+
+- **And** the company "RAINBOW MOTORS INC" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | Rainbow Fleet Depot | LLC | 23 Industrial Boulevard | PO Box 12 | SUITE | 60601 | Chicago |
+
+
+#### I search by dealer name then reset the search
+
+@feat:25360
+
+- **Given** I am a user on the home page
+- **And** I search by dealer name "CENTRAL AUTO GROUP"
+- **When** I reset the search
+- **Then** the dealer name field is empty
+- **And** the results table is not visible
+
+#### I search by VIN then reset the search
+
+@feat:25360
+
+- **Given** I am a user on the home page
+- **And** I search by VIN "01010101010"
+- **When** I reset the search
+- **Then** the VIN field is empty
+- **And** the results table is not visible
+
+---
+
+## Search by dealer name
+
+### The search should display results in the results table
+
+**Background**
+
+- **Given** the following dealer contracts:
+
+  | vin | company name |
+  | --- | --- |
+  | 1HGCM82633A004352 | RAINBOW MOTORS INC |
+  | 2T1BURHE0JC043821 | CENTRAL AUTO GROUP |
+
+- **And** the company "CENTRAL AUTO GROUP" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | Central Auto Midwest | LLC | 22 Industrial Boulevard | PO Box 12 | SUITE | 60601 | Chicago |
+  | Central Auto South | 8 Commerce Street |  |  |  | 30301 | Atlanta |
+
+- **And** the company "RAINBOW MOTORS INC" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | Rainbow Fleet Depot | LLC | 23 Industrial Boulevard | PO Box 12 | SUITE | 60601 | Chicago |
+
+
+#### Search by dealer name
+
+- **Given** I am a user on the home page
+- **When** I search "test"
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | CENTRAL AUTO GROUP | 2T1BURHE0JC043821 | Parent |  |  |  |
+  | Central Auto Midwest |  | Branch | LLC 22 Industrial Boulevard PO Box 12 SUITE | 60601 | Chicago |
+  | Central Auto South |  | Branch | 8 Commerce Street | 30301 | Atlanta |
+  | RAINBOW MOTORS INC | 1HGCM82633A004352 | Parent |  |  |  |
+  | Rainbow Fleet Depot |  | Branch | LLC 23 Industrial Boulevard PO Box 12 SUITE | 60601 | Chicago |
+
+
+#### I press the enter key after typing my search and get my results
+
+- **Given** I am a user on the home page
+- **When** I type "test" in the search field
+- **And** I press enter in the search field
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | CENTRAL AUTO GROUP | 2T1BURHE0JC043821 | Parent |  |  |  |
+  | Central Auto Midwest |  | Branch | LLC 22 Industrial Boulevard PO Box 12 SUITE | 60601 | Chicago |
+  | Central Auto South |  | Branch | 8 Commerce Street | 30301 | Atlanta |
+  | RAINBOW MOTORS INC | 1HGCM82633A004352 | Parent |  |  |  |
+  | Rainbow Fleet Depot |  | Branch | LLC 23 Industrial Boulevard PO Box 12 SUITE | 60601 | Chicago |
+
+
+### Search requires at least 3 characters
+
+#### When I type <search> in the search the button is <status>
+
+@feat:22089
+
+- **Given** I am a user on the home page
+- **When** I search "<search>"
+- **Then** the "Search" button is <status>
+
+**Examples**
+
+| search | status |
+| --- | --- |
+|  | disabled |
+| a | disabled |
+| ab | disabled |
+| abc | enabled |
+| azeazeaze | enabled |
+
+### When I have no results, the message "No results found..." tells me so
+
+#### Search by dealer name with no results
+
+@feat:21726
+
+- **Given** I am a user on the home page
+- **When** I search "test"
+- **Then** the error message "No results found for the search performed" appears
+
+### When the search returns an error, the message "No results found..." tells me so
+
+#### Search by dealer name with error
+
+- **Given** I am a user on the home page and the search returns an error
+- **When** I search "test"
+- **Then** the error message "No results found for the search performed" appears
+
+---
+
+## Search results sorting
+
+### Default sort is by relevance.
+
+#### Default sort
+
+@feat:21724
+
+- **Given** the following dealer contracts:
+
+  | vin | company name |
+  | --- | --- |
+  | Vin1 | RIVERDALE AUTO CENTER |
+  | Vin2 | RIVERSTONE FLEET SERVICES |
+  | Vin3 | RIVER VALLEY MOTORS |
+  | Vin4 | RIVERSIDE CAR WHOLESALE |
+  | Vin5 | RIVERTON AUTO IMPORTS |
+
+- **And** the company "RIVERDALE AUTO CENTER" has the following branches:
+
+  | Branch |
+  | --- |
+  | PREMIER AUTO RIVERDALE |
+  | Car RIVERDALE |
+  | Autohaus |
+
+- **And** the company "RIVERSTONE FLEET SERVICES" has the following branches:
+
+  | Branch |
+  | --- |
+  | RIVER FLEET NORTH |
+  | F RIVERTON |
+
+- **And** the company "RIVER VALLEY MOTORS" has the following branches:
+
+  | Branch |
+  | --- |
+  | RIVER VALLEY MOTORS |
+
+- **And** the company "RIVERSIDE CAR WHOLESALE" has the following branches:
+
+  | Branch |
+  | --- |
+  | RIVERSIDE WHOLESALE |
+  | AutoGroup |
+  | Westfield |
+
+- **And** the company "RIVERTON AUTO IMPORTS" has the following branches:
+
+  | Branch |
+  | --- |
+  | MOTORWAY SA |
+  | DELTA AUTOMOTIVE |
+
+- **And** I am a user on the home page
+- **When** I search "Rive"
+- **And** I display 25 items per page
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | RIVERDALE AUTO CENTER | Vin1 | Parent |  |  |  |
+  | Car RIVERDALE |  | Branch |  |  |  |
+  | PREMIER AUTO RIVERDALE |  | Branch |  |  |  |
+  | Autohaus |  | Branch |  |  |  |
+  | RIVERSIDE CAR WHOLESALE | Vin4 | Parent |  |  |  |
+  | RIVERSIDE WHOLESALE |  | Branch |  |  |  |
+  | AutoGroup |  | Branch |  |  |  |
+  | Westfield |  | Branch |  |  |  |
+  | RIVERSTONE FLEET SERVICES | Vin2 | Parent |  |  |  |
+  | RIVER FLEET NORTH |  | Branch |  |  |  |
+  | F RIVERTON |  | Branch |  |  |  |
+  | RIVERTON AUTO IMPORTS | Vin5 | Parent |  |  |  |
+  | DELTA AUTOMOTIVE |  | Branch |  |  |  |
+  | MOTORWAY SA |  | Branch |  |  |  |
+  | RIVER VALLEY MOTORS | Vin3 | Parent |  |  |  |
+  | RIVER VALLEY MOTORS |  | Branch |  |  |  |
+
+
+### Can sort by company name, parents first then branches
+
+#### Sort by company name ascending
+
+@feat:21696
+
+- **Given** the following dealer contracts:
+
+  | vin | company name | zip code |
+  | --- | --- | --- |
+  | Vin1 | Apex Motors | 10001 |
+  | Vin2 | AutoPeak | 92600 |
+  | Vin3 | Apextra Cars | 75000 |
+  | Vin4 | APEX Drive | 91100 |
+
+- **And** the company "Apex Motors" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | APEX CONSULTING HUB | Main Street |  |  |  | 10001 | New York |
+  | APEX SOUTH BRANCH | Side Road |  |  |  | 92600 | Los Angeles |
+  | APEX NORTH BRANCH | Main Street |  |  |  | 01200 | Springfield |
+
+- **And** I am a user on the home page
+- **And** I search "Apex"
+- **And** I display 10 items per page
+- **And** I sort by company name
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | APEX Drive | Vin4 | Parent |  | 91100 |  |
+  | Apex Motors | Vin1 | Parent |  | 10001 |  |
+  | Apextra Cars | Vin3 | Parent |  | 75000 |  |
+  | AutoPeak | Vin2 | Parent |  | 92600 |  |
+  | APEX CONSULTING HUB |  | Branch | Main Street | 10001 | New York |
+  | APEX NORTH BRANCH |  | Branch | Main Street | 01200 | Springfield |
+  | APEX SOUTH BRANCH |  | Branch | Side Road | 92600 | Los Angeles |
+
+
+#### Sort by company name descending
+
+@feat:21696
+
+- **Given** the following dealer contracts:
+
+  | vin | company name | zip code |
+  | --- | --- | --- |
+  | Vin1 | Apex Motors | 10001 |
+  | Vin2 | AutoPeak | 92600 |
+  | Vin3 | Apextra Cars | 75000 |
+  | Vin4 | APEX Drive | 91100 |
+
+- **And** the company "Apex Motors" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | APEX CONSULTING HUB | Main Street |  |  |  | 10001 | New York |
+  | APEX SOUTH BRANCH | Side Road |  |  |  | 92600 | Los Angeles |
+  | APEX NORTH BRANCH | Main Street |  |  |  | 01200 | Springfield |
+
+- **And** I am a user on the home page
+- **And** I search "Apex"
+- **And** I display 10 items per page
+- **And** I sort by company name
+- **And** I sort by company name
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | Apex Motors | Vin1 | Parent |  | 10001 |  |
+  | APEX SOUTH BRANCH |  | Branch | Side Road | 92600 | Los Angeles |
+  | APEX CONSULTING HUB |  | Branch | Main Street | 10001 | New York |
+  | APEX NORTH BRANCH |  | Branch | Main Street | 01200 | Springfield |
+  | APEX Drive | Vin4 | Parent |  | 91100 |  |
+  | Apextra Cars | Vin3 | Parent |  | 75000 |  |
+  | AutoPeak | Vin2 | Parent |  | 92600 |  |
+
+
+### Can sort by zip code ascending or descending. Parents first then branches
+
+#### Sort by zip code ascending
+
+@feat:21820
+
+- **Given** the following dealer contracts:
+
+  | vin | company name | zip code |
+  | --- | --- | --- |
+  | Vin1 | Apex Motors | 10001 |
+  | Vin2 | AutoPeak | 92600 |
+  | Vin3 | Apextra Cars | 75000 |
+  | Vin4 | APEX Drive | 91100 |
+  | Vin5 | APEX No Zip |  |
+
+- **And** the company "Apex Motors" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | APEX CONSULTING HUB | Main Street |  |  |  | 10001 | New York |
+  | APEX SOUTH BRANCH | Side Road |  |  |  | 92600 | Los Angeles |
+  | APEX NORTH BRANCH | Main Street |  |  |  | 01200 | Springfield |
+
+- **And** I am a user on the home page
+- **When** I search "Apex"
+- **And** I display 10 items per page
+- **And** I sort by zip code
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | APEX No Zip | Vin5 | Parent |  |  |  |
+  | Apextra Cars | Vin3 | Parent |  | 75000 |  |
+  | Apex Motors | Vin1 | Parent |  | 10001 |  |
+  | APEX NORTH BRANCH |  | Branch | Main Street | 01200 | Springfield |
+  | APEX CONSULTING HUB |  | Branch | Main Street | 10001 | New York |
+  | APEX SOUTH BRANCH |  | Branch | Side Road | 92600 | Los Angeles |
+  | APEX Drive | Vin4 | Parent |  | 91100 |  |
+  | AutoPeak | Vin2 | Parent |  | 92600 |  |
+
+
+#### Sort by zip code descending
+
+@feat:21820
+
+- **Given** the following dealer contracts:
+
+  | vin | company name | zip code |
+  | --- | --- | --- |
+  | Vin1 | Apex Motors | 10001 |
+  | Vin2 | AutoPeak | 92600 |
+  | Vin3 | Apextra Cars | 75000 |
+  | Vin4 | APEX Drive | 91100 |
+
+- **And** the company "Apex Motors" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | APEX CONSULTING HUB | Main Street |  |  |  | 10001 | New York |
+  | APEX SOUTH BRANCH | Side Road |  |  |  | 92600 | Los Angeles |
+  | APEX NORTH BRANCH | Main Street |  |  |  | 01200 | Springfield |
+
+- **And** I am a user on the home page
+- **When** I search "Apex"
+- **And** I display 10 items per page
+- **And** I sort by zip code
+- **And** I sort by zip code
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | AutoPeak | Vin2 | Parent |  | 92600 |  |
+  | APEX Drive | Vin4 | Parent |  | 91100 |  |
+  | Apex Motors | Vin1 | Parent |  | 10001 |  |
+  | APEX SOUTH BRANCH |  | Branch | Side Road | 92600 | Los Angeles |
+  | APEX CONSULTING HUB |  | Branch | Main Street | 10001 | New York |
+  | APEX NORTH BRANCH |  | Branch | Main Street | 01200 | Springfield |
+  | Apextra Cars | Vin3 | Parent |  | 75000 |  |
+
+
+### Can sort by city ascending or descending. Parents first then branches
+
+#### Sort by city ascending
+
+@feat:21821
+
+- **Given** the following dealer contracts:
+
+  | vin | company name | zip code | city |
+  | --- | --- | --- | --- |
+  | Vin1 | Apex Motors | 10001 | New York |
+  | Vin2 | AutoPeak | 92600 | Los Angeles |
+  | Vin3 | Apextra Cars | 75000 | New York |
+  | Vin4 | APEX Drive | 91100 | Houston |
+  | Vin5 | APEX No City |  |  |
+
+- **And** the company "Apex Motors" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | APEX CONSULTING HUB | Main Street |  |  |  | 10001 | New York |
+  | APEX SOUTH BRANCH | Side Road |  |  |  | 92600 | Los Angeles |
+  | APEX NORTH BRANCH | Main Street |  |  |  | 01200 | Springfield |
+
+- **And** I am a user on the home page
+- **When** I search "Apex"
+- **And** I display 10 items per page
+- **And** I sort by city
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | APEX No City | Vin5 | Parent |  |  |  |
+  | AutoPeak | Vin2 | Parent |  | 92600 | Los Angeles |
+  | APEX Drive | Vin4 | Parent |  | 91100 | Houston |
+  | Apextra Cars | Vin3 | Parent |  | 75000 | New York |
+  | Apex Motors | Vin1 | Parent |  | 10001 | New York |
+  | APEX SOUTH BRANCH |  | Branch | Side Road | 92600 | Los Angeles |
+  | APEX CONSULTING HUB |  | Branch | Main Street | 10001 | New York |
+  | APEX NORTH BRANCH |  | Branch | Main Street | 01200 | Springfield |
+
+
+#### Sort by city descending
+
+@feat:21821
+
+- **Given** the following dealer contracts:
+
+  | vin | company name | zip code | city |
+  | --- | --- | --- | --- |
+  | Vin1 | Apex Motors | 10001 | New York |
+  | Vin2 | AutoPeak | 92600 | Los Angeles |
+  | Vin3 | Apextra Cars | 75000 | New York |
+  | Vin4 | APEX Drive | 91100 | Houston |
+  | Vin5 | APEX No City |  |  |
+
+- **And** the company "Apex Motors" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | APEX CONSULTING HUB | Main Street |  |  |  | 10001 | New York |
+  | APEX SOUTH BRANCH | Side Road |  |  |  | 92600 | Los Angeles |
+  | APEX NORTH BRANCH | Main Street |  |  |  | 01200 | Springfield |
+
+- **And** I am a user on the home page
+- **When** I search "Apex"
+- **And** I display 10 items per page
+- **And** I sort by city
+- **And** I sort by city
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | Apextra Cars | Vin3 | Parent |  | 75000 | New York |
+  | Apex Motors | Vin1 | Parent |  | 10001 | New York |
+  | APEX NORTH BRANCH |  | Branch | Main Street | 01200 | Springfield |
+  | APEX CONSULTING HUB |  | Branch | Main Street | 10001 | New York |
+  | APEX SOUTH BRANCH |  | Branch | Side Road | 92600 | Los Angeles |
+  | APEX Drive | Vin4 | Parent |  | 91100 | Houston |
+  | AutoPeak | Vin2 | Parent |  | 92600 | Los Angeles |
+  | APEX No City | Vin5 | Parent |  |  |  |
+
+
+---
+
+## Date of birth validation
+
+@user-data @validation @date-of-birth @feat:20824
+
+#### I type an invalid date of birth and the help message shows an error: <Case>
+
+@date @feat:20824
+
+- **Given** today's date is 10/03/2020
+- **Given** I perform a driver search
+- **When** I type <Value> in the date of birth field
+- **And** I leave the date of birth field
+- **Then** I have an error on the date of birth field
+
+**Examples**
+
+| Case | Value |
+| --- | --- |
+| wrong format #1 | 01/10 |
+| wrong format #2 | 01-01-2020 |
+| invalid date #1 | 30/02/1980 |
+| date in the future | 11/03/2020 |
+| date too far in the past | 31/12/1899 |
+
+#### I type a valid date of birth and the help message does not show an error: <Case>
+
+@date @feat:20824
+
+- **Given** today's date is 07/03/2022
+- **And** I perform a driver search
+- **When** I type <Value> in the date of birth field
+- **And** I leave the date of birth field
+- **Then** I have no error on the date of birth field
+
+**Examples**
+
+| Case | Value |
+| --- | --- |
+| lower limit | 01/01/1900 |
+| today's date | 07/03/2022 |
+
+---
+
+## Driver search feature flag
+
+#### Driver search is disabled
+
+- **Given** the driver search is disabled
+- **When** I am on the search page
+- **Then** no search is selected
+- **And** the driver search is not displayed
+
+#### Driver search is enabled
+
+- **Given** the driver search is enabled
+- **When** I am on the search page
+- **Then** the dealer search is not selected
+- **And** the driver search is displayed
+
+---
+
+## Search results for a driver search
+
+#### I search for drivers and the results table appears
+
+@feat:20824
+
+- **Given** a driver search returns the following people
+
+  | id | lastName | firstName | dateOfBirth | zipCode | role | company |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | 1548 | Johnson | Michael | 01/08/1979 | 10001 | Primary Driver | FastWheels LLC |
+  | 1549 | Johnson | Michael | 01/08/1979 | 90001 |  | SpeedDrive Corporation |
+  | 1547 | Johnson | Michael | 01/08/1979 | 30301 | Fleet Manager | AutoNation Group |
+
+- **Given** I perform a driver search
+- **And** I type "Johnson" in the last name field
+- **And** I type "Michael" in the first name field
+- **And** I type "01/08/1979" in the date of birth field
+- **When** I search for this driver
+- **Then** the following results are displayed
+
+  | Last Name | First Name | Date of Birth | Zip Code | Contract Role (DSN) | Company Name |
+  | --- | --- | --- | --- | --- | --- |
+  | Johnson | Michael | 01/08/1979 | 10001 | Primary Driver | FastWheels LLC |
+  | Johnson | Michael | 01/08/1979 | 90001 |  | SpeedDrive Corporation |
+  | Johnson | Michael | 01/08/1979 | 30301 | Fleet Manager | AutoNation Group |
+
+- **And** the result indicates "3 drivers found"
+
+#### I search for drivers and no results are returned
+
+@feat:20824
+
+- **Given** a driver search returns no results
+- **Given** I perform a driver search
+- **And** I type "Johnson" in the last name field
+- **And** I type "Michael" in the first name field
+- **And** I type "01/08/1979" in the date of birth field
+- **When** I search for this driver
+- **Then** a message indicates "Your search returned no results"
+
+---
+
+## Search by driver
+
+#### The search button activates when last name, first name and date of birth are entered
+
+@feat:20824
+
+- **Given** today's date is 09/08/2015
+- **And** I perform a driver search
+- **When** I type "a" in the last name field
+- **And** I type "a" in the first name field
+- **And** I type "a" in the date of birth field
+- **Then** the "Search" button is enabled
+
+#### The search button does not activate when last name, first name or date of birth is missing
+
+@feat:20824
+
+- **Given** today's date is 09/08/2015
+- **And** I perform a driver search
+- **When** I type "<lastName>" in the last name field
+- **And** I type "<firstName>" in the first name field
+- **And** I type "<dateOfBirth>" in the date of birth field
+- **Then** the "Search" button is disabled
+
+**Examples**
+
+| lastName | firstName | dateOfBirth |
+| --- | --- | --- |
+|  | Miller | 01/01/1980 |
+| Thompson |  | 01/01/1980 |
+| Thompson | Miller |  |
+
+#### I reset the search and the results disappear and the fields are cleared
+
+@feat:20824
+
+- **Given** I perform a driver search
+- **And** I type "Johnson" in the last name field
+- **And** I type "Michael" in the first name field
+- **And** I type "01/08/1979" in the date of birth field
+- **When** I search for this driver
+- **And** I reset the search
+- **Then** the result indicates "No search performed"
+- **And** the results table disappears
+- **And** the last name field is empty
+- **And** the first name field is empty
+- **And** the date of birth field is empty
+
+---
+
+## Search by VIN
+
+Search car by VIN number. Some example cars:
+- A fast car
+![Lego car](/images/SearchByVin_lego-car.jpg)
+- A beautiful car
+![Lego lamborghini](/images/SearchByVin_lego-lamborghini.png)
+
+### The search should display results in the results table
+
+**Background**
+
+- **Given** the following dealer contracts:
+
+  | vin | company name |
+  | --- | --- |
+  | 1HGCM82633A004352 | RAINBOW MOTORS INC |
+  | 2T1BURHE0JC043821 | CENTRAL AUTO GROUP |
+
+- **And** the company "CENTRAL AUTO GROUP" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | Central Auto Midwest | LLC | 22 Industrial Boulevard | PO Box 12 | SUITE | 60601 | Chicago |
+  | Central Auto South | 8 Commerce Street |  |  |  | 30301 | Atlanta |
+
+- **And** the company "RAINBOW MOTORS INC" has the following branches:
+
+  | Branch | address1 | address2 | address3 | address4 | zip code | city |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | Rainbow Fleet Depot | LLC | 23 Industrial Boulevard | PO Box 12 | SUITE | 60601 | Chicago |
+
+
+#### Search by VIN
+
+- **Given** I am a user on the home page
+- **When** I search by VIN "1HGCM82633A004352"
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | CENTRAL AUTO GROUP | 2T1BURHE0JC043821 | Parent |  |  |  |
+  | Central Auto Midwest |  | Branch | LLC 22 Industrial Boulevard PO Box 12 SUITE | 60601 | Chicago |
+  | Central Auto South |  | Branch | 8 Commerce Street | 30301 | Atlanta |
+  | RAINBOW MOTORS INC | 1HGCM82633A004352 | Parent |  |  |  |
+  | Rainbow Fleet Depot |  | Branch | LLC 23 Industrial Boulevard PO Box 12 SUITE | 60601 | Chicago |
+
+
+#### I press the enter key after typing my search and get my results
+
+- **Given** I am a user on the home page
+- **When** I search by VIN
+- **When** I type "1HGCM82633A004352" in the search field
+- **And** I press enter in the search field
+- **Then** the following results are displayed
+
+  | Company Name | VIN | Scope | Address | Zip Code | City |
+  | --- | --- | --- | --- | --- | --- |
+  | CENTRAL AUTO GROUP | 2T1BURHE0JC043821 | Parent |  |  |  |
+  | Central Auto Midwest |  | Branch | LLC 22 Industrial Boulevard PO Box 12 SUITE | 60601 | Chicago |
+  | Central Auto South |  | Branch | 8 Commerce Street | 30301 | Atlanta |
+  | RAINBOW MOTORS INC | 1HGCM82633A004352 | Parent |  |  |  |
+  | Rainbow Fleet Depot |  | Branch | LLC 23 Industrial Boulevard PO Box 12 SUITE | 60601 | Chicago |
+
+
+#### Search by VIN with error
+
+- **Given** I am a user on the home page and the search returns an error
+- **When** I search by VIN "0000000000"
+- **Then** the error message "No results found for the search performed" appears
+
+### Search requires at least 9 characters
+
+#### When I type <search> in the VIN search the button is <status>
+
+- **Given** I am a user on the home page
+- **When** I search by VIN
+- **When** I type "<search>" in the search field
+- **Then** the "Search" button is <status>
+
+**Examples**
+
+| search | status |
+| --- | --- |
+|  | disabled |
+| 0 | disabled |
+| 01 | disabled |
+| 01234567 | disabled |
+| 012345678 | enabled |
+| 0123456789 | enabled |
+
+---
+
+## Unconfigured warranty alert
+
+#### Display alert when some warranties are not configured
+
+- **Given** unconfigured warranties exist
+- **When** I am on the main page
+- **Then** an alert is displayed with the message "Warning: You have new warranties to configure"
+- **And** a download link is visible
+
+#### No alert when all warranties are configured
+
+- **Given** no unconfigured warranties exist
+- **When** I am on the main page
+- **Then** no alert is displayed
+
+#### Download the warranty alert file
+
+- **Given** unconfigured warranties exist
+- **And** a warranty alert file is available
+- **When** I am on the main page
+- **And** I click the download link
+- **Then** the file is downloaded successfully
+
+#### Warranty alert file unavailable
+
+- **Given** unconfigured warranties exist
+- **And** retrieving the warranty alert file produces the error "Unable to download the warranty alert file"
+- **When** I am on the main page
+- **And** I click the download link
+- **Then** an error message is displayed with the text "Unable to download the warranty alert file"
+- **But** the file is not downloaded

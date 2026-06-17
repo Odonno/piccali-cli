@@ -85,11 +85,17 @@ fn run() -> Result<()> {
     let document = models::Document { folders };
 
     let default_title = "Cucumber docs";
+    let title = cli.title.as_deref().unwrap_or(default_title);
 
     match cli.format {
         None => {
-            let title = cli.title.unwrap_or_else(|| default_title.to_string());
-            server::serve(cli.port, document, title, image_refs, asset_refs)?;
+            server::serve(
+                cli.port,
+                document,
+                title.to_string(),
+                image_refs,
+                asset_refs,
+            )?;
         }
         Some(Format::Html) => {
             if cli.dry_run {
@@ -97,19 +103,26 @@ fn run() -> Result<()> {
             }
             let output_path = cli.output.as_deref().unwrap_or(".");
             let output_dir = std::path::Path::new(output_path);
-            let title = cli.title.as_deref().unwrap_or(default_title);
             format::format_html(&document, output_dir, title, &image_refs, &asset_refs)?;
-            eprintln!("HTML site written to {output_path}");
+            println!("HTML site written to {output_path}");
         }
         Some(Format::Markdown) => {
             if cli.dry_run {
                 let output = format::format_markdown_dry_run(&document);
                 println!("{output}");
             } else {
-                let output_path = cli.output.as_deref().unwrap_or(".");
-                let output_dir = std::path::Path::new(output_path);
-                format::format_markdown(&document, output_dir)?;
-                eprintln!("Markdown files written to {output_path}");
+                let output_path_str = cli.output.as_deref().unwrap_or(".");
+                let output_path = std::path::Path::new(output_path_str);
+
+                if output_path.extension().is_some() {
+                    // Output has a file extension → write single concatenated file
+                    format::format_markdown_single_file(&document, title, output_path)?;
+                    println!("Markdown written to {output_path_str}");
+                } else {
+                    // No extension → treat as directory, one file per feature
+                    format::format_markdown(&document, output_path)?;
+                    println!("Markdown files written to {output_path_str}");
+                }
             }
         }
         Some(Format::Json) => {
@@ -119,7 +132,7 @@ fn run() -> Result<()> {
             } else if let Some(ref output_path) = cli.output {
                 std::fs::write(output_path, &output)
                     .map_err(|e| eyre!("Failed to write output to {output_path}: {e}"))?;
-                eprintln!("Written to {output_path}");
+                println!("Written to {output_path}");
             }
         }
     }
