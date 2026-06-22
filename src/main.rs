@@ -29,10 +29,16 @@ fn run() -> Result<()> {
     if !cli.assets.is_empty() {
         match &cli.format {
             Some(Format::Json) => bail!("--assets is not supported for the json formatter."),
-            Some(Format::Markdown) => {
-                bail!("--assets is not supported for the markdown formatter.")
-            }
+            Some(Format::Markdown) => bail!("--assets is not supported for the markdown formatter."),
             Some(Format::Html) | None => {}
+        }
+    }
+
+    // --base-url is only supported for HTML output
+    if cli.base_url.is_some() {
+        match &cli.format {
+            Some(Format::Html) => {}
+            _ => bail!("--base-url is only supported with --format html."),
         }
     }
 
@@ -103,7 +109,7 @@ fn run() -> Result<()> {
             }
             let output_path = cli.output.as_deref().unwrap_or(".");
             let output_dir = std::path::Path::new(output_path);
-            format::format_html(&document, output_dir, title, &image_refs, &asset_refs)?;
+            format::format_html(&document, output_dir, title, &image_refs, &asset_refs, cli.base_url.as_deref())?;
             println!("HTML site written to {output_path}");
         }
         Some(Format::Markdown) => {

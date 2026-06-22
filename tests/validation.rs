@@ -70,3 +70,48 @@ fn no_matching_files_fails() {
         .failure()
         .stderr(predicate::str::contains("No feature files found"));
 }
+
+#[test]
+fn base_url_with_json_format_fails() {
+    piccali()
+        .args([
+            "--format",
+            "json",
+            "--dry-run",
+            "--base-url",
+            "/docs/",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "--base-url is only supported with --format html",
+        ));
+}
+
+#[test]
+fn base_url_with_markdown_format_fails() {
+    piccali()
+        .args([
+            "--format",
+            "markdown",
+            "--dry-run",
+            "--base-url",
+            "/docs/",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "--base-url is only supported with --format html",
+        ));
+}
+
+#[test]
+fn base_url_without_format_fails() {
+    piccali()
+        .args(["--base-url", "/docs/", "--dry-run"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "--base-url is only supported with --format html",
+        ));
+}

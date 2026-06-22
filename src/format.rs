@@ -61,6 +61,7 @@ pub fn format_html(
     title: &str,
     image_refs: &[ImageRef],
     asset_refs: &[AssetRef],
+    base_url: Option<&str>,
 ) -> Result<()> {
     // Create output directory
     std::fs::create_dir_all(output_dir)
@@ -80,6 +81,16 @@ pub fn format_html(
 
         std::fs::write(&dest, file.data.as_ref())
             .wrap_err_with(|| format!("Failed to write {}", dest.display()))?;
+    }
+
+    // Inject <base href="..."> into index.html if base_url is set
+    if let Some(base_url) = base_url {
+        let index_path = output_dir.join("index.html");
+        let content = std::fs::read_to_string(&index_path)
+            .wrap_err_with(|| format!("Failed to read {}", index_path.display()))?;
+        let injected = inject_base_url(&content, base_url);
+        std::fs::write(&index_path, injected)
+            .wrap_err_with(|| format!("Failed to write {}", index_path.display()))?;
     }
 
     // Write data.json
@@ -129,6 +140,15 @@ pub fn format_html(
     }
 
     Ok(())
+}
+
+/// Inject `<base href="...">` as the first element inside `<head>`.
+fn inject_base_url(html: &str, base_url: &str) -> String {
+    html.replacen(
+        "<head>",
+        &format!("<head>\n    <base href=\"{base_url}\" />"),
+        1,
+    )
 }
 
 // ---------------------------------------------------------------------------
