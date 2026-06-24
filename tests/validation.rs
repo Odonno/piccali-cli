@@ -115,3 +115,48 @@ fn base_url_without_format_fails() {
             "--base-url is only supported with --format html",
         ));
 }
+
+#[test]
+fn lang_with_json_format_fails() {
+    piccali()
+        .args([
+            "--format",
+            "json",
+            "--dry-run",
+            "--lang",
+            "fr",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "--lang is only supported with --format html",
+        ));
+}
+
+#[test]
+fn lang_with_markdown_format_fails() {
+    piccali()
+        .args([
+            "--format",
+            "markdown",
+            "--dry-run",
+            "--lang",
+            "fr",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "--lang is only supported with --format html",
+        ));
+}
+
+#[test]
+fn lang_without_format_fails() {
+    piccali()
+        .args(["--lang", "fr", "--dry-run"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "--lang is only supported with --format html",
+        ));
+}

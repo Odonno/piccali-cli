@@ -53,6 +53,11 @@ pub struct Cli {
     #[arg(long)]
     pub base_url: Option<String>,
 
+    /// Language code to set as the `lang` attribute on the `<html>` element
+    /// (e.g. "en", "fr"). Only supported with --format html.
+    #[arg(long)]
+    pub lang: Option<String>,
+
     /// Tag prefix to match (e.g. "feat:"). Repeat for multiple prefixes.
     /// Each --tag-prefix must be paired with a corresponding --tag-url-template.
     #[arg(long, value_name = "PREFIX")]

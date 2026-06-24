@@ -62,6 +62,7 @@ pub fn format_html(
     image_refs: &[ImageRef],
     asset_refs: &[AssetRef],
     base_url: Option<&str>,
+    lang: Option<&str>,
 ) -> Result<()> {
     // Create output directory
     std::fs::create_dir_all(output_dir)
@@ -89,6 +90,16 @@ pub fn format_html(
         let content = std::fs::read_to_string(&index_path)
             .wrap_err_with(|| format!("Failed to read {}", index_path.display()))?;
         let injected = inject_base_url(&content, base_url);
+        std::fs::write(&index_path, injected)
+            .wrap_err_with(|| format!("Failed to write {}", index_path.display()))?;
+    }
+
+    // Replace lang attribute in index.html if lang is set
+    if let Some(lang) = lang {
+        let index_path = output_dir.join("index.html");
+        let content = std::fs::read_to_string(&index_path)
+            .wrap_err_with(|| format!("Failed to read {}", index_path.display()))?;
+        let injected = inject_lang(&content, lang);
         std::fs::write(&index_path, injected)
             .wrap_err_with(|| format!("Failed to write {}", index_path.display()))?;
     }
@@ -149,6 +160,12 @@ fn inject_base_url(html: &str, base_url: &str) -> String {
         &format!("<head>\n    <base href=\"{base_url}\" />"),
         1,
     )
+}
+
+/// Replace the `lang` attribute on the `<html>` element.
+fn inject_lang(html: &str, lang: &str) -> String {
+    // The template always ships with lang="en"; replace the first occurrence.
+    html.replacen("lang=\"en\"", &format!("lang=\"{lang}\""), 1)
 }
 
 // ---------------------------------------------------------------------------
@@ -474,6 +491,21 @@ mod tests {
 
     fn parse_metadata(json: &str) -> serde_json::Value {
         serde_json::from_str(json).expect("valid JSON")
+    }
+
+    #[test]
+    fn inject_lang_replaces_lang_attribute() {
+        let html = r#"<!doctype html><html lang="en"><head></head></html>"#;
+        let result = inject_lang(html, "fr");
+        assert!(result.contains("lang=\"fr\""), "expected lang=\"fr\" in: {result}");
+        assert!(!result.contains("lang=\"en\""), "old lang should be gone: {result}");
+    }
+
+    #[test]
+    fn inject_lang_does_not_modify_when_same_lang() {
+        let html = r#"<!doctype html><html lang="en"><head></head></html>"#;
+        let result = inject_lang(html, "en");
+        assert!(result.contains("lang=\"en\""));
     }
 
     #[test]

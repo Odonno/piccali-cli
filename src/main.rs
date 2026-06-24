@@ -42,6 +42,14 @@ fn run() -> Result<()> {
         }
     }
 
+    // --lang is only supported for HTML output
+    if cli.lang.is_some() {
+        match &cli.format {
+            Some(Format::Html) => {}
+            _ => bail!("--lang is only supported with --format html."),
+        }
+    }
+
     // Validate that --tag-prefix and --tag-url-template are always paired
     if cli.tag_prefix.len() != cli.tag_url_template.len() {
         bail!(
@@ -109,7 +117,7 @@ fn run() -> Result<()> {
             }
             let output_path = cli.output.as_deref().unwrap_or(".");
             let output_dir = std::path::Path::new(output_path);
-            format::format_html(&document, output_dir, title, &image_refs, &asset_refs, cli.base_url.as_deref())?;
+            format::format_html(&document, output_dir, title, &image_refs, &asset_refs, cli.base_url.as_deref(), cli.lang.as_deref())?;
             println!("HTML site written to {output_path}");
         }
         Some(Format::Markdown) => {
