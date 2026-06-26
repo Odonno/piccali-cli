@@ -29,7 +29,7 @@ export const AppSidebar = () => {
 							tooltip="Features"
 						>
 							<div className="flex size-8 items-center justify-center rounded-lg bg-yellow-50/60 shrink-0">
-								<img src="/logo.png" alt="" className="size-7" />
+								<img src="./logo.png" alt="" className="size-7" />
 							</div>
 							<div className="flex flex-col gap-0.5 leading-none">
 								<span className="font-semibold text-sm">Features</span>
