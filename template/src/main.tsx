@@ -5,7 +5,13 @@ import "./index.css";
 import { ThemeProvider } from "@/context/ThemeProvider.tsx";
 import { routeTree } from "./routeTree.gen";
 
-const router = createRouter({ routeTree });
+const raw = document.querySelector("base")?.getAttribute("href") ?? "/";
+const basepath = raw.endsWith("/") ? raw.slice(0, -1) || "/" : raw;
+
+const router = createRouter({
+	routeTree,
+	basepath,
+});
 
 declare module "@tanstack/react-router" {
 	interface Register {
