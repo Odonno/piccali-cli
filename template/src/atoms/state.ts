@@ -8,14 +8,14 @@ import { collectFeatures, collectScenarios } from "@/functions/state";
 import { isScenarioOutline } from "@/functions/scenario";
 
 const dataAsyncAtom = atom(async () => {
-	const res = await fetch("/data.json");
+	const res = await fetch("./data.json");
 	const data = await res.json();
 
 	return v.parse(DataSchema, data) as PiccaliData;
 });
 
 const metadataAsyncAtom = atom(async () => {
-	const res = await fetch("/metadata.json");
+	const res = await fetch("./metadata.json");
 	const data = await res.json();
 
 	return v.parse(MetadataSchema, data) as PiccaliMetadata;
