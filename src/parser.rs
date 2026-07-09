@@ -224,7 +224,10 @@ pub fn parse_feature_file(
         .wrap_err_with(|| format!("Could not read path: {}", path.display()))
         .wrap_err_with(|| format!("Failed to parse {}", path.display()))?;
 
-    let preprocessed = escape_backslashes_in_table_cells(&raw);
+    // Strip UTF-8 BOM (U+FEFF) if present — some editors write it.
+    let raw = raw.strip_prefix('\u{FEFF}').unwrap_or(&raw);
+
+    let preprocessed = escape_backslashes_in_table_cells(raw);
 
     let env = GherkinEnv::default();
     let parsed = gherkin::Feature::parse(&preprocessed, env)
@@ -775,6 +778,23 @@ mod tests {
     /// Collect the full eyre error chain as a `Vec<String>`.
     fn error_chain(err: &color_eyre::eyre::Error) -> Vec<String> {
         err.chain().map(|c| c.to_string()).collect()
+    }
+
+    // --- parse_feature_file: BOM handling ---
+
+    #[test]
+    fn parse_feature_file_with_utf8_bom_succeeds() {
+        // Write a file whose first three bytes are the UTF-8 BOM (EF BB BF).
+        let mut tmp = NamedTempFile::with_suffix(".feature").unwrap();
+        let bom = b"\xEF\xBB\xBF";
+        let body = b"Feature: BOM test\n\n  Scenario: Works\n\n    Given a step\n";
+        tmp.write_all(bom).unwrap();
+        tmp.write_all(body).unwrap();
+
+        let feature = parse_feature_file(tmp.path(), &HashMap::new()).unwrap();
+        assert_eq!(feature.name, "BOM test");
+        assert_eq!(feature.scenarios.len(), 1);
+        assert_eq!(feature.scenarios[0].steps[0].text, "a step");
     }
 
     // --- parse_feature_file: success cases ---
