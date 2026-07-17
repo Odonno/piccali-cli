@@ -1,6 +1,6 @@
 import type { StepType } from "@/schemas/data";
 
-export const ALL_STEP_TYPES: StepType[] = ["Given", "When", "Then"];
+export const PRIMARY_STEP_TYPES: StepType[] = ["Given", "When", "Then"];
 
 /**
  * Distinctive OKLCH colors per variant — scoped to this page only.

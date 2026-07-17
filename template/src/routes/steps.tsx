@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
-	ALL_STEP_TYPES,
+	PRIMARY_STEP_TYPES,
 	STEP_TYPE_COLORS,
 	STEP_TYPE_ORDER,
 } from "@/constants/steps";
@@ -17,7 +17,7 @@ const StepsPage = () => {
 	const uniqueSteps = useAtomValue(uniqueStepsAtom);
 
 	const [activeTypes, setActiveTypes] = useState<Set<StepType>>(
-		new Set(ALL_STEP_TYPES),
+		new Set(PRIMARY_STEP_TYPES),
 	);
 	const [search, setSearch] = useState("");
 
@@ -60,15 +60,15 @@ const StepsPage = () => {
 
 	const isFiltered =
 		filteredSteps.length !== uniqueSteps.length ||
-		activeTypes.size !== ALL_STEP_TYPES.length ||
+		activeTypes.size !== PRIMARY_STEP_TYPES.length ||
 		normalizedSearch !== "";
 
 	return (
 		<div className="max-w-5xl mx-auto px-6 py-8">
 			{/* Header */}
 			<div className="flex items-center gap-3 mb-6">
-				<div className="size-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
-					<BookOpen className="size-5 text-muted-foreground" />
+				<div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+					<BookOpen className="size-5" />
 				</div>
 				<div>
 					<h1 className="text-xl font-semibold">Step Definitions</h1>
@@ -83,7 +83,7 @@ const StepsPage = () => {
 			{/* Controls: toggle filters + search */}
 			<div className="flex flex-wrap items-center gap-2 mb-4">
 				<div className="flex items-center gap-1">
-					{ALL_STEP_TYPES.map((type) => {
+					{PRIMARY_STEP_TYPES.map((type) => {
 						const active = activeTypes.has(type);
 						const colors = STEP_TYPE_COLORS[type];
 						return (

@@ -28,8 +28,8 @@ export const AppSidebar = () => {
 							className="pointer-events-none"
 							tooltip="Features"
 						>
-							<div className="flex size-8 items-center justify-center rounded-lg bg-yellow-50/60 shrink-0">
-								<img src="./logo.png" alt="" className="size-7" />
+							<div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 shrink-0">
+								<img src="./logo.png" alt="" className="size-6" />
 							</div>
 							<div className="flex flex-col gap-0.5 leading-none">
 								<span className="font-semibold text-sm">Features</span>

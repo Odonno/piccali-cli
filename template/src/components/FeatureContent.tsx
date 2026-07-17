@@ -30,6 +30,7 @@ import type { FeaturePath } from "@/types/navigation";
 import { useAtomValue } from "jotai";
 import { foldersAtom } from "@/atoms/state";
 import { scenarioImprovementsAtom } from "@/atoms/scenarioImprovements";
+import { cn } from "@/lib/utils";
 
 type FeatureContentProps = {
 	feature: Feature;
@@ -91,7 +92,7 @@ export const FeatureContent = ({
 					) : (
 						<FileText className="size-5 text-primary shrink-0" />
 					)}
-					<span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+					<span className="text-[10px] font-mono font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
 						{subject.keyword}
 					</span>
 				</div>
@@ -204,7 +205,14 @@ export const FeatureContent = ({
 									>
 										{/* Scenario header */}
 										<div className="flex items-start gap-2">
-											<span className="text-xs font-mono text-muted-foreground uppercase tracking-widest shrink-0 pt-0.5">
+											<span
+												className={cn(
+													"text-[10px] font-mono font-semibold uppercase tracking-wider shrink-0 rounded px-1.5 py-0.5 mt-0.5",
+													isOutline
+														? "bg-muted text-muted-foreground"
+														: "bg-primary/10 text-primary",
+												)}
+											>
 												{scenario.keyword}
 											</span>
 											<span className="text-sm font-semibold leading-snug flex-1">

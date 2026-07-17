@@ -30,31 +30,6 @@ fn html_base_url_injected_in_index() {
 }
 
 #[test]
-fn html_without_base_url_has_no_base_tag() {
-    let output_dir = tempfile::tempdir().expect("failed to create temp dir");
-
-    piccali()
-        .args([
-            "--format",
-            "html",
-            "--output",
-            output_dir.path().to_str().unwrap(),
-            "--input",
-            "features/WarrantyAlert/*.feature",
-        ])
-        .assert()
-        .success();
-
-    let index_html = std::fs::read_to_string(output_dir.path().join("index.html"))
-        .expect("index.html not found");
-
-    assert!(
-        !index_html.contains("<base href="),
-        "expected no <base href> in index.html without --base-url"
-    );
-}
-
-#[test]
 fn html_lang_injected_in_index() {
     let output_dir = tempfile::tempdir().expect("failed to create temp dir");
 

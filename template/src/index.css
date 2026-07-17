@@ -78,7 +78,7 @@
     --chart-3: oklch(0.546 0.245 262.881);
     --chart-4: oklch(0.488 0.243 264.376);
     --chart-5: oklch(0.424 0.199 265.638);
-    --radius: 0.45rem;
+    --radius: 0.55rem;
     --sidebar: var(--theme-sidebar, oklch(0.985 0 0));
     --sidebar-foreground: var(--theme-sidebar-foreground, oklch(0.141 0.005 285.823));
     --sidebar-primary: var(--theme-sidebar-primary, oklch(0.546 0.245 262.881));
@@ -144,4 +144,33 @@
   html {
     @apply font-sans;
     }
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 100vh;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+  opacity: 0.5;
+}
+@supports (scrollbar-width: thin) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+}
+
+/* ─── Selection ─────────────────────────────────────────────────────── */
+::selection {
+  background: oklch(0.488 0.243 264.376 / 18%);
+  color: inherit;
 }

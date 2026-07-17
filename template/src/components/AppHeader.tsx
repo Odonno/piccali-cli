@@ -26,11 +26,8 @@ export const AppHeader = () => {
 
 			<Separator orientation="vertical" className="mx-1" />
 
-			<Link
-				to="/"
-				className="flex items-center gap-2.5 min-w-0 flex-none group"
-			>
-				<h1 className="text-base font-semibold tracking-tight truncate group-hover:opacity-75 transition-opacity">
+			<Link to="/" className="flex items-center gap-2 min-w-0 flex-none group">
+				<h1 className="text-sm font-semibold tracking-tight truncate group-hover:text-primary transition-colors">
 					{metadata?.title ?? "Cucumber docs"}
 				</h1>
 			</Link>

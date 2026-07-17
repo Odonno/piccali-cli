@@ -131,7 +131,7 @@ export const SearchBar = () => {
 			{/* Input */}
 			<div
 				className={cn(
-					"flex items-center gap-2 rounded-md border bg-background px-3 h-8",
+					"flex items-center gap-2 rounded-lg border bg-muted/50 px-3 h-8",
 					"transition-shadow duration-150",
 					isOpen
 						? "ring-2 ring-ring ring-offset-1 border-ring/50"

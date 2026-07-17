@@ -19,8 +19,8 @@ export const TagBadge = ({
 	if (tag.url) {
 		return (
 			<Badge
-				variant="secondary"
-				className={`${className} cursor-pointer hover:bg-secondary/80 transition-colors`}
+				variant="outline"
+				className={`${className} cursor-pointer border-primary/30 text-primary hover:bg-primary/10 transition-colors`}
 				asChild
 			>
 				<a href={tag.url} target="_blank" rel="noopener noreferrer">

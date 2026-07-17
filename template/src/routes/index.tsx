@@ -37,13 +37,13 @@ const IndexPage = () => {
 
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<StatCard
-					icon={<FileText className="size-4 text-muted-foreground" />}
+					icon={<FileText className="size-4" />}
 					value={features.length}
 					label={features.length <= 1 ? "feature file" : "feature files"}
 				/>
 
 				<StatCard
-					icon={<ListChecks className="size-4 text-muted-foreground" />}
+					icon={<ListChecks className="size-4" />}
 					value={scenarios.length}
 					label=""
 				>
@@ -61,7 +61,7 @@ const IndexPage = () => {
 				</StatCard>
 
 				<StatCard
-					icon={<BookOpen className="size-4 text-muted-foreground" />}
+					icon={<BookOpen className="size-4" />}
 					value={uniqueSteps.length}
 					label=""
 				>
