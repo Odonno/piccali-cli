@@ -236,6 +236,21 @@ pub fn parse_feature_file(
     Ok(convert_feature(&parsed, tag_links))
 }
 
+/// Strip a trailing inline comment from a table row line.
+///
+/// Gherkin table rows end at the last `|`; anything after it that begins
+/// with optional whitespace followed by `#` is a comment and not part of
+/// the grammar.  The `gherkin` crate's parser rejects such lines.
+fn strip_table_row_comment(line: &str) -> &str {
+    if let Some(last_pipe) = line.rfind('|') {
+        let after = &line[last_pipe + 1..];
+        if after.trim_start().starts_with('#') {
+            return &line[..last_pipe + 1];
+        }
+    }
+    line
+}
+
 /// Pre-process raw Gherkin text to escape backslashes inside table cells that
 /// are not part of a recognised Gherkin escape sequence (`\n`, `\|`, `\\`).
 ///
@@ -251,7 +266,7 @@ fn escape_backslashes_in_table_cells(source: &str) -> String {
     for line in source.split('\n') {
         let trimmed = line.trim_start();
         if trimmed.starts_with('|') {
-            result.push_str(&escape_table_row(line));
+            result.push_str(&escape_table_row(strip_table_row_comment(line)));
         } else {
             result.push_str(line);
         }
@@ -930,6 +945,25 @@ mod tests {
           ]
         }
         "#);
+    }
+
+    #[test]
+    fn parse_feature_file_with_inline_comment_on_table_row_succeeds() {
+        let tmp = write_feature(
+            "Feature: Inline comment\n\
+             \n\
+               Scenario: Table with trailing comment\n\
+             \n\
+                 Then the following results are displayed\n\
+                   | Name  | Type   |\n\
+                   | Alice | Branch | # this is ignored\n\
+                   | Bob   | Parent |\n",
+        );
+
+        let feature = parse_feature_file(tmp.path(), &HashMap::new()).unwrap();
+        let table = feature.scenarios[0].steps[0].table.as_ref().unwrap();
+        assert_eq!(table.rows[0], vec!["Alice", "Branch"]);
+        assert_eq!(table.rows[1], vec!["Bob", "Parent"]);
     }
 
     #[test]

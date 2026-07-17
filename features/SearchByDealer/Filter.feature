@@ -17,4 +17,4 @@ Feature: Search results filtering
       | Apextra Cars        |     | Parent |         |          |      |
       | APEX Drive          |     | Parent |         |          |      |
       | Apex Motors         |     | Parent |         |          |      |
-      | APEX NORTH BRANCH   |     | Branch |         |          |      |
+      | APEX NORTH BRANCH   |     | Branch |         |          |      | # This a special branch
