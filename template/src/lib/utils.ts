@@ -3,8 +3,12 @@ import { twMerge } from "tailwind-merge";
 import * as internalSlugify from "slugify";
 
 export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs));
 }
 
 export const slugify = (name: string) =>
-	internalSlugify.default(name, { lower: true, remove: /['']/g });
+  internalSlugify.default(name, {
+    lower: true,
+    remove: /['']/g,
+    strict: true, // strict strips URL-hostile chars (/ ? # & + ~ …) so slugs stay one route segment
+  });

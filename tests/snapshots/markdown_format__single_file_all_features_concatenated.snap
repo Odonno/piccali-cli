@@ -800,6 +800,15 @@ Screenshot: ![Screenshot](./screenshots/feature-page.png)
 
 ---
 
+## Page /other
+
+#### Other page
+
+- **When** I search "other"
+- **Then** I am redirected to "/other" page
+
+---
+
 ## Search results pagination
 
 **Background**
