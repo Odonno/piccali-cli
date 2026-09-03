@@ -26,6 +26,72 @@ const buildScenario = (
 });
 
 describe("analyzeScenarioOutlineImprovements", () => {
+	test("joins localized outline (French Plan du scénario) like an English one", () => {
+		const outline: Scenario = {
+			id: uuidv4(),
+			keyword: "Plan du scénario",
+			name: "Erreurs par action",
+			steps: [
+				{
+					id: uuidv4(),
+					keyword: "Étant donné ",
+					type: "Given",
+					text: "je démarre l'application",
+				},
+				{
+					id: uuidv4(),
+					keyword: "Quand ",
+					type: "When",
+					text: 'je fais "<action>"',
+				},
+				{
+					id: uuidv4(),
+					keyword: "Alors ",
+					type: "Then",
+					text: 'je vois un message d\'erreur "<message>"',
+				},
+			],
+			examples: [
+				{
+					keyword: "Exemples",
+					table: { header: ["action", "message"], rows: [["X", "M"]] },
+				},
+			],
+		};
+
+		const scenario: Scenario = {
+			...buildScenario("B", "X", "M"),
+			steps: [
+				{
+					id: uuidv4(),
+					keyword: "Étant donné ",
+					type: "Given",
+					text: "je démarre l'application",
+				},
+				{
+					id: uuidv4(),
+					keyword: "Quand ",
+					type: "When",
+					text: 'je fais "X"',
+				},
+				{
+					id: uuidv4(),
+					keyword: "Alors ",
+					type: "Then",
+					text: 'je vois un message d\'erreur "M"',
+				},
+			],
+		};
+		const improvements = analyzeScenarioOutlineImprovements([
+			outline,
+			scenario,
+		]);
+		expect(improvements[0]).toEqual({
+			scenarioId: scenario.id,
+			outlineId: outline.id,
+		});
+	});
+
 	test("flags regular scenarios that can be grouped into outline", () => {
 		const scenarioA = buildScenario("A", "X", "M");
 		const scenarioB = buildScenario("B", "Y", "W");

@@ -15,7 +15,7 @@ export const StepTable = ({ step }: { step: Step }) => {
 	const { header, rows } = step.table;
 
 	return (
-		<div className="mt-2 ml-[3.5rem] overflow-x-auto rounded-md border text-xs">
+		<div className="col-start-2 overflow-x-auto rounded-md border text-xs">
 			<Table>
 				<TableHeader>
 					<TableRow>

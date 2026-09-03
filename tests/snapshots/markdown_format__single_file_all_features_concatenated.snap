@@ -594,6 +594,70 @@ If there are multiple, they are sorted by nearest end date first.
 
 ---
 
+## Recherche de contrats par immatriculation
+
+@localisation @feat:90001
+
+**Background**
+
+- **Étant donné** un véhicule immatriculé "AB-123-CD"
+- **Et** un contrat "22815092700" associé à ce véhicule
+
+#### Recherche par immatriculation existante
+
+- **Quand** je saisis l'immatriculation "AB-123-CD"
+- **Et** je clique sur le bouton "rechercher"
+- **Alors** le contrat "22815092700" est affiché
+- **Et** la carte de services suivante est visible:
+
+  | Service | État | Ajouté par | Date |
+  | --- | --- | --- | --- |
+  | DRIVER PROTECTION | actif | Anonyme | 24/10/2023 |
+  | GLOBAL ROADSIDE | suspendu | Jérôme Dupû | 31/12/2023 |
+
+
+#### Recherche sans résultat
+
+- **Quand** je saisis l'immatriculation "ZZ-999-ZZ"
+- **Et** je clique sur le bouton "rechercher"
+- **Mais** aucun contrat n'est trouvé
+- **Alors** le message "Aucun contrat trouvé pour cette immatriculation" est affiché
+
+#### Recherche avec des caractères accentués
+
+@plan @feat:90002
+
+- **Quand** je saisis l'immatriculation "<immatriculation>"
+- **Alors** le résultat de la recherche est "<résultat>"
+
+**Examples**
+
+| immatriculation | résultat |
+| --- | --- |
+| AB-123-CD | trouvé |
+| ÀÇ-ÉÎ-ÔÛ | trouvé |
+| ab-123-cd | trouvé (insensible) |
+| éà-456-ü | non trouvé |
+
+#### Détail de l'audit
+
+- **Alors** la piste d'audit de la carte contient:
+
+  ```
+  
+  ## Piste d'audit
+  
+  | Champ       | Valeur      |
+  |-------------|-------------|
+  | Action      | `ajouté`    |
+  | Effectué par | `Anonyme`  |
+  | Date        | `24/10/2023` |
+  
+  > La date est toujours au format `JJ/MM/AAAA`.
+  ```
+
+---
+
 ## Input validation with regex patterns
 
 Screenshot: ![Screenshot](./screenshots/feature-page.png)

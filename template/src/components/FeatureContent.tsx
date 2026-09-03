@@ -24,6 +24,7 @@ import { TagBadge } from "@/components/TagBadge";
 import { StepList } from "@/components/StepList";
 import { TableCellValue } from "@/components/TableCellValue";
 import { resolveExampleVars, type ExampleRowKey } from "@/functions/examples";
+import { isScenarioOutline } from "@/functions/scenario";
 import type { Feature, Rule } from "@/schemas/data";
 import { buildRuleUrl } from "@/functions/feature";
 import type { FeaturePath } from "@/types/navigation";
@@ -183,7 +184,7 @@ export const FeatureContent = ({
 					{scenarios.length > 0 && (
 						<div className="flex flex-col gap-4">
 							{scenarios.map((scenario, scenarioIndex) => {
-								const isOutline = scenario.keyword === "Scenario Outline";
+								const isOutline = isScenarioOutline(scenario);
 								const selectedKey = selectedExampleRows[scenarioIndex] ?? null;
 								const improvement = !isOutline
 									? allImprovements.find((i) => i.scenarioId === scenario.id)

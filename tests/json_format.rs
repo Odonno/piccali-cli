@@ -110,9 +110,14 @@ fn json_all_features_default_glob() {
         all_features.len()
     );
 
-    // Each feature should have a keyword and name
+    // Each feature should have a keyword and name.
+    // Keywords are localized (# language: header), e.g. French "Fonctionnalité".
     for feature in &all_features {
-        assert_eq!(feature["keyword"], "Feature");
+        let keyword = feature["keyword"]
+            .as_str()
+            .unwrap_or_default()
+            .trim();
+        assert!(!keyword.is_empty(), "feature missing 'keyword' field");
         assert!(feature["name"].is_string(), "feature missing 'name' field");
     }
 }
