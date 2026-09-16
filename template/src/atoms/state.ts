@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import { loadable } from "jotai/utils";
+import { unwrap } from "jotai/utils";
 import { DataSchema, type PiccaliData } from "@/schemas/data";
 import { MetadataSchema, type PiccaliMetadata } from "@/schemas/metadata";
 import * as v from "valibot";
@@ -21,25 +21,13 @@ const metadataAsyncAtom = atom(async () => {
 	return v.parse(MetadataSchema, data) as PiccaliMetadata;
 });
 
-const dataLoadableAtom = loadable(dataAsyncAtom);
-const metadataLoadableAtom = loadable(metadataAsyncAtom);
+export const dataAtom = unwrap(dataAsyncAtom, () => null);
+export const metadataAtom = unwrap(metadataAsyncAtom, () => null);
 
 export const isLoadingAtom = atom((get) => {
-	const dataLoadable = get(dataLoadableAtom);
-	const metadataLoadable = get(metadataLoadableAtom);
-	return (
-		dataLoadable.state === "loading" && metadataLoadable.state === "loading"
-	);
-});
-
-export const dataAtom = atom((get) => {
-	const loadable = get(dataLoadableAtom);
-	return loadable.state === "hasData" ? loadable.data : null;
-});
-
-export const metadataAtom = atom((get) => {
-	const loadable = get(metadataLoadableAtom);
-	return loadable.state === "hasData" ? loadable.data : null;
+	const data = get(dataAtom);
+	const metadata = get(metadataAtom);
+	return data === null || metadata === null;
 });
 
 export const foldersAtom = atom((get) => {

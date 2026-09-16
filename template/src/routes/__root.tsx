@@ -1,4 +1,8 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	ErrorComponent,
+	Outlet,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -47,4 +51,5 @@ const RootComponent = () => {
 
 export const Route = createRootRoute({
 	component: RootComponent,
+	errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
