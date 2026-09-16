@@ -683,6 +683,16 @@ Screenshot: ![Screenshot](./screenshots/feature-page.png)
 
 ---
 
+## Input validation with regex patterns
+
+#### Validate numbers
+
+- **Given** a field matching pattern "123"
+- **When** I validate input "(123)"
+- **Then** the validation succeeds
+
+---
+
 ## Search by contract number
 
 ### The search should display results in the results table

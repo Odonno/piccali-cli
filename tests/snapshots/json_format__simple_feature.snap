@@ -9,6 +9,7 @@ expression: json
         {
           "features": [
             {
+              "id": "291e84d0",
               "keyword": "Feature",
               "name": "Unconfigured warranty alert",
               "scenarios": [
@@ -129,9 +130,11 @@ expression: json
               ]
             }
           ],
+          "id": "f94d8d18",
           "name": "WarrantyAlert"
         }
       ],
+      "id": "51779442",
       "name": "features"
     }
   ]

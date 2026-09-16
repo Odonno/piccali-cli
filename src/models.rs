@@ -18,6 +18,10 @@ pub struct Document {
 /// more feature files directly inside it.
 #[derive(Debug, Serialize)]
 pub struct FolderNode {
+    /// Deterministic short id (8 hex chars) baked at generation time; used
+    /// by the frontend to disambiguate URL slugs of same-named siblings.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     pub name: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub folders: Vec<FolderNode>,
@@ -28,6 +32,10 @@ pub struct FolderNode {
 /// A Gherkin Feature.
 #[derive(Debug, Serialize)]
 pub struct Feature {
+    /// Deterministic short id (8 hex chars) baked at generation time; used
+    /// by the frontend to disambiguate URL slugs of same-named siblings.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     pub keyword: String,
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -45,6 +53,10 @@ pub struct Feature {
 /// A Gherkin Rule (Gherkin 6+).
 #[derive(Debug, Serialize)]
 pub struct Rule {
+    /// Deterministic short id (8 hex chars) baked at generation time; used
+    /// by the frontend to disambiguate URL slugs of same-named siblings.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     pub keyword: String,
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]

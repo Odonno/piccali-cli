@@ -9,6 +9,7 @@ expression: json
         {
           "features": [
             {
+              "id": "def1f095",
               "keyword": "Feature",
               "name": "Search by dealer name",
               "rules": [
@@ -102,6 +103,7 @@ expression: json
                       }
                     ]
                   },
+                  "id": "f4765a68",
                   "keyword": "Rule",
                   "name": "The search should display results in the results table",
                   "scenarios": [
@@ -259,6 +261,7 @@ expression: json
                   ]
                 },
                 {
+                  "id": "651a35cf",
                   "keyword": "Rule",
                   "name": "Search requires at least 3 characters",
                   "scenarios": [
@@ -324,6 +327,7 @@ expression: json
                   ]
                 },
                 {
+                  "id": "eafbb3c3",
                   "keyword": "Rule",
                   "name": "When I have no results, the message \"No results found...\" tells me so",
                   "scenarios": [
@@ -356,6 +360,7 @@ expression: json
                   ]
                 },
                 {
+                  "id": "a273adf7",
                   "keyword": "Rule",
                   "name": "When the search returns an error, the message \"No results found...\" tells me so",
                   "scenarios": [
@@ -385,9 +390,11 @@ expression: json
               ]
             }
           ],
+          "id": "b0e385bd",
           "name": "SearchByDealer"
         }
       ],
+      "id": "51779442",
       "name": "features"
     }
   ]

@@ -278,6 +278,7 @@ export const FolderTree = ({
 																const ruleUrl = buildRuleUrl(
 																	rootFolders,
 																	featurePath,
+																	feature,
 																	rule,
 																);
 																const ruleIsActive = location === ruleUrl;

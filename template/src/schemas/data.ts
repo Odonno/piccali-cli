@@ -54,6 +54,7 @@ const ScenarioSchema = v.pipe(
 
 const RuleSchema = v.pipe(
 	v.object({
+		id: v.optional(v.string()),
 		keyword: v.string(),
 		name: v.string(),
 		description: v.optional(v.string()),
@@ -61,11 +62,12 @@ const RuleSchema = v.pipe(
 		background: v.optional(BackgroundSchema),
 		scenarios: v.optional(v.array(ScenarioSchema)),
 	}),
-	v.transform((rule) => ({ ...rule, id: uuidv4() })),
+	v.transform((rule) => ({ ...rule, id: rule.id ?? uuidv4() })),
 );
 
 const FeatureSchema = v.pipe(
 	v.object({
+		id: v.optional(v.string()),
 		keyword: v.string(),
 		name: v.string(),
 		description: v.optional(v.string()),
@@ -74,16 +76,18 @@ const FeatureSchema = v.pipe(
 		scenarios: v.optional(v.array(ScenarioSchema)),
 		rules: v.optional(v.array(RuleSchema)),
 	}),
-	v.transform((feature) => ({ ...feature, id: uuidv4() })),
+	v.transform((feature) => ({ ...feature, id: feature.id ?? uuidv4() })),
 );
 
 type FolderNodeInput = {
+	id?: string;
 	name: string;
 	folders?: FolderNodeInput[];
 	features?: v.InferInput<typeof FeatureSchema>[];
 };
 
 type FolderNodeOutput = {
+	id?: string;
 	name: string;
 	folders?: FolderNodeOutput[];
 	features?: v.InferOutput<typeof FeatureSchema>[];
@@ -94,6 +98,7 @@ const FolderNodeSchema: v.BaseSchema<
 	FolderNodeOutput,
 	v.BaseIssue<unknown>
 > = v.object({
+	id: v.optional(v.string()),
 	name: v.string(),
 	folders: v.optional(v.array(v.lazy(() => FolderNodeSchema))),
 	features: v.optional(v.array(FeatureSchema)),

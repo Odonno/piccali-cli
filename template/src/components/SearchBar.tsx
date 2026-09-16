@@ -72,7 +72,9 @@ export const SearchBar = () => {
 			if (selection.type === "rule") {
 				const rule = feature.rules?.[selection.ruleIndex];
 				if (rule) {
-					navigate({ to: buildRuleUrl(folders, selection.path, rule) });
+					navigate({
+						to: buildRuleUrl(folders, selection.path, feature, rule),
+					});
 					return;
 				}
 			}

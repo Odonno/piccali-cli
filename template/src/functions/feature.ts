@@ -52,6 +52,40 @@ export const folderTotalScenarioCount = (folder: FolderNode): number => {
 export const featureLabel = (feature: Feature): string =>
 	feature.name || feature.keyword;
 
+/**
+ * Sibling-aware URL slug: `slugify(label)`, plus `-<id>` when another sibling
+ * slugifies to the same value (ids are baked into the JSON by the generator).
+ * Falls back to the bare slug when the id is missing (older data) — same
+ * behaviour as before this disambiguation existed.
+ * ponytail: O(n²) slugify over siblings — fine for folder-sized lists.
+ */
+const urlSlugOf = <T>(
+	siblings: T[],
+	item: T,
+	labelOf: (item: T) => string,
+	idOf: (item: T) => string | undefined,
+): string => {
+	const base = slugify(labelOf(item));
+	const id = idOf(item);
+	if (
+		!id ||
+		!siblings.some(
+			(other) => other !== item && slugify(labelOf(other)) === base,
+		)
+	) {
+		return base;
+	}
+	return `${base}-${id}`;
+};
+
+const folderUrlSlug = (folders: FolderNode[], folder: FolderNode): string =>
+	urlSlugOf(
+		folders,
+		folder,
+		(f) => f.name,
+		(f) => f.id,
+	);
+
 export const isSameFeaturePath = (a: FeaturePath, b: FeaturePath): boolean =>
 	a.featureIndex === b.featureIndex &&
 	a.folderPath.length === b.folderPath.length &&
@@ -112,12 +146,13 @@ export const buildFeatureUrl = (
 	for (const idx of path.folderPath) {
 		leafFolder = nodes[idx];
 		if (!leafFolder) break;
-		segments.push(slugify(leafFolder.name));
+		segments.push(folderUrlSlug(nodes, leafFolder));
 		nodes = leafFolder.folders ?? [];
 	}
-	const feature = leafFolder?.features?.[path.featureIndex];
+	const features = leafFolder?.features ?? [];
+	const feature = features[path.featureIndex];
 	if (feature) {
-		segments.push(slugify(featureLabel(feature)));
+		segments.push(urlSlugOf(features, feature, featureLabel, (f) => f.id));
 	}
 	return `/features/${segments.join("/")}`;
 };
@@ -129,9 +164,17 @@ export const buildFeatureUrl = (
 export const buildRuleUrl = (
 	folders: FolderNode[],
 	path: FeaturePath,
+	feature: Feature,
 	rule: Rule,
 ): string => {
-	return `${buildFeatureUrl(folders, path)}/rules/${slugify(rule.name || rule.keyword)}`;
+	const rules = feature.rules ?? [];
+	const ruleSlug = urlSlugOf(
+		rules,
+		rule,
+		(r) => r.name || r.keyword,
+		(r) => r.id,
+	);
+	return `${buildFeatureUrl(folders, path)}/rules/${ruleSlug}`;
 };
 
 /**
@@ -152,7 +195,7 @@ export const resolveFeatureBySlug = (
 	const folderPath: number[] = [];
 
 	for (const slug of folderSlugs) {
-		const idx = nodes.findIndex((f) => slugify(f.name) === slug);
+		const idx = nodes.findIndex((f) => folderUrlSlug(nodes, f) === slug);
 		if (idx === -1) return undefined;
 		folderPath.push(idx);
 		nodes = nodes[idx].folders ?? [];
@@ -174,7 +217,8 @@ export const resolveFeatureBySlug = (
 	}
 
 	const featureIndex = featureNodes.findIndex(
-		(f) => slugify(featureLabel(f)) === featureSlug,
+		(f) =>
+			urlSlugOf(featureNodes, f, featureLabel, (x) => x.id) === featureSlug,
 	);
 	if (featureIndex === -1) return undefined;
 
@@ -191,10 +235,16 @@ export const resolveRuleBySlug = (
 	feature: Feature,
 	ruleSlug: string,
 ): { rule: Rule; ruleIndex: number } | undefined => {
-	const ruleIndex =
-		feature.rules?.findIndex(
-			(r) => slugify(r.name || r.keyword) === ruleSlug,
-		) ?? -1;
-	if (ruleIndex === -1 || !feature.rules) return undefined;
-	return { rule: feature.rules[ruleIndex], ruleIndex };
+	const rules = feature.rules ?? [];
+	const ruleIndex = rules.findIndex(
+		(r) =>
+			urlSlugOf(
+				rules,
+				r,
+				(x) => x.name || x.keyword,
+				(x) => x.id,
+			) === ruleSlug,
+	);
+	if (ruleIndex === -1) return undefined;
+	return { rule: rules[ruleIndex], ruleIndex };
 };

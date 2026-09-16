@@ -80,7 +80,7 @@ export const FeatureContent = ({
 
 	const getRuleUrl = (ruleIndex: number): string => {
 		const rule = feature.rules?.[ruleIndex];
-		return rule ? buildRuleUrl(folders, path, rule) : "/";
+		return rule ? buildRuleUrl(folders, path, feature, rule) : "/";
 	};
 
 	return (

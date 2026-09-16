@@ -3,6 +3,8 @@ use gherkin::GherkinEnv;
 use globset::Glob;
 use regex::Regex;
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use walkdir::WalkDir;
@@ -314,6 +316,15 @@ fn escape_table_row(line: &str) -> String {
     out
 }
 
+/// Deterministic 8-hex-char id baked into the generated JSON so the frontend can disambiguate URL slugs of same-named siblings.
+/// Unique by construction from the hashed input (file path / folder path / path + index).
+/// ponytail: DefaultHasher is only stable within one build — fine, each build regenerates the JSON and every link in it together.
+fn short_id(value: impl Hash) -> String {
+    let mut hasher = DefaultHasher::new();
+    value.hash(&mut hasher);
+    format!("{:08x}", hasher.finish() & 0xffff_ffff)
+}
+
 /// Build a nested folder tree from a list of `(path, feature)` pairs.
 ///
 /// The path components between the working directory and the feature file
@@ -334,9 +345,15 @@ pub fn build_folder_tree(
     // We build the tree by inserting each entry into a root vec of FolderNodes.
     let mut root: Vec<models::FolderNode> = Vec::new();
 
-    for (path, feature) in entries {
-        // Strip the leading "./" if present
+    for (path, mut feature) in entries {
+        // Strip the leading "./" if present — then the path itself is the
+        // feature's unique identity for URL-slug disambiguation.
         let relative = path.strip_prefix(".").unwrap_or(&path);
+        let file_key = relative.display().to_string();
+        feature.id = Some(short_id(&file_key));
+        for (i, rule) in feature.rules.iter_mut().enumerate() {
+            rule.id = Some(short_id((&file_key, i)));
+        }
 
         // Collect path components, excluding the filename itself
         let dir_components: Vec<String> = relative
@@ -352,7 +369,7 @@ pub fn build_folder_tree(
             .unwrap_or_default();
 
         // Navigate / create the folder hierarchy, then push the feature
-        insert_into_tree(&mut root, &dir_components, feature);
+        insert_into_tree(&mut root, &dir_components, "", feature);
     }
 
     root
@@ -363,6 +380,7 @@ pub fn build_folder_tree(
 fn insert_into_tree(
     nodes: &mut Vec<models::FolderNode>,
     path_parts: &[String],
+    parent_path: &str,
     feature: models::Feature,
 ) {
     if path_parts.is_empty() {
@@ -373,6 +391,7 @@ fn insert_into_tree(
             node.features.push(feature);
         } else {
             nodes.push(models::FolderNode {
+                id: None,
                 name: String::new(),
                 folders: Vec::new(),
                 features: vec![feature],
@@ -383,6 +402,11 @@ fn insert_into_tree(
 
     let folder_name = &path_parts[0];
     let rest = &path_parts[1..];
+    let folder_path = if parent_path.is_empty() {
+        folder_name.clone()
+    } else {
+        format!("{parent_path}/{folder_name}")
+    };
 
     // Find or create the folder node at this level
     let idx = nodes.iter().position(|n| &n.name == folder_name);
@@ -390,6 +414,7 @@ fn insert_into_tree(
         Some(i) => i,
         None => {
             nodes.push(models::FolderNode {
+                id: Some(short_id(&folder_path)),
                 name: folder_name.clone(),
                 folders: Vec::new(),
                 features: Vec::new(),
@@ -404,7 +429,7 @@ fn insert_into_tree(
     } else {
         // Recurse into sub-folders
         let sub = &mut nodes[idx].folders;
-        insert_into_tree(sub, rest, feature);
+        insert_into_tree(sub, rest, &folder_path, feature);
     }
 }
 
@@ -413,6 +438,7 @@ fn convert_feature(
     tag_links: &HashMap<String, String>,
 ) -> models::Feature {
     models::Feature {
+        id: None, // stamped later in build_folder_tree
         keyword: feature.keyword.clone(),
         name: feature.name.clone(),
         description: feature.description.clone(),
@@ -440,6 +466,7 @@ fn convert_background(background: &gherkin::Background) -> models::Background {
 
 fn convert_rule(rule: &gherkin::Rule, tag_links: &HashMap<String, String>) -> models::Rule {
     models::Rule {
+        id: None, // stamped later in build_folder_tree
         keyword: rule.keyword.clone(),
         name: rule.name.clone(),
         description: rule.description.clone(),
@@ -1138,5 +1165,55 @@ mod tests {
 
         // ParseError with line/column — stable, no path involved
         insta::assert_snapshot!(chain[2], @r#"Error at 4:18: {"unknown keyword"}"#);
+    }
+
+    // --- build_folder_tree: URL-slug disambiguation ids ---
+
+    #[test]
+    fn duplicate_names_yield_distinct_url_ids() {
+        let make_rule = |name: &str| models::Rule {
+            id: None,
+            keyword: "Rule".into(),
+            name: name.into(),
+            description: None,
+            tags: vec![],
+            background: None,
+            scenarios: vec![],
+        };
+        let make_feature = |name: &str, rule_name: &str| models::Feature {
+            id: None,
+            keyword: "Feature".into(),
+            name: name.into(),
+            description: None,
+            tags: vec![],
+            background: None,
+            scenarios: vec![],
+            rules: vec![make_rule(rule_name)],
+        };
+
+        let tree = build_folder_tree(vec![
+            (
+                PathBuf::from("features/RegexPatterns/InputValidation.feature"),
+                make_feature("Input validation with regex patterns", "Validation"),
+            ),
+            (
+                PathBuf::from("features/RegexPatterns/InputValidationDuplicate.feature"),
+                make_feature("Input validation with regex patterns", "Validation"),
+            ),
+        ]);
+
+        let folder = &tree[0].folders[0];
+        assert_eq!(folder.name, "RegexPatterns");
+        assert_eq!(folder.features.len(), 2);
+
+        let (a, b) = (&folder.features[0], &folder.features[1]);
+        // Distinct 8-char ids despite identical feature and rule names
+        assert_ne!(a.id, b.id);
+        assert_eq!(a.id.as_deref().map(str::len), Some(8));
+        assert_ne!(a.rules[0].id, b.rules[0].id);
+        assert_eq!(a.rules[0].id.as_deref().map(str::len), Some(8));
+        // Folders get ids too (full folder path is unique by construction)
+        assert!(folder.id.is_some());
+        assert!(tree[0].id.is_some());
     }
 }
