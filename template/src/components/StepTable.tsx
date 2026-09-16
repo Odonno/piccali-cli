@@ -8,9 +8,16 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { TableCellValue } from "@/components/TableCellValue";
+import { StepTextWithVars } from "@/components/StepTextWithVars";
 
 /** Renders a step table (data table attached to a step). */
-export const StepTable = ({ step }: { step: Step }) => {
+export const StepTable = ({
+	step,
+	vars,
+}: {
+	step: Step;
+	vars?: Record<string, string> | null;
+}) => {
 	if (!step.table) return null;
 	const { header, rows } = step.table;
 
@@ -40,7 +47,11 @@ export const StepTable = ({ step }: { step: Step }) => {
 									key={cellIndex}
 									className="py-1.5 px-3 font-mono text-[11px]"
 								>
-									<TableCellValue value={cell} />
+									{vars && cell.startsWith("<") && cell.endsWith(">") ? (
+										<StepTextWithVars text={cell} vars={vars} />
+									) : (
+										<TableCellValue value={cell} />
+									)}
 								</TableCell>
 							))}
 						</TableRow>

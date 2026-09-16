@@ -22,6 +22,7 @@ import {
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { TagBadge } from "@/components/TagBadge";
 import { StepList } from "@/components/StepList";
+import { StepTextWithVars } from "@/components/StepTextWithVars";
 import { TableCellValue } from "@/components/TableCellValue";
 import { resolveExampleVars, type ExampleRowKey } from "@/functions/examples";
 import { isScenarioOutline } from "@/functions/scenario";
@@ -217,7 +218,10 @@ export const FeatureContent = ({
 												{scenario.keyword}
 											</span>
 											<span className="text-sm font-semibold leading-snug flex-1">
-												{scenario.name}
+												<StepTextWithVars
+													text={scenario.name}
+													vars={exampleVars}
+												/>
 											</span>
 											{(scenario.tags ?? []).length > 0 && (
 												<div className="flex flex-wrap gap-1 ml-auto">

@@ -39,7 +39,7 @@ export const StepList = ({
 						{trimmed}
 					</span>
 					<StepTextWithVars text={step.text} vars={vars ?? null} />
-					{step.table && <StepTable step={step} />}
+					{step.table && <StepTable step={step} vars={vars} />}
 					{step.doc_string && (
 						<div className="col-start-2 rounded-md border border-border bg-muted/30 px-4 py-3 text-muted-foreground">
 							<MarkdownContent content={step.doc_string} />

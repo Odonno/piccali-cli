@@ -4,11 +4,17 @@ import { StepList } from "./StepList";
 import type { Step, StepType } from "@/schemas/data";
 import { v4 as uuidv4 } from "uuid";
 
-const makeStep = (keyword: string, type: StepType, text: string): Step => ({
+const makeStep = (
+	keyword: string,
+	type: StepType,
+	text: string,
+	table?: { header: string[]; rows: string[][] },
+): Step => ({
 	id: uuidv4(),
 	keyword,
 	type,
 	text,
+	...(table ? { table } : {}),
 });
 
 const PRIMARY = 'style="color:var(--primary)"';
@@ -66,5 +72,29 @@ describe("StepList keyword coloring", () => {
 			<StepList steps={[makeStep("Étant donné ", "Given", "un contrat")]} />,
 		);
 		expect(markup).toContain(">Étant donné</span>");
+	});
+});
+
+describe("StepList example variable substitution", () => {
+	const outlinedStep = makeStep(
+		"Then ",
+		"Then",
+		"the following results are displayed",
+		{ header: ["VIN"], rows: [["<input>"]] },
+	);
+
+	test("vars substitute placeholders in table cells", () => {
+		const markup = renderToStaticMarkup(
+			<StepList steps={[outlinedStep]} vars={{ input: "1HGCM82633A004352" }} />,
+		);
+		expect(markup).toContain("1HGCM82633A004352");
+		expect(markup).not.toContain("&lt;input&gt;");
+	});
+
+	test("without vars, raw placeholders remain in cells", () => {
+		const markup = renderToStaticMarkup(
+			<StepList steps={[outlinedStep]} vars={null} />,
+		);
+		expect(markup).toContain("&lt;input&gt;");
 	});
 });

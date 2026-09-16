@@ -53,6 +53,19 @@ Feature: Search by VIN
       When I search by VIN "0000000000"
       Then the error message "No results found for the search performed" appears
 
+    Scenario Outline: Search with exactly one result
+      Given I am a user on the home page
+      When I search by VIN
+      When I type "<input>" in the search field
+      And I press enter in the search field
+      Then the following results are displayed
+        | Company Name       | VIN     | Scope  | Address | Zip Code | City |
+        | RAINBOW MOTORS INC | <input> | Parent |         |          |      |
+
+      Examples:
+        | input             |
+        | 1HGCM82633A004352 |
+
   Rule: Search requires at least 9 characters
 
     Scenario Outline: When I type <search> in the VIN search the button is <status>
