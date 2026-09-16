@@ -1,5 +1,5 @@
 use clap::Parser;
-use cli::{Cli, Format};
+use cli::{Cli, FeatureFlag, Format};
 use color_eyre::eyre::{Result, bail, eyre};
 use std::collections::HashMap;
 
@@ -29,7 +29,9 @@ fn run() -> Result<()> {
     if !cli.assets.is_empty() {
         match &cli.format {
             Some(Format::Json) => bail!("--assets is not supported for the json formatter."),
-            Some(Format::Markdown) => bail!("--assets is not supported for the markdown formatter."),
+            Some(Format::Markdown) => {
+                bail!("--assets is not supported for the markdown formatter.")
+            }
             Some(Format::Html) | None => {}
         }
     }
@@ -101,6 +103,12 @@ fn run() -> Result<()> {
     let default_title = "Cucumber docs";
     let title = cli.title.as_deref().unwrap_or(default_title);
 
+    let features = format::MetadataFeatures {
+        scenario_outline_improvements: cli
+            .features
+            .contains(&FeatureFlag::ScenarioOutlineImprovements),
+    };
+
     match cli.format {
         None => {
             server::serve(
@@ -109,6 +117,7 @@ fn run() -> Result<()> {
                 title.to_string(),
                 image_refs,
                 asset_refs,
+                features,
             )?;
         }
         Some(Format::Html) => {
@@ -117,7 +126,18 @@ fn run() -> Result<()> {
             }
             let output_path = cli.output.as_deref().unwrap_or(".");
             let output_dir = std::path::Path::new(output_path);
-            format::format_html(&document, output_dir, title, &image_refs, &asset_refs, cli.base_url.as_deref(), cli.lang.as_deref())?;
+            format::format_html(
+                &document,
+                output_dir,
+                title,
+                &image_refs,
+                &asset_refs,
+                &format::HtmlOptions {
+                    base_url: cli.base_url.as_deref(),
+                    lang: cli.lang.as_deref(),
+                    features: &features,
+                },
+            )?;
             println!("HTML site written to {output_path}");
         }
         Some(Format::Markdown) => {

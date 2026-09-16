@@ -20,6 +20,8 @@ struct ServerState {
     document: Document,
     /// Page title — needed to produce `metadata.json` on demand.
     title: String,
+    /// Feature flags — included in `metadata.json`.
+    features: format::MetadataFeatures,
     /// Map from `/images/{output_name}` → absolute source path on disk.
     /// Used to serve local images referenced in feature descriptions.
     images: HashMap<String, PathBuf>,
@@ -41,7 +43,8 @@ impl ServerState {
     fn get_metadata_json(&self) -> std::result::Result<&str, &str> {
         self.metadata_json
             .get_or_init(|| {
-                format::format_metadata(&self.title, &self.asset_refs).map_err(|e| e.to_string())
+                format::format_metadata(&self.title, &self.asset_refs, &self.features)
+                    .map_err(|e| e.to_string())
             })
             .as_deref()
             .map_err(|e| e.as_str())
@@ -69,6 +72,7 @@ pub fn serve(
     title: String,
     image_refs: Vec<ImageRef>,
     asset_refs: Vec<AssetRef>,
+    features: format::MetadataFeatures,
 ) -> Result<()> {
     let addr = format!("127.0.0.1:{port}");
     let server =
@@ -95,6 +99,7 @@ pub fn serve(
         metadata_json: OnceLock::new(),
         document,
         title,
+        features,
         images,
         assets,
         asset_refs,

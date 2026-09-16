@@ -1,6 +1,13 @@
 use clap::{Parser, ValueEnum};
 use globset::Glob;
 
+/// Feature flags that can be enabled in the generated viewer via `--features`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum FeatureFlag {
+    /// Highlight regular scenarios that could join an existing Scenario Outline or be grouped into a new one.
+    ScenarioOutlineImprovements,
+}
+
 /// Output format for generated documentation.
 #[derive(Debug, Clone, ValueEnum)]
 pub enum Format {
@@ -68,4 +75,10 @@ pub struct Cli {
     /// Repeat to match each --tag-prefix in order.
     #[arg(long, value_name = "URL_TEMPLATE")]
     pub tag_url_template: Vec<String>,
+
+    /// Feature flag to enable in the viewer
+    /// (e.g. "scenario-outline-improvements"). Written to metadata.json.
+    /// Repeat for multiple features. Off by default.
+    #[arg(long, value_name = "FEATURE", value_enum)]
+    pub features: Vec<FeatureFlag>,
 }

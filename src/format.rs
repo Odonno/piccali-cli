@@ -8,6 +8,20 @@ use color_eyre::eyre::{Result, WrapErr, eyre};
 use serde::Serialize;
 use std::path::Path;
 
+/// Feature flags written to `metadata.json`. All flags default to `false`.
+#[derive(Debug, Default, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MetadataFeatures {
+    pub scenario_outline_improvements: bool,
+}
+
+/// HTML-only output options (see `format_html`).
+pub struct HtmlOptions<'a> {
+    pub base_url: Option<&'a str>,
+    pub lang: Option<&'a str>,
+    pub features: &'a MetadataFeatures,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Metadata<'a> {
@@ -15,6 +29,7 @@ struct Metadata<'a> {
     created_at: String,
     scripts: Vec<String>,
     styles: Vec<String>,
+    features: MetadataFeatures,
 }
 
 /// Format a document as a pretty-printed JSON string.
@@ -25,7 +40,11 @@ pub fn format_json(document: &Document) -> Result<String> {
 /// Produce the `metadata.json` payload as a pretty-printed JSON string.
 ///
 /// `scripts` and `styles` are derived from `asset_refs` (filtered by `.js` / `.css` extension).
-pub fn format_metadata(title: &str, asset_refs: &[AssetRef]) -> Result<String> {
+pub fn format_metadata(
+    title: &str,
+    asset_refs: &[AssetRef],
+    features: &MetadataFeatures,
+) -> Result<String> {
     let mut scripts = Vec::<String>::new();
     let mut styles = Vec::<String>::new();
 
@@ -43,6 +62,7 @@ pub fn format_metadata(title: &str, asset_refs: &[AssetRef]) -> Result<String> {
         created_at: Utc::now().to_rfc3339(),
         scripts,
         styles,
+        features: features.clone(),
     };
     serde_json::to_string_pretty(&metadata).wrap_err("Metadata JSON serialization failed")
 }
@@ -61,8 +81,7 @@ pub fn format_html(
     title: &str,
     image_refs: &[ImageRef],
     asset_refs: &[AssetRef],
-    base_url: Option<&str>,
-    lang: Option<&str>,
+    options: &HtmlOptions,
 ) -> Result<()> {
     // Create output directory
     std::fs::create_dir_all(output_dir)
@@ -85,7 +104,7 @@ pub fn format_html(
     }
 
     // Inject <base href="..."> into index.html if base_url is set
-    if let Some(base_url) = base_url {
+    if let Some(base_url) = options.base_url {
         let index_path = output_dir.join("index.html");
         let content = std::fs::read_to_string(&index_path)
             .wrap_err_with(|| format!("Failed to read {}", index_path.display()))?;
@@ -95,7 +114,7 @@ pub fn format_html(
     }
 
     // Replace lang attribute in index.html if lang is set
-    if let Some(lang) = lang {
+    if let Some(lang) = options.lang {
         let index_path = output_dir.join("index.html");
         let content = std::fs::read_to_string(&index_path)
             .wrap_err_with(|| format!("Failed to read {}", index_path.display()))?;
@@ -111,7 +130,7 @@ pub fn format_html(
         .wrap_err_with(|| format!("Failed to write {}", data_path.display()))?;
 
     // Write metadata.json
-    let metadata_json = format_metadata(title, asset_refs)?;
+    let metadata_json = format_metadata(title, asset_refs, options.features)?;
     let metadata_path = output_dir.join("metadata.json");
     std::fs::write(&metadata_path, metadata_json)
         .wrap_err_with(|| format!("Failed to write {}", metadata_path.display()))?;
@@ -314,7 +333,11 @@ fn render_rule(rule: &Rule, heading: &str, scenario_heading: &str) -> String {
 ///
 /// The file starts with `# {title}` and features are separated by `---` dividers.
 /// Used when `--output` points to a file path (has a file extension).
-pub fn format_markdown_single_file(document: &Document, title: &str, output_path: &Path) -> Result<()> {
+pub fn format_markdown_single_file(
+    document: &Document,
+    title: &str,
+    output_path: &Path,
+) -> Result<()> {
     // Create parent directories if needed
     if let Some(parent) = output_path.parent() {
         if !parent.as_os_str().is_empty() {
@@ -497,8 +520,14 @@ mod tests {
     fn inject_lang_replaces_lang_attribute() {
         let html = r#"<!doctype html><html lang="en"><head></head></html>"#;
         let result = inject_lang(html, "fr");
-        assert!(result.contains("lang=\"fr\""), "expected lang=\"fr\" in: {result}");
-        assert!(!result.contains("lang=\"en\""), "old lang should be gone: {result}");
+        assert!(
+            result.contains("lang=\"fr\""),
+            "expected lang=\"fr\" in: {result}"
+        );
+        assert!(
+            !result.contains("lang=\"en\""),
+            "old lang should be gone: {result}"
+        );
     }
 
     #[test]
@@ -510,16 +539,33 @@ mod tests {
 
     #[test]
     fn metadata_contains_title_and_created_at() {
-        let json = format_metadata("My Docs", &[]).unwrap();
+        let json = format_metadata("My Docs", &[], &MetadataFeatures::default()).unwrap();
         let v = parse_metadata(&json);
         assert_eq!(v["title"], "My Docs");
         assert!(v["createdAt"].as_str().is_some());
     }
 
     #[test]
+    fn metadata_features_default_to_false() {
+        let json = format_metadata("test", &[], &MetadataFeatures::default()).unwrap();
+        let v = parse_metadata(&json);
+        assert_eq!(v["features"]["scenarioOutlineImprovements"], false);
+    }
+
+    #[test]
+    fn metadata_features_scenario_outline_improvements_true() {
+        let features = MetadataFeatures {
+            scenario_outline_improvements: true,
+        };
+        let json = format_metadata("test", &[], &features).unwrap();
+        let v = parse_metadata(&json);
+        assert_eq!(v["features"]["scenarioOutlineImprovements"], true);
+    }
+
+    #[test]
     fn metadata_user_js_asset_added_to_scripts() {
         let asset = make_asset("custom/extra.js");
-        let json = format_metadata("test", &[asset]).unwrap();
+        let json = format_metadata("test", &[asset], &MetadataFeatures::default()).unwrap();
         let v = parse_metadata(&json);
         let scripts: Vec<&str> = v["scripts"]
             .as_array()
@@ -536,7 +582,7 @@ mod tests {
     #[test]
     fn metadata_user_css_asset_added_to_styles() {
         let asset = make_asset("custom/theme.css");
-        let json = format_metadata("test", &[asset]).unwrap();
+        let json = format_metadata("test", &[asset], &MetadataFeatures::default()).unwrap();
         let v = parse_metadata(&json);
         let styles: Vec<&str> = v["styles"]
             .as_array()
@@ -553,7 +599,7 @@ mod tests {
     #[test]
     fn metadata_non_js_css_asset_not_added() {
         let asset = make_asset("images/logo.png");
-        let json = format_metadata("test", &[asset]).unwrap();
+        let json = format_metadata("test", &[asset], &MetadataFeatures::default()).unwrap();
         let v = parse_metadata(&json);
         let scripts: Vec<&str> = v["scripts"]
             .as_array()

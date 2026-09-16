@@ -74,13 +74,7 @@ fn no_matching_files_fails() {
 #[test]
 fn base_url_with_json_format_fails() {
     piccali()
-        .args([
-            "--format",
-            "json",
-            "--dry-run",
-            "--base-url",
-            "/docs/",
-        ])
+        .args(["--format", "json", "--dry-run", "--base-url", "/docs/"])
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -91,13 +85,7 @@ fn base_url_with_json_format_fails() {
 #[test]
 fn base_url_with_markdown_format_fails() {
     piccali()
-        .args([
-            "--format",
-            "markdown",
-            "--dry-run",
-            "--base-url",
-            "/docs/",
-        ])
+        .args(["--format", "markdown", "--dry-run", "--base-url", "/docs/"])
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -119,13 +107,7 @@ fn base_url_without_format_fails() {
 #[test]
 fn lang_with_json_format_fails() {
     piccali()
-        .args([
-            "--format",
-            "json",
-            "--dry-run",
-            "--lang",
-            "fr",
-        ])
+        .args(["--format", "json", "--dry-run", "--lang", "fr"])
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -136,13 +118,7 @@ fn lang_with_json_format_fails() {
 #[test]
 fn lang_with_markdown_format_fails() {
     piccali()
-        .args([
-            "--format",
-            "markdown",
-            "--dry-run",
-            "--lang",
-            "fr",
-        ])
+        .args(["--format", "markdown", "--dry-run", "--lang", "fr"])
         .assert()
         .failure()
         .stderr(predicate::str::contains(
@@ -158,5 +134,16 @@ fn lang_without_format_fails() {
         .failure()
         .stderr(predicate::str::contains(
             "--lang is only supported with --format html",
+        ));
+}
+
+#[test]
+fn invalid_feature_flag_fails() {
+    piccali()
+        .args(["--format", "json", "--dry-run", "--features", "bogus"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "invalid value 'bogus' for '--features <FEATURE>'",
         ));
 }
