@@ -20,7 +20,7 @@ export default defineConfig({
 		{
 			name: "exclude-data-json",
 			closeBundle() {
-				const outPath = path.resolve(__dirname, "dist", "data.json");
+				const outPath = path.resolve(import.meta.dirname, "dist", "data.json");
 				if (fs.existsSync(outPath)) {
 					fs.unlinkSync(outPath);
 				}
@@ -29,7 +29,7 @@ export default defineConfig({
 		{
 			name: "exclude-metadata-json",
 			closeBundle() {
-				const outPath = path.resolve(__dirname, "dist", "metadata.json");
+				const outPath = path.resolve(import.meta.dirname, "dist", "metadata.json");
 				if (fs.existsSync(outPath)) {
 					fs.unlinkSync(outPath);
 				}
@@ -38,7 +38,7 @@ export default defineConfig({
 	],
 	resolve: {
 		alias: {
-			"@": path.resolve(__dirname, "./src"),
+			"@": path.resolve(import.meta.dirname, "./src"),
 		},
 	},
 	base: "./",
