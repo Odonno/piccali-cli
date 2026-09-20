@@ -19,6 +19,7 @@ import {
 	resolveFeature,
 } from "@/functions/feature";
 import { useNavigate } from "@tanstack/react-router";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
 export const SearchBar = () => {
 	const [query, setQuery] = useAtom(searchQueryAtom);
@@ -174,9 +175,9 @@ export const SearchBar = () => {
 						<X className="size-3.5" />
 					</button>
 				) : (
-					<kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/40 font-mono border border-border/50 rounded px-1 py-0.5 select-none">
-						⌘K
-					</kbd>
+					<KbdGroup className="select-none">
+						<Kbd>⌘ + K</Kbd>
+					</KbdGroup>
 				)}
 			</div>
 
