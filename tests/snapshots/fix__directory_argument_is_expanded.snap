@@ -1,0 +1,21 @@
+---
+source: tests/fix.rs
+expression: "fs::read_to_string(&path).unwrap()"
+---
+Feature: Warranty
+
+  Scenario Outline: Alert is shown
+    Given a warranty is about to expire for <vin>
+
+    Examples:
+      | vin |
+      | ABC |
+
+  Rule: Alerts
+
+    Scenario Outline: In rule with data
+      Given an alert for <level>
+
+      Examples:
+        | level |
+        | low   |

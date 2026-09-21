@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 use globset::Glob;
 
 /// Feature flags that can be enabled in the generated viewer via `--features`.
@@ -16,6 +16,23 @@ pub enum Format {
     /// Markdown (also accepted as "md")
     #[value(alias = "md")]
     Markdown,
+}
+
+/// Available subcommands. When omitted, the default behavior (generate documentation from feature files) applies.
+#[derive(Debug, Subcommand)]
+pub enum Command {
+    /// Fix scenario keywords in Gherkin feature files so they match the presence of Examples blocks (in the file's `# language:` dialect).
+    /// All files are parsed first; if any fails to parse, nothing is written.
+    Fix {
+        /// Feature files to fix: a file, a directory, or a glob pattern.
+        /// Defaults to the same glob as the default command: `**/*.feature`.
+        #[arg(default_values_t = vec!["**/*.feature".to_string()])]
+        paths: Vec<String>,
+
+        /// Print the planned fixes without writing anything.
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 /// Piccali CLI — generate living documentation from feature files.
@@ -81,4 +98,8 @@ pub struct Cli {
     /// Repeat for multiple features. Off by default.
     #[arg(long, value_name = "FEATURE", value_enum)]
     pub features: Vec<FeatureFlag>,
+
+    /// Subcommand to run. When omitted, the default behavior (generate documentation) applies.
+    #[command(subcommand)]
+    pub command: Option<Command>,
 }

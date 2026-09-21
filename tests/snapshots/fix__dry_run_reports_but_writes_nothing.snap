@@ -1,0 +1,7 @@
+---
+source: tests/fix.rs
+expression: "String::from_utf8_lossy(&assert.get_output().stdout)"
+---
+./warranty.feature: line 3: Scenario → Scenario Outline
+./warranty.feature: line 12: Scenario → Scenario Outline
+Dry run: 2 fix(es) in 1 file(s); nothing was written.

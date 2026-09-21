@@ -339,12 +339,11 @@ pub fn format_markdown_single_file(
     output_path: &Path,
 ) -> Result<()> {
     // Create parent directories if needed
-    if let Some(parent) = output_path.parent() {
-        if !parent.as_os_str().is_empty() {
-            std::fs::create_dir_all(parent).wrap_err_with(|| {
-                format!("Failed to create parent directory {}", parent.display())
-            })?;
-        }
+    if let Some(parent) = output_path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent)
+            .wrap_err_with(|| format!("Failed to create parent directory {}", parent.display()))?;
     }
 
     let mut parts: Vec<String> = Vec::new();

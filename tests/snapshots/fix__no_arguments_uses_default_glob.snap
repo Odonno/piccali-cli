@@ -1,0 +1,11 @@
+---
+source: tests/fix.rs
+expression: "fs::read_to_string(&path).unwrap()"
+---
+Feature: Warranty
+
+  Scenario: Alert is shown
+    Given a warranty is about to expire
+
+  Scenario: Another one
+    Given nothing happens

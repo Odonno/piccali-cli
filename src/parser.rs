@@ -222,20 +222,27 @@ pub fn parse_feature_file(
     path: &Path,
     tag_links: &HashMap<String, String>,
 ) -> Result<models::Feature> {
+    let parsed = parse_raw_feature_text(&read_feature_file(path)?, path)?;
+    Ok(convert_feature(&parsed, tag_links))
+}
+
+/// Read a `.feature` file, stripping a UTF-8 BOM (U+FEFF) if present — some editors write it.
+fn read_feature_file(path: &Path) -> Result<String> {
     let raw = std::fs::read_to_string(path)
         .wrap_err_with(|| format!("Could not read path: {}", path.display()))
         .wrap_err_with(|| format!("Failed to parse {}", path.display()))?;
+    Ok(raw.strip_prefix('\u{FEFF}').unwrap_or(&raw).to_string())
+}
 
-    // Strip UTF-8 BOM (U+FEFF) if present — some editors write it.
-    let raw = raw.strip_prefix('\u{FEFF}').unwrap_or(&raw);
-
+/// Parse raw Gherkin text into the underlying `gherkin` AST (which keeps source positions, unlike our own model).
+/// `path` is used only for error messages.
+pub fn parse_raw_feature_text(raw: &str, path: &Path) -> Result<gherkin::Feature> {
     let preprocessed = escape_backslashes_in_table_cells(raw);
 
     let env = GherkinEnv::default();
-    let parsed = gherkin::Feature::parse(&preprocessed, env)
+    gherkin::Feature::parse(&preprocessed, env)
         .wrap_err_with(|| format!("Could not parse feature file: {}", path.display()))
-        .wrap_err_with(|| format!("Failed to parse {}", path.display()))?;
-    Ok(convert_feature(&parsed, tag_links))
+        .wrap_err_with(|| format!("Failed to parse {}", path.display()))
 }
 
 /// Strip a trailing inline comment from a table row line.

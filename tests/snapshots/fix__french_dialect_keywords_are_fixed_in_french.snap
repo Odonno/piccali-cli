@@ -1,0 +1,16 @@
+---
+source: tests/fix.rs
+expression: "fs::read_to_string(&path).unwrap()"
+---
+# language: fr
+Fonctionnalité: Fumée
+
+  Plan du scénario: Avec exemples
+    Soit une <valeur>
+
+    Exemples:
+      | valeur |
+      | 1      |
+
+  Scénario: Sans exemples
+    Soit rien

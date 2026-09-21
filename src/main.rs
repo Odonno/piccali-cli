@@ -1,10 +1,12 @@
 use clap::Parser;
-use cli::{Cli, FeatureFlag, Format};
+use cli::{Cli, Command, FeatureFlag, Format};
 use color_eyre::eyre::{Result, bail, eyre};
 use std::collections::HashMap;
 
 mod assets;
 mod cli;
+mod dialects;
+mod fix;
 mod format;
 mod models;
 mod parser;
@@ -19,6 +21,11 @@ fn main() -> Result<()> {
 
 fn run() -> Result<()> {
     let cli = Cli::parse();
+
+    // Subcommands bypass the default documentation pipeline entirely.
+    if let Some(Command::Fix { paths, dry_run }) = cli.command {
+        return fix::run(&paths, dry_run);
+    }
 
     // When a format is explicitly given, require --output or --dry-run
     if cli.format.is_some() && cli.output.is_none() && !cli.dry_run {
