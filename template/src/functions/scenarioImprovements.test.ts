@@ -1,7 +1,7 @@
-import { describe, expect, test } from "vitest";
-import { analyzeScenarioOutlineImprovements } from "./scenarioImprovements";
-import type { Scenario, Step } from "@/schemas/data";
 import { v4 as uuidv4 } from "uuid";
+import { describe, expect, test } from "vitest";
+import type { Scenario, Step } from "@/schemas/data";
+import { analyzeScenarioOutlineImprovements } from "./scenarioImprovements";
 
 const buildSteps = (action: string, message: string): Step[] => [
 	{ id: uuidv4(), keyword: "Given", type: "Given", text: "I start the app" },

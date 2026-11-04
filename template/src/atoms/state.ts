@@ -1,11 +1,11 @@
 import { atom } from "jotai";
 import { unwrap } from "jotai/utils";
+import * as v from "valibot";
+import { isScenarioOutline } from "@/functions/scenario";
+import { collectFeatures, collectScenarios } from "@/functions/state";
+import { collectUniqueSteps } from "@/functions/steps";
 import { DataSchema, type PiccaliData } from "@/schemas/data";
 import { MetadataSchema, type PiccaliMetadata } from "@/schemas/metadata";
-import * as v from "valibot";
-import { collectUniqueSteps } from "@/functions/steps";
-import { collectFeatures, collectScenarios } from "@/functions/state";
-import { isScenarioOutline } from "@/functions/scenario";
 
 const dataAsyncAtom = atom(async () => {
 	const res = await fetch("./data.json");

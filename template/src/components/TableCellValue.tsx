@@ -1,4 +1,4 @@
-import { classifyCell, type CellType } from "@/functions/cell";
+import { type CellType, classifyCell } from "@/functions/cell";
 
 const CELL_STYLES: Record<CellType, string> = {
 	boolean: "text-[var(--type-boolean)]",

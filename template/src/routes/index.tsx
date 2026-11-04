@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, ListChecks, BookOpen, TriangleAlert } from "lucide-react";
 import { useAtomValue } from "jotai";
-import {
-	uniqueStepsAtom,
-	featuresAtom,
-	scenariosAtom,
-	scenarioOutlinesAtom,
-} from "@/atoms/state";
+import { BookOpen, FileText, ListChecks, TriangleAlert } from "lucide-react";
 import { scenarioImprovementsAtom } from "@/atoms/scenarioImprovements";
+import {
+	featuresAtom,
+	scenarioOutlinesAtom,
+	scenariosAtom,
+	uniqueStepsAtom,
+} from "@/atoms/state";
 import { StatCard } from "@/components/StatCard";
 
 const IndexPage = () => {

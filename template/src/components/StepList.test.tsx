@@ -1,8 +1,8 @@
-import { describe, expect, test } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { StepList } from "./StepList";
-import type { Step, StepType } from "@/schemas/data";
 import { v4 as uuidv4 } from "uuid";
+import { describe, expect, test } from "vitest";
+import type { Step, StepType } from "@/schemas/data";
+import { StepList } from "./StepList";
 
 const makeStep = (
 	keyword: string,

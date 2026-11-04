@@ -1,11 +1,11 @@
 import {
+	ChevronRight,
 	FileText,
 	ListChecks,
-	ChevronRight,
 	Tag as TagIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { HighlightedText } from "@/components/HighlightedText";
+import { cn } from "@/lib/utils";
 import type { SearchResult, SearchResultKind } from "@/types/search";
 
 export const KIND_ICON: Record<SearchResultKind, React.ReactNode> = {

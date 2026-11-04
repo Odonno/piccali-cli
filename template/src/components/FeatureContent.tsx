@@ -1,16 +1,24 @@
-import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useAtomValue } from "jotai";
 import {
-	FileText,
+	AlertCircle,
 	BookOpen,
+	FileText,
 	Layers,
 	ListChecks,
-	AlertCircle,
 	TriangleAlert,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { scenarioImprovementsAtom } from "@/atoms/scenarioImprovements";
+import { foldersAtom } from "@/atoms/state";
+import { MarkdownContent } from "@/components/MarkdownContent";
+import { StepList } from "@/components/StepList";
+import { StepTextWithVars } from "@/components/StepTextWithVars";
+import { TableCellValue } from "@/components/TableCellValue";
+import { TagBadge } from "@/components/TagBadge";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -19,20 +27,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { MarkdownContent } from "@/components/MarkdownContent";
-import { TagBadge } from "@/components/TagBadge";
-import { StepList } from "@/components/StepList";
-import { StepTextWithVars } from "@/components/StepTextWithVars";
-import { TableCellValue } from "@/components/TableCellValue";
-import { resolveExampleVars, type ExampleRowKey } from "@/functions/examples";
-import { isScenarioOutline } from "@/functions/scenario";
-import type { Feature, Rule } from "@/schemas/data";
+import { type ExampleRowKey, resolveExampleVars } from "@/functions/examples";
 import { buildRuleUrl } from "@/functions/feature";
-import type { FeaturePath } from "@/types/navigation";
-import { useAtomValue } from "jotai";
-import { foldersAtom } from "@/atoms/state";
-import { scenarioImprovementsAtom } from "@/atoms/scenarioImprovements";
+import { isScenarioOutline } from "@/functions/scenario";
 import { cn } from "@/lib/utils";
+import type { Feature, Rule } from "@/schemas/data";
+import type { FeaturePath } from "@/types/navigation";
 
 type FeatureContentProps = {
 	feature: Feature;

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, test, vi, afterEach } from "vitest";
-import { isHexColor, getSystemLabel } from "./colors";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import { getSystemLabel, isHexColor } from "./colors";
 
 describe("isHexColor", () => {
 	test("accepts 3-digit hex", () => {

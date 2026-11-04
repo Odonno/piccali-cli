@@ -1,25 +1,25 @@
-import { useEffect, useRef, useCallback, type KeyboardEvent } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import { Search, X } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { useAtom, useAtomValue } from "jotai";
-import { SearchDropdown } from "@/components/SearchDropdown";
-import { searchData } from "@/functions/search";
-import { cn } from "@/lib/utils";
+import { Search, X } from "lucide-react";
+import { type KeyboardEvent, useCallback, useEffect, useRef } from "react";
 import {
-	searchQueryAtom,
-	searchIsOpenAtom,
 	searchActiveIndexAtom,
+	searchIsOpenAtom,
+	searchQueryAtom,
 } from "@/atoms/search";
-import type { SelectedFeature } from "@/types/navigation";
-import type { SearchResult } from "@/types/search";
 import { foldersAtom } from "@/atoms/state";
+import { SearchDropdown } from "@/components/SearchDropdown";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import {
 	buildFeatureUrl,
 	buildRuleUrl,
 	resolveFeature,
 } from "@/functions/feature";
-import { useNavigate } from "@tanstack/react-router";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { searchData } from "@/functions/search";
+import { cn } from "@/lib/utils";
+import type { SelectedFeature } from "@/types/navigation";
+import type { SearchResult } from "@/types/search";
 
 export const SearchBar = () => {
 	const [query, setQuery] = useAtom(searchQueryAtom);

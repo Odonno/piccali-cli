@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { FeatureContent } from "@/components/FeatureContent";
 import { useAtomValue } from "jotai";
 import { foldersAtom } from "@/atoms/state";
+import { FeatureContent } from "@/components/FeatureContent";
 import { resolveFeatureBySlug, resolveRuleBySlug } from "@/functions/feature";
 
 const FeatureOrRulePage = () => {

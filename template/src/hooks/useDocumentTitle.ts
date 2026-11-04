@@ -1,6 +1,6 @@
-import { metadataAtom } from "@/atoms/state";
 import { useAtomValue } from "jotai";
 import { useEffect } from "react";
+import { metadataAtom } from "@/atoms/state";
 
 export const useDocumentTitle = () => {
 	const metadata = useAtomValue(metadataAtom);

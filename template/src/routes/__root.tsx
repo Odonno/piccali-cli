@@ -4,17 +4,17 @@ import {
 	Outlet,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { LoadingState } from "@/components/LoadingState";
-import { AppSidebar } from "@/components/AppSidebar";
-import { AppHeader } from "@/components/AppHeader";
 import { useAtomValue } from "jotai";
 import { isLoadingAtom } from "@/atoms/state";
+import { AppHeader } from "@/components/AppHeader";
+import { AppSidebar } from "@/components/AppSidebar";
+import { LoadingState } from "@/components/LoadingState";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLoadScripts } from "@/hooks/useLoadScripts";
 import { useLoadStyles } from "@/hooks/useLoadStyles";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const RootComponent = () => {
 	const isLoading = useAtomValue(isLoadingAtom);

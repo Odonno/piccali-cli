@@ -1,19 +1,19 @@
-import { useState } from "react";
-import { CalendarClock, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { useAtomValue } from "jotai";
+import { CalendarClock, Settings } from "lucide-react";
+import { useState } from "react";
+import { metadataAtom } from "@/atoms/state";
+import { SearchBar } from "@/components/SearchBar";
+import { SettingsModal } from "@/components/SettingsModal";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SearchBar } from "@/components/SearchBar";
-import { SettingsModal } from "@/components/SettingsModal";
 import { formatDate } from "@/functions/date";
-import { metadataAtom } from "@/atoms/state";
-import { useAtomValue } from "jotai";
 
 export const AppHeader = () => {
 	const metadata = useAtomValue(metadataAtom);

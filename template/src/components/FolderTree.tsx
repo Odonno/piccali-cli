@@ -1,13 +1,22 @@
+import { Link, useRouterState } from "@tanstack/react-router";
+import { useAtom, useAtomValue } from "jotai";
 import {
-	FileText,
 	ChevronRight,
-	ListChecks,
-	Tag as TagIcon,
+	FileText,
 	Folder,
 	FolderOpen,
+	ListChecks,
+	Tag as TagIcon,
 	TriangleAlert,
 } from "lucide-react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { warningScenariosAtom } from "@/atoms/scenarioImprovements";
+import { sidebarOpenKeysAtom } from "@/atoms/sidebar";
+import { Badge } from "@/components/ui/badge";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
 	SidebarMenuButton,
 	SidebarMenuItem,
@@ -16,34 +25,24 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Badge } from "@/components/ui/badge";
-import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+	buildFeatureUrl,
+	buildRuleUrl,
+	featureHasWarnings,
+	featureLabel,
+	featureScenarioCount,
+	folderHasWarnings,
+	folderKey,
+	folderTotalScenarioCount,
+	ruleHasWarnings,
+} from "@/functions/feature";
 import { cn } from "@/lib/utils";
 import type { FolderNode } from "@/schemas/data";
 import type { FeaturePath } from "@/types/navigation";
-import {
-	featureScenarioCount,
-	folderTotalScenarioCount,
-	featureLabel,
-	folderKey,
-	buildFeatureUrl,
-	buildRuleUrl,
-	folderHasWarnings,
-	featureHasWarnings,
-	ruleHasWarnings,
-} from "@/functions/feature";
-import { useAtom } from "jotai";
-import { sidebarOpenKeysAtom } from "@/atoms/sidebar";
-import { useAtomValue } from "jotai";
-import { warningScenariosAtom } from "@/atoms/scenarioImprovements";
 
 type FolderTreeProps = {
 	/** The current level's folders to render. */

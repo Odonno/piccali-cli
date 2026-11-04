@@ -299,4 +299,4 @@ export const highlightMatches = (
 	return parts;
 };
 
-export type { SearchResultKind, SearchResult };
+export type { SearchResult, SearchResultKind };

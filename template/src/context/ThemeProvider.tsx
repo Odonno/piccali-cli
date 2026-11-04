@@ -1,4 +1,12 @@
 import {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import {
 	CUSTOM_THEME_STORAGE_KEY,
 	THEME_STORAGE_KEY,
 } from "@/constants/storage/themes";
@@ -20,14 +28,6 @@ import type {
 	ThemeColors,
 	ThemeProviderState,
 } from "@/types/themes";
-import {
-	createContext,
-	useContext,
-	useEffect,
-	useRef,
-	useState,
-	useCallback,
-} from "react";
 
 export const THEME_COLORS_MAP: Record<
 	Exclude<AppTheme, "system" | "custom">,

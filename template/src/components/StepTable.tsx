@@ -1,4 +1,5 @@
-import type { Step } from "@/schemas/data";
+import { StepTextWithVars } from "@/components/StepTextWithVars";
+import { TableCellValue } from "@/components/TableCellValue";
 import {
 	Table,
 	TableBody,
@@ -7,8 +8,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { TableCellValue } from "@/components/TableCellValue";
-import { StepTextWithVars } from "@/components/StepTextWithVars";
+import type { Step } from "@/schemas/data";
 
 /** Renders a step table (data table attached to a step). */
 export const StepTable = ({

@@ -1,16 +1,16 @@
-import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { BookOpen, Search } from "lucide-react";
 import { useAtomValue } from "jotai";
+import { BookOpen, Search } from "lucide-react";
+import { useState } from "react";
 import { uniqueStepsAtom } from "@/atoms/state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import {
 	PRIMARY_STEP_TYPES,
 	STEP_TYPE_COLORS,
 	STEP_TYPE_ORDER,
 } from "@/constants/steps";
+import { cn } from "@/lib/utils";
 import type { StepType } from "@/schemas/data";
 
 const StepsPage = () => {

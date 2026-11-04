@@ -1,12 +1,15 @@
-import { useState, useCallback } from "react";
-import { Monitor, Sun, Moon, Palette, Copy, Check } from "lucide-react";
+import { Check, Copy, Monitor, Moon, Palette, Sun } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
 	SelectContent,
@@ -17,21 +20,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-	useTheme,
-	THEME_LABELS,
 	COLOR_KEY_LABELS,
 	COLOR_KEYS_ORDER,
 	THEME_COLORS_MAP,
+	THEME_LABELS,
+	useTheme,
 } from "@/context/ThemeProvider";
+import { getSystemLabel } from "@/functions/colors";
 import { cn } from "@/lib/utils";
 import type { AppTheme, ThemeColorKey } from "@/types/themes";
-import { getSystemLabel } from "@/functions/colors";
-import { THEME_ICONS } from "./Icons";
 import { ColorSwatch } from "./ColorSwatch";
+import { THEME_ICONS } from "./Icons";
 
 type SettingsModalProps = {
 	open: boolean;

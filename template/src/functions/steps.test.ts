@@ -1,4 +1,6 @@
+import { v4 as uuidv4 } from "uuid";
 import { describe, expect, test } from "vitest";
+import type { FolderNode, Step, StepType } from "@/schemas/data";
 import {
 	collectUniqueSteps,
 	groupStepsByPattern,
@@ -6,8 +8,6 @@ import {
 	toPattern,
 	toSlug,
 } from "./steps";
-import type { FolderNode, Step, StepType } from "@/schemas/data";
-import { v4 as uuidv4 } from "uuid";
 
 const makeStep = (type: StepType, text: string, keyword = type): Step => ({
 	id: uuidv4(),

@@ -1,4 +1,4 @@
-import { Monitor, Sun, Moon } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import type { ReactNode } from "react";
 
 export const THEME_ICONS: Record<string, ReactNode> = {

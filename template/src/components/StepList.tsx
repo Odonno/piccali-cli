@@ -1,10 +1,10 @@
 import { Fragment } from "react";
-import type { Step } from "@/schemas/data";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { StepTable } from "@/components/StepTable";
 import { StepTextWithVars } from "@/components/StepTextWithVars";
-import { PRIMARY_STEP_TYPES } from "@/constants/steps";
 import { CONJUNCTION_KEYWORDS } from "@/constants/conjunctionKeywords";
+import { PRIMARY_STEP_TYPES } from "@/constants/steps";
+import type { Step } from "@/schemas/data";
 
 /** Renders a list of steps with optional step tables and variable substitution.
  *

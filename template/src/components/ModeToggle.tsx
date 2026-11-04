@@ -1,11 +1,11 @@
 import { Monitor, Moon, Sun } from "lucide-react";
-import { useTheme } from "@/context/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTheme } from "@/context/ThemeProvider";
 
 const CYCLE = ["light", "dark", "system"] as const;
 type Theme = (typeof CYCLE)[number];

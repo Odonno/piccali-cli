@@ -1,4 +1,4 @@
-import type { StepType, Step } from "@/schemas/data";
+import type { Step, StepType } from "@/schemas/data";
 
 /**
  * A group of steps that match the same regex pattern.

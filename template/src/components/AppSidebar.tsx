@@ -1,3 +1,6 @@
+import { useAtomValue } from "jotai";
+import { foldersAtom } from "@/atoms/state";
+import { FolderTree } from "@/components/FolderTree";
 import {
 	Sidebar,
 	SidebarContent,
@@ -10,9 +13,6 @@ import {
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import { countFeaturesInFolders } from "@/functions/feature";
-import { FolderTree } from "@/components/FolderTree";
-import { foldersAtom } from "@/atoms/state";
-import { useAtomValue } from "jotai";
 
 export const AppSidebar = () => {
 	const folders = useAtomValue(foldersAtom);

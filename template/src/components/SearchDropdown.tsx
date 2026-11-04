@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
 import { Search } from "lucide-react";
-import { ResultRow, KIND_ICON, KIND_LABEL } from "@/components/ResultRow";
+import { useEffect, useRef } from "react";
+import { KIND_ICON, KIND_LABEL, ResultRow } from "@/components/ResultRow";
 import type { SearchResult, SearchResultKind } from "@/types/search";
 
 type SearchDropdownProps = {

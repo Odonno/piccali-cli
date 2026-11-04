@@ -1,7 +1,7 @@
-import { describe, expect, test } from "vitest";
-import { isScenarioOutline } from "./scenario";
-import type { Scenario } from "@/schemas/data";
 import { v4 as uuidv4 } from "uuid";
+import { describe, expect, test } from "vitest";
+import type { Scenario } from "@/schemas/data";
+import { isScenarioOutline } from "./scenario";
 
 const makeScenario = (
 	keyword: string,
