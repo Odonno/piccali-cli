@@ -33,10 +33,12 @@ export const AppHeader = () => {
 
 			<SidebarTrigger className="size-7 shrink-0 text-muted-foreground" />
 
-			<SearchBar />
+			<div className="flex-1 flex justify-center">
+				<SearchBar />
+			</div>
 
 			{/* Actions */}
-			<div className="ml-auto flex items-center gap-3.5 shrink-0">
+			<div className="flex items-center gap-3.5 shrink-0">
 				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 					<CalendarClock className="size-3" />
 					{metadata ? (
