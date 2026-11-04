@@ -147,3 +147,15 @@ Snapshots stored in `tests/snapshots/`. Commit updated `.snap` files when behavi
 - Use `predicates` for stderr/stdout checks.
 - Snapshot-heavy tests use `insta`.
 - Test names should describe behavior, not implementation detail.
+
+## Verification gates
+
+- the Rust project verification gates should succeed
+  - `cargo fmt` & `cargo clippy` should output no error/warning
+  - `cargo test` should succeed
+- the `template` verification gates should succeed
+  - `bun run build`
+  - `bun run check:types`
+  - `bun run format`
+  - `bun run lint`
+  - `bun run test`
