@@ -17,6 +17,7 @@ import {
 	CATPPUCCIN_MOCHA_COLORS,
 	DARK_COLORS,
 	LIGHT_COLORS,
+	NIGHTFALL_CYAN_COLORS,
 } from "@/constants/themes/palettes";
 import { DEFAULT_CUSTOM_THEME, initialState } from "@/constants/themes/state";
 import { getSystemTheme } from "@/functions/colors";
@@ -39,6 +40,7 @@ export const THEME_COLORS_MAP: Record<
 	"catppuccin-frappe": CATPPUCCIN_FRAPPE_COLORS,
 	"catppuccin-macchiato": CATPPUCCIN_MACCHIATO_COLORS,
 	"catppuccin-mocha": CATPPUCCIN_MOCHA_COLORS,
+	"nightfall-cyan": NIGHTFALL_CYAN_COLORS,
 };
 
 export const THEME_LABELS: Record<AppTheme, string> = {
@@ -49,6 +51,7 @@ export const THEME_LABELS: Record<AppTheme, string> = {
 	"catppuccin-frappe": "Catppuccin — Frappé",
 	"catppuccin-macchiato": "Catppuccin — Macchiato",
 	"catppuccin-mocha": "Catppuccin — Mocha",
+	"nightfall-cyan": "Nightfall — Cyan",
 	custom: "Custom",
 };
 
@@ -173,6 +176,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 			"catppuccin-frappe",
 			"catppuccin-macchiato",
 			"catppuccin-mocha",
+			"nightfall-cyan",
 			"custom",
 		);
 

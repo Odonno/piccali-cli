@@ -158,6 +158,11 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
 								</SelectGroup>
 								<SelectSeparator />
 								<SelectGroup>
+									<SelectLabel>Nightfall</SelectLabel>
+									<SelectItem value="nightfall-cyan">Cyan</SelectItem>
+								</SelectGroup>
+								<SelectSeparator />
+								<SelectGroup>
 									<SelectItem value="custom">
 										<span className="flex items-center gap-2">
 											<Palette className="size-3.5" />
@@ -203,6 +208,11 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
 											Macchiato
 										</SelectItem>
 										<SelectItem value="catppuccin-mocha">Mocha</SelectItem>
+									</SelectGroup>
+									<SelectSeparator />
+									<SelectGroup>
+										<SelectLabel>Nightfall</SelectLabel>
+										<SelectItem value="nightfall-cyan">Cyan</SelectItem>
 									</SelectGroup>
 								</SelectContent>
 							</Select>

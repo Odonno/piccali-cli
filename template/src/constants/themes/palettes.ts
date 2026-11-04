@@ -179,3 +179,33 @@ export const CATPPUCCIN_MOCHA_COLORS: ThemeColors = {
 	"type-date": "#f9e2af",
 	"type-string": "#eba0ac",
 };
+
+export const NIGHTFALL_CYAN_COLORS: ThemeColors = {
+	background: "#0A0C10",
+	foreground: "#EDEFF4",
+	card: "#12151C",
+	"card-foreground": "#EDEFF4",
+	popover: "#12151C",
+	"popover-foreground": "#EDEFF4",
+	primary: "#4FD8E8",
+	"primary-foreground": "#0A0C10",
+	secondary: "#1A1F29",
+	"secondary-foreground": "#EDEFF4",
+	muted: "#1A1F29",
+	"muted-foreground": "#8A93A6",
+	accent: "#1A1F29",
+	"accent-foreground": "#EDEFF4",
+	destructive: "#F87171",
+	border: "rgba(255,255,255,0.09)",
+	input: "rgba(255,255,255,0.18)",
+	ring: "#4FD8E8",
+	sidebar: "#08090D",
+	"sidebar-foreground": "#EDEFF4",
+	"sidebar-primary": "#4FD8E8",
+	"sidebar-primary-foreground": "#0A0C10",
+	// boolean → step keyword blue, number → success green, date → warning amber, string → soft rose
+	"type-boolean": "#89B4FA",
+	"type-number": "#7EE0A8",
+	"type-date": "#F0B454",
+	"type-string": "#F5A3B7",
+};

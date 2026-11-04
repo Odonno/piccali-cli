@@ -6,6 +6,7 @@ export type AppTheme =
 	| "catppuccin-frappe"
 	| "catppuccin-macchiato"
 	| "catppuccin-mocha"
+	| "nightfall-cyan"
 	| "custom";
 
 export type ThemeColorKey =
