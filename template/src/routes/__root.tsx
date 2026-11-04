@@ -30,18 +30,20 @@ const RootComponent = () => {
 	return (
 		<TooltipProvider>
 			<SidebarProvider>
-				<AppSidebar />
-				<SidebarInset>
-					<div className="flex flex-col h-svh">
-						<AppHeader />
+				<div className="flex flex-col h-svh w-full">
+					<AppHeader />
 
-						<ScrollArea className="flex-1">
-							<main>
-								<Outlet />
-							</main>
-						</ScrollArea>
+					<div className="flex flex-1 min-h-0">
+						<AppSidebar />
+						<SidebarInset className="flex-1 min-w-0">
+							<ScrollArea className="h-full">
+								<main>
+									<Outlet />
+								</main>
+							</ScrollArea>
+						</SidebarInset>
 					</div>
-				</SidebarInset>
+				</div>
 			</SidebarProvider>
 
 			{import.meta.env.DEV && <TanStackRouterDevtools />}

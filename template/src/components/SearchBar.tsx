@@ -130,11 +130,11 @@ export const SearchBar = () => {
 	};
 
 	return (
-		<div ref={containerRef} className="relative flex-1 max-w-lg mx-4">
+		<div ref={containerRef} className="relative flex-1 max-w-xl mx-2">
 			{/* Input */}
 			<div
 				className={cn(
-					"flex items-center gap-2 rounded-lg border bg-muted/50 px-3 h-8",
+					"flex items-center gap-2.5 rounded-lg border bg-muted/40 px-3.5 h-9",
 					"transition-shadow duration-150",
 					isOpen
 						? "ring-2 ring-ring ring-offset-1 border-ring/50"
@@ -154,7 +154,7 @@ export const SearchBar = () => {
 							? `search-result-${activeIndex}`
 							: undefined
 					}
-					placeholder="Search…"
+					placeholder="Search features, scenarios, steps..."
 					value={query}
 					onChange={(e) => {
 						setQuery(e.target.value);
