@@ -80,6 +80,10 @@ cargo install piccali-cli
 ```bash
 git clone https://github.com/Odonno/piccali-cli
 cd piccali-cli
+cd template
+npm install
+bun run build
+cd ..
 cargo build --release
 # binary is at ./target/release/piccali-cli
 ```
