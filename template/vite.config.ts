@@ -4,6 +4,7 @@ import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import { redact } from "@tanstack/redact/vite";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
@@ -14,6 +15,7 @@ export default defineConfig({
 			autoCodeSplitting: true,
 		}),
 		react(),
+		redact(),
 		babel({ presets: [reactCompilerPreset()] }),
 		// Remove the generated data.json from the build output — it is produced at
 		// Cargo build time and should not be bundled as a static asset.

@@ -17,8 +17,9 @@ const makeStep = (
 	...(table ? { table } : {}),
 });
 
-const PRIMARY = 'style="color:var(--primary)"';
-const MUTED = 'style="color:var(--muted-foreground)"';
+// Trailing quote omitted: React and Redact serialize style differently (`var(--primary)"` vs `var(--primary);"`)
+const PRIMARY = 'style="color:var(--primary)';
+const MUTED = 'style="color:var(--muted-foreground)';
 
 const count = (markup: string, snippet: string) =>
 	markup.split(snippet).length - 1;
