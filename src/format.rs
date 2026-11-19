@@ -3,8 +3,8 @@ use crate::models::{
     Background, Document, Examples, Feature, FolderNode, Rule, Scenario, Step, Table, Tag,
 };
 use crate::parser::{AssetRef, ImageRef};
-use chrono::Utc;
 use color_eyre::eyre::{Result, WrapErr, eyre};
+use jiff::Timestamp;
 use serde::Serialize;
 use std::path::Path;
 
@@ -59,7 +59,7 @@ pub fn format_metadata(
 
     let metadata = Metadata {
         title,
-        created_at: Utc::now().to_rfc3339(),
+        created_at: Timestamp::now().to_string(),
         scripts,
         styles,
         features: features.clone(),
@@ -541,7 +541,7 @@ mod tests {
         let json = format_metadata("My Docs", &[], &MetadataFeatures::default()).unwrap();
         let v = parse_metadata(&json);
         assert_eq!(v["title"], "My Docs");
-        assert!(v["createdAt"].as_str().is_some());
+        assert!(v["createdAt"].as_str().is_some_and(|s| s.ends_with('Z')));
     }
 
     #[test]
