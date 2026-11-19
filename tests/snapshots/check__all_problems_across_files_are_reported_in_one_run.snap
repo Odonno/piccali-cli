@@ -1,0 +1,15 @@
+---
+source: tests/check.rs
+expression: combined_output(&assert)
+---
+--- stdout ---
+warning: ./a/error2.feature: line 3: 'Senario' is not a Feature keyword — did you mean 'Scenario'?
+warning: ./a/error2.feature: line 4: step 'Given' sits in the Feature description and is silently treated as text — move it inside a Scenario or Background
+warning: ./a/error2.feature: line 5: step 'Then' sits in the Feature description and is silently treated as text — move it inside a Scenario or Background
+--- stderr ---
+error: ./a/broken.feature: Failed to parse ./a/broken.feature: Could not parse feature file: ./a/broken.feature: Error at 5:22: {"unknown keyword"}
+Error: 
+   0: 4 problem(s) found in 2 of 3 file(s).
+
+Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.
+Run with RUST_BACKTRACE=full to include source snippets.

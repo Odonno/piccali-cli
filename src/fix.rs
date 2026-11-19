@@ -5,8 +5,6 @@
 //! Keywords are read/written in the file's own `# language:` dialect.
 
 use color_eyre::eyre::{Context, Report, Result, bail, eyre};
-use globset::Glob;
-use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use crate::{dialects, parser};
@@ -31,7 +29,7 @@ struct Plan {
 /// Transactional: every file is parsed and planned first; if any file fails,
 /// nothing is written. With `dry_run`, the plan is printed but never applied.
 pub fn run(paths: &[String], dry_run: bool) -> Result<()> {
-    let files = resolve_files(paths)?;
+    let files = parser::resolve_files(paths)?;
     if files.is_empty() {
         bail!("No feature files found for: {}", paths.join(", "));
     }
@@ -89,35 +87,6 @@ pub fn run(paths: &[String], dry_run: bool) -> Result<()> {
     Ok(())
 }
 
-/// Expand user-supplied paths into a de-duplicated list of feature files.
-///
-/// Each path may be a file, a directory (searched recursively for `*.feature`), or a glob pattern.
-/// Empty input falls back to the default command's glob, `**/*.feature`.
-fn resolve_files(paths: &[String]) -> Result<Vec<PathBuf>> {
-    let patterns: Vec<String> = if paths.is_empty() {
-        vec!["**/*.feature".to_string()]
-    } else {
-        paths
-            .iter()
-            .map(|p| {
-                let trimmed = p.trim_end_matches('/');
-                if Path::new(trimmed).is_dir() {
-                    format!("{trimmed}/**/*.feature")
-                } else {
-                    trimmed.to_string()
-                }
-            })
-            .collect()
-    };
-
-    let mut files = BTreeSet::new();
-    for pattern in patterns {
-        let glob = Glob::new(&pattern).wrap_err_with(|| format!("Invalid pattern: {pattern}"))?;
-        files.extend(parser::discover_files(&glob));
-    }
-    Ok(files.into_iter().collect())
-}
-
 /// Parse one feature file and plan keyword edits for every scenario whose keyword does not match its Examples presence.
 fn plan_file(path: &Path) -> Result<Plan> {
     let raw = std::fs::read_to_string(path)
@@ -127,7 +96,7 @@ fn plan_file(path: &Path) -> Result<Plan> {
 
     let feature = parser::parse_raw_feature_text(&raw, path)?;
 
-    let lang = detect_language(&raw);
+    let lang = dialects::detect_language(&raw);
     let dialect = dialects::dialect(&lang)
         .ok_or_else(|| eyre!("{} uses unsupported language '{lang}'", path.display()))?;
 
@@ -169,32 +138,6 @@ fn plan_file(path: &Path) -> Result<Plan> {
         had_bom,
         edits,
     })
-}
-
-/// Read the `# language:` directive from raw Gherkin text (default `"en"`).
-///
-/// Per the Gherkin grammar the directive must come before any other content;
-/// we stop scanning at the first non-blank, non-comment line, so `# language:`
-/// mentions inside later comments or docstrings are ignored.
-fn detect_language(raw: &str) -> String {
-    for line in raw.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-        if let Some(body) = trimmed.strip_prefix('#') {
-            if let Some(code) = body
-                .trim_start()
-                .strip_prefix("language")
-                .and_then(|rest| rest.trim_start().strip_prefix(':'))
-            {
-                return code.trim().to_string();
-            }
-            return "en".to_string(); // a non-language comment ends the header
-        }
-        return "en".to_string(); // real content ends the header
-    }
-    "en".to_string()
 }
 
 /// Apply a plan's edits to the file on disk, preserving everything else (indentation, line endings, comments, trailing newline, BOM).

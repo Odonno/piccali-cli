@@ -2,6 +2,7 @@ use color_eyre::eyre::{Result, WrapErr};
 use gherkin::GherkinEnv;
 use globset::Glob;
 use regex::Regex;
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -1223,4 +1224,33 @@ mod tests {
         assert!(folder.id.is_some());
         assert!(tree[0].id.is_some());
     }
+}
+
+/// Expand user-supplied paths into a de-duplicated list of feature files.
+///
+/// Each path may be a file, a directory (searched recursively for `*.feature`), or a glob pattern.
+/// Empty input falls back to the default command's glob, `**/*.feature`.
+pub(crate) fn resolve_files(paths: &[String]) -> Result<Vec<PathBuf>> {
+    let patterns: Vec<String> = if paths.is_empty() {
+        vec!["**/*.feature".to_string()]
+    } else {
+        paths
+            .iter()
+            .map(|p| {
+                let trimmed = p.trim_end_matches('/');
+                if Path::new(trimmed).is_dir() {
+                    format!("{trimmed}/**/*.feature")
+                } else {
+                    trimmed.to_string()
+                }
+            })
+            .collect()
+    };
+
+    let mut files = BTreeSet::new();
+    for pattern in patterns {
+        let glob = Glob::new(&pattern).wrap_err_with(|| format!("Invalid pattern: {pattern}"))?;
+        files.extend(discover_files(&glob));
+    }
+    Ok(files.into_iter().collect())
 }

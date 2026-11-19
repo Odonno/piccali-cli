@@ -21,6 +21,16 @@ pub enum Format {
 /// Available subcommands. When omitted, the default behavior (generate documentation from feature files) applies.
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Check feature files for silently-swallowed Gherkin mistakes:
+    /// a typo'd keyword (e.g. `Senario:`) is legal description text, so it never fails parsing — the block just disappears from the docs.
+    /// Reports misspelled keywords and steps swallowed into Feature/Rule descriptions, plus parse failures.
+    /// Exits 1 if anything is found; writes nothing.
+    Check {
+        /// Feature files to check: a file, a directory, or a glob pattern.
+        /// Defaults to the same glob as the default command: `**/*.feature`.
+        #[arg(default_values_t = vec!["**/*.feature".to_string()])]
+        paths: Vec<String>,
+    },
     /// Fix scenario keywords in Gherkin feature files so they match the presence of Examples blocks (in the file's `# language:` dialect).
     /// All files are parsed first; if any fails to parse, nothing is written.
     Fix {

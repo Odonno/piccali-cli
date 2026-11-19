@@ -4,10 +4,12 @@ use color_eyre::eyre::{Result, bail, eyre};
 use std::collections::HashMap;
 
 mod assets;
+mod check;
 mod cli;
 mod dialects;
 mod fix;
 mod format;
+mod keywords;
 mod models;
 mod parser;
 mod server;
@@ -23,8 +25,10 @@ fn run() -> Result<()> {
     let cli = Cli::parse();
 
     // Subcommands bypass the default documentation pipeline entirely.
-    if let Some(Command::Fix { paths, dry_run }) = cli.command {
-        return fix::run(&paths, dry_run);
+    match cli.command {
+        Some(Command::Check { paths }) => return check::run(&paths),
+        Some(Command::Fix { paths, dry_run }) => return fix::run(&paths, dry_run),
+        None => {}
     }
 
     // When a format is explicitly given, require --output or --dry-run

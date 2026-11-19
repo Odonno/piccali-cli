@@ -1,0 +1,12 @@
+---
+source: tests/check.rs
+expression: combined_output(&assert)
+---
+--- stdout ---
+--- stderr ---
+error: ./broken.feature: Failed to parse ./broken.feature: Could not parse feature file: ./broken.feature: Error at 5:22: {"unknown keyword"}
+Error: 
+   0: 1 problem(s) found in 1 of 1 file(s).
+
+Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.
+Run with RUST_BACKTRACE=full to include source snippets.

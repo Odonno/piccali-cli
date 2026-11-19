@@ -746,3 +746,29 @@ pub fn dialect(lang: &str) -> Option<&'static Dialect> {
         .iter()
         .find_map(|(code, dialect)| (*code == lang).then_some(dialect))
 }
+
+/// Read the `# language:` directive from raw Gherkin text (default `"en"`).
+///
+/// Per the Gherkin grammar the directive must come before any other content;
+/// we stop scanning at the first non-blank, non-comment line, so `# language:`
+/// mentions inside later comments or docstrings are ignored.
+pub(crate) fn detect_language(raw: &str) -> String {
+    for line in raw.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if let Some(body) = trimmed.strip_prefix('#') {
+            if let Some(code) = body
+                .trim_start()
+                .strip_prefix("language")
+                .and_then(|rest| rest.trim_start().strip_prefix(':'))
+            {
+                return code.trim().to_string();
+            }
+            return "en".to_string(); // a non-language comment ends the header
+        }
+        return "en".to_string(); // real content ends the header
+    }
+    "en".to_string()
+}

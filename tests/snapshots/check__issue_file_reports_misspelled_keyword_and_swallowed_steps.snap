@@ -1,0 +1,14 @@
+---
+source: tests/check.rs
+expression: combined_output(&assert)
+---
+--- stdout ---
+warning: ./error2.feature: line 3: 'Senario' is not a Feature keyword — did you mean 'Scenario'?
+warning: ./error2.feature: line 4: step 'Given' sits in the Feature description and is silently treated as text — move it inside a Scenario or Background
+warning: ./error2.feature: line 5: step 'Then' sits in the Feature description and is silently treated as text — move it inside a Scenario or Background
+--- stderr ---
+Error: 
+   0: 3 problem(s) found in 1 of 1 file(s).
+
+Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.
+Run with RUST_BACKTRACE=full to include source snippets.
