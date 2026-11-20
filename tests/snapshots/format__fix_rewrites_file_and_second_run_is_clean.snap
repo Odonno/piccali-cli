@@ -1,0 +1,15 @@
+---
+source: tests/format.rs
+expression: "fs::read_to_string(dir.path().join(\"warranty.feature\")).unwrap()"
+---
+Feature: Warranty
+
+  Scenario: Alert is shown
+    Given a warranty is about to expire
+      | state    | days |
+      | critical |    3 |
+    When I am on the main page
+    Then an alert is displayed
+
+  Scenario: No alert
+    Given no unconfigured warranties

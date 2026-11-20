@@ -8,6 +8,7 @@ mod check;
 mod cli;
 mod dialects;
 mod fix;
+mod fmt;
 mod format;
 mod keywords;
 mod models;
@@ -28,6 +29,7 @@ fn run() -> Result<()> {
     match cli.command {
         Some(Command::Check { paths }) => return check::run(&paths),
         Some(Command::Fix { paths, dry_run }) => return fix::run(&paths, dry_run),
+        Some(Command::Format { paths, fix }) => return fmt::run(&paths, fix),
         None => {}
     }
 

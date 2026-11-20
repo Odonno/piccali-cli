@@ -43,6 +43,23 @@ pub enum Command {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Format feature files to a consistent layout: indentation, blank lines and table alignment.
+    /// Layout only — keywords, comments, descriptions and docstring contents are never modified.
+    /// Readonly by default: prints a unified diff and exits non-zero when files need formatting.
+    /// With --fix, files are rewritten in place (alias: --write).
+    /// All files are parsed first; if any fails to parse, nothing is written.
+    /// Style is read from .editorconfig ([*.feature]: indent_style, indent_size,
+    /// piccali_table_cell_right_align_numeric_content); without one, 2-space indentation is used.
+    Format {
+        /// Feature files to format: a file, a directory, or a glob pattern.
+        /// Defaults to the same glob as the default command: `**/*.feature`.
+        #[arg(default_values_t = vec!["**/*.feature".to_string()])]
+        paths: Vec<String>,
+
+        /// Apply the formatting in place.
+        #[arg(long, alias = "write")]
+        fix: bool,
+    },
 }
 
 /// Piccali CLI — generate living documentation from feature files.

@@ -18,9 +18,8 @@ use crate::models;
 
 /// A resolved reference to a local image found in a Gherkin description.
 ///
-/// `src_path` is the absolute (or CWD-relative) path to the source image on
-/// disk.  `output_name` is the de-duplicated name used under the `/images/`
-/// prefix in every output mode (e.g. `SearchByVin_lego-car.jpg`).
+/// `src_path` is the absolute (or CWD-relative) path to the source image on disk.
+/// `output_name` is the de-duplicated name used under the `/images/` prefix in every output mode (e.g. `SearchByVin_lego-car.jpg`).
 #[derive(Debug, Clone)]
 pub struct ImageRef {
     /// Absolute / CWD-relative path to the source image on disk.
@@ -251,7 +250,7 @@ pub fn parse_raw_feature_text(raw: &str, path: &Path) -> Result<gherkin::Feature
 /// Gherkin table rows end at the last `|`; anything after it that begins
 /// with optional whitespace followed by `#` is a comment and not part of
 /// the grammar.  The `gherkin` crate's parser rejects such lines.
-fn strip_table_row_comment(line: &str) -> &str {
+pub(crate) fn strip_table_row_comment(line: &str) -> &str {
     if let Some(last_pipe) = line.rfind('|') {
         let after = &line[last_pipe + 1..];
         if after.trim_start().starts_with('#') {

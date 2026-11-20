@@ -142,6 +142,44 @@ piccali-cli \
 
 The `{id}` placeholder is replaced by the part of the tag after the prefix.
 
+## Formatting feature files
+
+`piccali-cli format` normalizes feature-file layout: one indentation level per
+nesting block, consistent blank lines, and aligned data-table pipes. It is
+layout-only — keywords, comments, descriptions and docstring contents are
+never modified, and the formatted file parses to the exact same document.
+
+```bash
+# Readonly: print a unified diff per unformatted file.
+# Exits non-zero when anything would change — CI-friendly as-is.
+piccali-cli format
+
+# Apply the formatting in place (--write is an alias).
+piccali-cli format --fix
+```
+
+All files are parsed first; if any fails to parse, nothing is written.
+
+### Style configuration via `.editorconfig`
+
+Style is read from [`.editorconfig`](https://editorconfig.org/) files
+(`[*.feature]` sections apply), so your editor and piccali agree:
+
+| Key | Effect | Default |
+| --- | --- | --- |
+| `indent_style` | `space` or `tab` | `space` |
+| `indent_size` (or `tab_width`) | Spaces per nesting level | `2` |
+| `piccali_table_cell_right_align_numeric_content` | Right-align numeric table cells (Reqnroll-style) | `true` |
+
+Example:
+
+```ini
+[*.feature]
+indent_style = space
+indent_size = 2
+piccali_table_cell_right_align_numeric_content = true
+```
+
 ---
 
 ### Custom glob for feature files

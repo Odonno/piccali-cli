@@ -1,0 +1,29 @@
+---
+source: src/fmt.rs
+expression: "format_with(MESSY, &house_style())"
+---
+# language: en
+
+Feature: Kitchen sink
+
+   As a user
+      I want formatting
+
+  @smoke @wip
+  Scenario: Tables
+    Given a table
+      | name  | qty |
+      | car   |   1 |
+      | plane | 250 |
+    When a docstring
+      """
+        ## Heading
+
+          body stays
+      """
+    Then done
+
+  Rule: Nested
+
+    Scenario: In rule
+      Given nothing
