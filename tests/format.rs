@@ -22,6 +22,16 @@ fn run_format(dir: &TempDir, args: &[&str]) -> assert_cmd::assert::Assert {
         .assert()
 }
 
+/// Same as `run_format`, but pipes `input` to the command's stdin.
+fn run_format_stdin(dir: &TempDir, args: &[&str], input: &str) -> assert_cmd::assert::Assert {
+    piccali()
+        .current_dir(dir.path())
+        .arg("format")
+        .args(args)
+        .write_stdin(input)
+        .assert()
+}
+
 const MESSY: &str = "\
 Feature: Warranty
 
@@ -35,6 +45,44 @@ Feature: Warranty
       Scenario: No alert
         Given no unconfigured warranties
 ";
+
+#[test]
+fn stdin_mode_formats_stdin_to_stdout() {
+    let dir = TempDir::new().unwrap();
+    // No file is created: the path only guides .editorconfig lookup.
+
+    run_format_stdin(&dir, &["--stdin-file-path", "warranty.feature"], MESSY)
+        .success()
+        .stdout(predicates::str::contains(
+            "    Given a warranty is about to expire\n",
+        ))
+        .stdout(predicates::str::contains("      | state    | days |\n"));
+}
+
+#[test]
+fn stdin_mode_honors_editorconfig_via_stdin_file_path() {
+    let dir = TempDir::new().unwrap();
+    file(&dir, ".editorconfig", "[*.feature]\nindent_size = 4\n");
+
+    run_format_stdin(&dir, &["--stdin-file-path", "warranty.feature"], MESSY)
+        .success()
+        .stdout(predicates::str::contains(
+            "        Given a warranty is about to expire\n",
+        ));
+}
+
+#[test]
+fn stdin_mode_conflicts_with_fix_and_paths() {
+    let dir = TempDir::new().unwrap();
+
+    run_format_stdin(&dir, &["--stdin-file-path", "w.feature", "--fix"], MESSY).failure();
+    run_format_stdin(
+        &dir,
+        &["--stdin-file-path", "w.feature", "w.feature"],
+        MESSY,
+    )
+    .failure();
+}
 
 #[test]
 fn readonly_prints_diff_and_exits_nonzero_without_writing() {

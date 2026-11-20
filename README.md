@@ -180,6 +180,39 @@ indent_size = 2
 piccali_table_cell_right_align_numeric_content = true
 ```
 
+### Editor integration (Zed)
+
+Zed runs external formatters over stdin, so `format` plugs in natively —
+format-on-save with the same `.editorconfig` style as the CLI. Add to your
+Zed `settings.json`:
+
+```json
+"languages": {
+  "Gherkin": {
+    "formatter": {
+      "external": {
+        "command": "piccali",
+        "arguments": ["format", "--stdin-file-path", "{buffer_path}"]
+      }
+    },
+    "format_on_save": "on"
+  }
+}
+```
+
+(`Gherkin` is the language name registered by a Gherkin syntax extension —
+install one from Zed's extension registry first.)
+
+`check` and `fix` don't need an extension either — Zed [tasks](https://zed.dev/docs/tasks)
+run them on the current file. Add to your project's `.zed/tasks.json`:
+
+```json
+[
+  { "label": "piccali: check", "command": "piccali", "args": ["check", "$ZED_FILE"], "use_new_terminal": true, "allow_concurrent_runs": false },
+  { "label": "piccali: fix", "command": "piccali", "args": ["fix", "$ZED_FILE"], "use_new_terminal": true, "allow_concurrent_runs": false }
+]
+```
+
 ---
 
 ### Custom glob for feature files

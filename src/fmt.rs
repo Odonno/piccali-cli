@@ -26,8 +26,11 @@ struct Style {
 }
 
 fn style_for(path: &Path) -> Style {
+    // editorconfig lookup walks up from the file's directory; a bare file
+    // name has none, so resolve it against the working directory first.
+    let path = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
     // A malformed .editorconfig is not fatal: warn and use the house style.
-    let props = match editorconfig_core::properties(path) {
+    let props = match editorconfig_core::properties(&path) {
         Ok(props) => props,
         Err(err) => {
             eprintln!(
@@ -63,6 +66,27 @@ fn style_from_props(props: &HashMap<String, String>) -> Style {
     }
 }
 
+/// Format one in-memory buffer (the LSP server's `textDocument/formatting`).
+/// Style comes from the file's `.editorconfig`, exactly as on the command line.
+pub(crate) fn format_buffer(raw: &str, path: &Path) -> Result<String> {
+    format_text(raw, path, &style_for(path))
+}
+
+/// Read one buffer from stdin, format it, print it to stdout.
+/// `path` names the buffer: `.editorconfig` lookup and error messages only.
+fn format_stdin(path: &str) -> Result<()> {
+    use std::io::Read;
+    let mut raw = String::new();
+    std::io::stdin()
+        .read_to_string(&mut raw)
+        .wrap_err("Could not read from stdin")?;
+    let stripped = raw.strip_prefix('\u{FEFF}').unwrap_or(&raw);
+
+    let formatted = format_buffer(stripped, Path::new(path))?;
+    print!("{formatted}");
+    Ok(())
+}
+
 /// A file whose formatted text differs from its current contents.
 struct Plan {
     path: PathBuf,
@@ -86,7 +110,15 @@ impl Plan {
 /// Readonly by default: prints a unified diff per unformatted file and exits non-zero when any file would change.
 /// With `fix`, files are rewritten in place.
 /// Transactional like `fix`: every file is parsed and formatted first; if any fails to parse, nothing is written.
-pub fn run(paths: &[String], fix: bool) -> Result<()> {
+///
+/// With `stdin_file_path`, reads stdin instead of files and prints the
+/// formatted buffer to stdout (exit 0) — the editor-integration mode used by
+/// external formatters such as Zed's.
+pub fn run(paths: &[String], fix: bool, stdin_file_path: Option<&str>) -> Result<()> {
+    if let Some(path) = stdin_file_path {
+        return format_stdin(path);
+    }
+
     let files = parser::resolve_files(paths)?;
     if files.is_empty() {
         bail!("No feature files found for: {}", paths.join(", "));

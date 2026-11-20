@@ -76,9 +76,22 @@ fn lint_file(path: &Path) -> Result<Vec<Finding>> {
         .wrap_err_with(|| format!("Could not read path: {}", path.display()))?;
     let raw = raw.strip_prefix('\u{FEFF}').unwrap_or(&raw).to_string();
 
-    let feature = parser::parse_raw_feature_text(&raw, path)?;
+    Ok(lint_text(&raw, path)?
+        .into_iter()
+        .map(|(line, message)| Finding {
+            path: path.to_path_buf(),
+            line,
+            message,
+        })
+        .collect())
+}
 
-    let lang = dialects::detect_language(&raw);
+/// Parse and lint feature text held in memory (the LSP server's open buffers).
+/// Returns `(1-based line, message)` pairs; parse failures propagate to the caller.
+pub(crate) fn lint_text(raw: &str, path: &Path) -> Result<Vec<(usize, String)>> {
+    let feature = parser::parse_raw_feature_text(raw, path)?;
+
+    let lang = dialects::detect_language(raw);
     let keywords = lang_keywords(&lang)
         .ok_or_else(|| eyre!("{} uses unsupported language '{lang}'", path.display()))?;
 
@@ -87,14 +100,7 @@ fn lint_file(path: &Path) -> Result<Vec<Finding>> {
     for (block, start, end) in description_regions(&feature, lines.len()) {
         // `start` is the Feature:/Rule: line itself; description lines follow.
         for (index, line) in lines[start..end].iter().enumerate() {
-            lint_line(
-                path,
-                start + index + 1,
-                line,
-                block,
-                keywords,
-                &mut findings,
-            );
+            lint_text_line(start + index + 1, line, block, keywords, &mut findings);
         }
     }
     Ok(findings)
@@ -129,13 +135,12 @@ fn description_regions(
 }
 
 /// Lint one description-region line. Blank, comment and tag lines are ignored.
-fn lint_line(
-    path: &Path,
+fn lint_text_line(
     line_no: usize,
     line: &str,
     block: &'static str,
     keywords: &crate::keywords::LangKeywords,
-    findings: &mut Vec<Finding>,
+    findings: &mut Vec<(usize, String)>,
 ) {
     let trimmed = line.trim_start();
     if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with('@') {
@@ -151,13 +156,12 @@ fn lint_line(
             .strip_prefix(step)
             .is_some_and(|rest| rest.is_empty() || rest.starts_with(char::is_whitespace))
         {
-            findings.push(Finding {
-                path: path.to_path_buf(),
-                line: line_no,
-                message: format!(
+            findings.push((
+                line_no,
+                format!(
                     "step '{step}' sits in the {block} description and is silently treated as text — move it inside a Scenario or Background"
                 ),
-            });
+            ));
             break;
         }
     }
@@ -184,13 +188,10 @@ fn lint_line(
             }
         }
         if let Some((keyword, _)) = best.filter(|(_, d)| (1..=2).contains(d) && *d < second_best) {
-            findings.push(Finding {
-                path: path.to_path_buf(),
-                line: line_no,
-                message: format!(
-                    "'{candidate}' is not a {block} keyword — did you mean '{keyword}'?"
-                ),
-            });
+            findings.push((
+                line_no,
+                format!("'{candidate}' is not a {block} keyword — did you mean '{keyword}'?"),
+            ));
         }
     }
 }

@@ -57,9 +57,17 @@ pub enum Command {
         paths: Vec<String>,
 
         /// Apply the formatting in place.
-        #[arg(long, alias = "write")]
+        #[arg(long, alias = "write", conflicts_with = "stdin_file_path")]
         fix: bool,
+
+        /// Format stdin and print the result to stdout, for editor integration.
+        /// The path names the buffer: it drives `.editorconfig` lookup and error messages, and is never read from or written to.
+        #[arg(long, conflicts_with = "paths")]
+        stdin_file_path: Option<String>,
     },
+    /// Run the language server (LSP over stdio) for editor integration.
+    /// Diagnostics from `check`, formatting from `format`, on the open buffers.
+    Lsp,
 }
 
 /// Piccali CLI — generate living documentation from feature files.

@@ -11,6 +11,7 @@ mod fix;
 mod fmt;
 mod format;
 mod keywords;
+mod lsp;
 mod models;
 mod parser;
 mod server;
@@ -29,7 +30,12 @@ fn run() -> Result<()> {
     match cli.command {
         Some(Command::Check { paths }) => return check::run(&paths),
         Some(Command::Fix { paths, dry_run }) => return fix::run(&paths, dry_run),
-        Some(Command::Format { paths, fix }) => return fmt::run(&paths, fix),
+        Some(Command::Format {
+            paths,
+            fix,
+            stdin_file_path,
+        }) => return fmt::run(&paths, fix, stdin_file_path.as_deref()),
+        Some(Command::Lsp) => return lsp::run(),
         None => {}
     }
 
